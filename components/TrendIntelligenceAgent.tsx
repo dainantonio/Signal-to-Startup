@@ -259,7 +259,7 @@ export default function TrendIntelligenceAgent() {
     setError(null);
     
     try {
-      const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+      const genAI = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
       const model = "gemini-2.5-flash";
       
       const prompt = `
