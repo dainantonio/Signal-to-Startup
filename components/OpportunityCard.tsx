@@ -67,55 +67,34 @@ export const OpportunityCard: React.FC<OpportunityCardProps> = ({
           </div>
         </div>
         
-        <div className="grid grid-cols-3 gap-y-3 gap-x-2 pt-2">
-          <div className="text-center">
-            <p className="text-[8px] uppercase opacity-50 font-mono mb-1">Speed</p>
-            <div className="flex justify-center gap-0.5">
-              {[...Array(10)].map((_, j) => (
-                <div key={j} className={`w-1 h-2 ${j < opp.speed_to_launch ? 'bg-[#141414]' : 'bg-gray-200'}`} />
-              ))}
+        <div className="grid grid-cols-2 gap-y-4 gap-x-6 pt-4">
+          {[
+            { label: 'Speed', value: opp.speed_to_launch },
+            { label: 'ROI', value: opp.roi_potential },
+            { label: 'Urgency', value: opp.urgency },
+            { label: 'Local Fit', value: opp.local_fit },
+            { label: 'Gap', value: opp.competition_gap },
+            { label: 'Ease', value: 10 - opp.difficulty },
+          ].map((metric) => (
+            <div key={metric.label} className="space-y-1.5">
+              <div className="flex justify-between items-end">
+                <p className="text-[10px] uppercase opacity-50 font-mono leading-none">{metric.label}</p>
+                <p className="text-[10px] font-mono font-bold leading-none">{metric.value}/10</p>
+              </div>
+              <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                <motion.div 
+                  initial={{ width: 0 }}
+                  animate={{ width: `${metric.value * 10}%` }}
+                  transition={{ duration: 1, delay: 0.2 + index * 0.1 }}
+                  className={`h-full ${
+                    metric.value >= 8 ? 'bg-emerald-500' : 
+                    metric.value >= 5 ? 'bg-[#141414]' : 
+                    'bg-amber-500'
+                  }`}
+                />
+              </div>
             </div>
-          </div>
-          <div className="text-center">
-            <p className="text-[8px] uppercase opacity-50 font-mono mb-1">ROI</p>
-            <div className="flex justify-center gap-0.5">
-              {[...Array(10)].map((_, j) => (
-                <div key={j} className={`w-1 h-2 ${j < opp.roi_potential ? 'bg-[#141414]' : 'bg-gray-200'}`} />
-              ))}
-            </div>
-          </div>
-          <div className="text-center">
-            <p className="text-[8px] uppercase opacity-50 font-mono mb-1">Urgency</p>
-            <div className="flex justify-center gap-0.5">
-              {[...Array(10)].map((_, j) => (
-                <div key={j} className={`w-1 h-2 ${j < opp.urgency ? 'bg-[#141414]' : 'bg-gray-200'}`} />
-              ))}
-            </div>
-          </div>
-          <div className="text-center">
-            <p className="text-[8px] uppercase opacity-50 font-mono mb-1">Local Fit</p>
-            <div className="flex justify-center gap-0.5">
-              {[...Array(10)].map((_, j) => (
-                <div key={j} className={`w-1 h-2 ${j < opp.local_fit ? 'bg-[#141414]' : 'bg-gray-200'}`} />
-              ))}
-            </div>
-          </div>
-          <div className="text-center">
-            <p className="text-[8px] uppercase opacity-50 font-mono mb-1">Gap</p>
-            <div className="flex justify-center gap-0.5">
-              {[...Array(10)].map((_, j) => (
-                <div key={j} className={`w-1 h-2 ${j < opp.competition_gap ? 'bg-[#141414]' : 'bg-gray-200'}`} />
-              ))}
-            </div>
-          </div>
-          <div className="text-center">
-            <p className="text-[8px] uppercase opacity-50 font-mono mb-1">Ease</p>
-            <div className="flex justify-center gap-0.5">
-              {[...Array(10)].map((_, j) => (
-                <div key={j} className={`w-1 h-2 ${j < (10 - opp.difficulty) ? 'bg-[#141414]' : 'bg-gray-200'}`} />
-              ))}
-            </div>
-          </div>
+          ))}
         </div>
       </div>
       

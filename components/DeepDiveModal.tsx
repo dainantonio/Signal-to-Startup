@@ -11,7 +11,9 @@ import {
   CheckSquare, 
   Users, 
   Check, 
-  Copy 
+  Copy,
+  Share2,
+  Download
 } from 'lucide-react';
 import Markdown from 'react-markdown';
 import { Opportunity, DeepDiveResult } from './types';
@@ -45,21 +47,61 @@ export const DeepDiveModal: React.FC<DeepDiveModalProps> = ({
 }) => {
   if (!selectedOpportunity) return null;
 
+  const shareLink = () => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('opp', selectedOpportunity.name);
+    copyToClipboard(url.toString(), 'share-link');
+  };
+
+  const exportToPDF = () => {
+    window.print();
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-[#141414]/90 backdrop-blur-sm z-50 flex items-center justify-center p-4 md:p-8"
+      className="fixed inset-0 bg-[#141414]/90 backdrop-blur-sm z-50 flex items-center justify-center p-4 md:p-8 no-print"
     >
+      <style dangerouslySetInnerHTML={{ __html: `
+        @media print {
+          .no-print { display: none !important; }
+          .print-only { display: block !important; }
+          body { background: white !important; color: black !important; padding: 0 !important; margin: 0 !important; }
+          .modal-container { 
+            position: absolute !important; 
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important; 
+            max-width: none !important; 
+            height: auto !important; 
+            max-height: none !important; 
+            overflow: visible !important;
+            border: none !important;
+            box-shadow: none !important;
+            background: white !important;
+          }
+          .modal-content { overflow: visible !important; height: auto !important; padding: 2rem !important; }
+          .sidebar-tabs { display: none !important; }
+          .main-content { width: 100% !important; border: none !important; box-shadow: none !important; padding: 0 !important; }
+          .copy-button { display: none !important; }
+          .print-report-header { margin-bottom: 2rem; border-bottom: 2px solid #141414; padding-bottom: 1rem; }
+          .print-section { margin-bottom: 3rem; page-break-inside: avoid; }
+          .print-section-title { font-size: 1.5rem; font-weight: bold; font-style: italic; border-bottom: 1px solid #eee; margin-bottom: 1rem; padding-bottom: 0.5rem; }
+        }
+        @media screen {
+          .print-only { display: none !important; }
+        }
+      `}} />
       <motion.div
         initial={{ scale: 0.9, y: 20 }}
         animate={{ scale: 1, y: 0 }}
         exit={{ scale: 0.9, y: 20 }}
-        className="bg-[#E4E3E0] w-full max-w-5xl max-h-[90vh] overflow-hidden border border-[#141414] flex flex-col"
+        className="bg-[#E4E3E0] w-full max-w-5xl max-h-[90vh] overflow-hidden border border-[#141414] flex flex-col modal-container"
       >
         {/* Modal Header */}
-        <div className="border-b-2 border-[#141414] p-6 flex items-center justify-between bg-white">
+        <div className="border-b-2 border-[#141414] p-6 flex items-center justify-between bg-white no-print">
           <div className="flex items-center gap-4">
             <button 
               onClick={() => setSelectedOpportunity(null)}
@@ -74,6 +116,22 @@ export const DeepDiveModal: React.FC<DeepDiveModalProps> = ({
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <button
+              onClick={shareLink}
+              className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-mono uppercase hover:bg-emerald-100 transition-all"
+              title="Copy Shareable Link"
+            >
+              {copied === 'share-link' ? <Check size={14} /> : <Share2 size={14} />}
+              {copied === 'share-link' ? 'Link Copied' : 'Share Link'}
+            </button>
+            <button
+              onClick={exportToPDF}
+              className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-200 text-blue-700 text-[10px] font-mono uppercase hover:bg-blue-100 transition-all"
+              title="Export to PDF"
+            >
+              <Download size={14} />
+              Export PDF
+            </button>
             <button
               onClick={() => generateDeepDive(selectedOpportunity)}
               className="p-2 hover:bg-gray-100 rounded-full transition-colors text-[#141414]"
@@ -90,10 +148,17 @@ export const DeepDiveModal: React.FC<DeepDiveModalProps> = ({
           </div>
         </div>
 
+        {/* Print Header (Only visible when printing) */}
+        <div className="hidden print-only p-8 border-b-4 border-black mb-8">
+          <h1 className="text-4xl font-serif italic uppercase mb-2">Signal to Startup: Execution Report</h1>
+          <h2 className="text-2xl font-bold uppercase tracking-tighter">{selectedOpportunity.name}</h2>
+          <p className="text-xs font-mono uppercase opacity-60 mt-4">Generated via AI Trend Intelligence Agent • {new Date().toLocaleDateString()}</p>
+        </div>
+
         {/* Modal Content */}
-        <div className="flex-grow overflow-y-auto p-6 md:p-10 bg-[#F5F5F0]">
+        <div className="flex-grow overflow-y-auto p-6 md:p-10 bg-[#F5F5F0] modal-content">
           {deepDiveLoading ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-6">
+            <div className="flex flex-col items-center justify-center py-20 gap-6 no-print">
               <div className="relative">
                 <Loader2 className="w-16 h-16 animate-spin text-[#141414] opacity-20" />
                 <div className="absolute inset-0 flex items-center justify-center">
@@ -108,7 +173,7 @@ export const DeepDiveModal: React.FC<DeepDiveModalProps> = ({
           ) : deepDiveResult ? (
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-10">
               {/* Sidebar Tabs */}
-              <div className="lg:col-span-1 space-y-3">
+              <div className="lg:col-span-1 space-y-3 sidebar-tabs">
                 <div className="bg-white border-2 border-[#141414] p-4 mb-4 shadow-[4px_4px_0px_0px_rgba(20,20,20,1)]">
                   <div className="text-[10px] font-mono uppercase opacity-50 mb-2">Opportunity Score</div>
                   <div className="text-3xl font-bold font-serif italic">{Math.round(selectedOpportunity.money_score)}/100</div>
@@ -152,8 +217,8 @@ export const DeepDiveModal: React.FC<DeepDiveModalProps> = ({
               </div>
 
               {/* Main Content Area */}
-              <div className="lg:col-span-3 bg-white border-2 border-[#141414] p-8 md:p-12 min-h-[500px] shadow-[8px_8px_0px_0px_rgba(20,20,20,1)] relative">
-                <div className="absolute top-4 right-4">
+              <div className="lg:col-span-3 bg-white border-2 border-[#141414] p-8 md:p-12 min-h-[500px] shadow-[8px_8px_0px_0px_rgba(20,20,20,1)] relative main-content">
+                <div className="absolute top-4 right-4 no-print">
                   <button
                     onClick={() => {
                       let text = "";
@@ -164,7 +229,7 @@ export const DeepDiveModal: React.FC<DeepDiveModalProps> = ({
                       if (activeDeepDiveTab === 'investors') text = deepDiveResult.investors.map(inv => `${inv.name} (${inv.stage}): ${inv.focus}`).join('\n');
                       copyToClipboard(text, activeDeepDiveTab);
                     }}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 border border-[#141414] text-[10px] font-mono uppercase hover:bg-[#141414] hover:text-[#E4E3E0] transition-all"
+                    className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 border border-[#141414] text-[10px] font-mono uppercase hover:bg-[#141414] hover:text-[#E4E3E0] transition-all copy-button"
                   >
                     {copied === activeDeepDiveTab ? (
                       <><Check className="w-3 h-3" /> Copied</>
@@ -212,6 +277,61 @@ export const DeepDiveModal: React.FC<DeepDiveModalProps> = ({
                     <InvestorMatch deepDiveResult={deepDiveResult} />
                   )}
                 </AnimatePresence>
+              </div>
+
+              {/* Print-Only Full Report */}
+              <div className="print-only w-full">
+                <div className="print-report-header">
+                  <h1 className="text-4xl font-bold font-serif italic uppercase tracking-tighter">Execution Suite: {selectedOpportunity.name}</h1>
+                  <p className="text-sm font-mono uppercase tracking-widest opacity-60 mt-2">Intelligence Report • {new Date().toLocaleDateString()}</p>
+                  <div className="mt-4 flex items-center gap-4">
+                    <div className="px-4 py-2 bg-[#141414] text-white text-xl font-bold font-serif italic">
+                      Money Score: {Math.round(selectedOpportunity.money_score)}/100
+                    </div>
+                  </div>
+                </div>
+
+                <div className="print-section">
+                  <h2 className="print-section-title">01. Executive Summary</h2>
+                  <p className="font-serif italic text-lg leading-relaxed mb-4">{selectedOpportunity.description}</p>
+                  <div className="grid grid-cols-2 gap-4 text-sm font-mono uppercase">
+                    <div className="p-4 border border-gray-200">
+                      <div className="opacity-60 mb-1">Target Customer</div>
+                      <div className="font-bold">{selectedOpportunity.target_customer}</div>
+                    </div>
+                    <div className="p-4 border border-gray-200">
+                      <div className="opacity-60 mb-1">Monetization</div>
+                      <div className="font-bold">{selectedOpportunity.monetization}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="print-section">
+                  <h2 className="print-section-title">02. Detailed Business Plan</h2>
+                  <div className="prose prose-sm max-w-none font-serif">
+                    <Markdown>{deepDiveResult.business_plan}</Markdown>
+                  </div>
+                </div>
+
+                <div className="print-section">
+                  <h2 className="print-section-title">03. Startup Cost Estimator</h2>
+                  <CostEstimator deepDiveResult={deepDiveResult} />
+                </div>
+
+                <div className="print-section">
+                  <h2 className="print-section-title">04. Grant & Funding Opportunities</h2>
+                  <GrantFinder deepDiveResult={deepDiveResult} />
+                </div>
+
+                <div className="print-section">
+                  <h2 className="print-section-title">05. 30-Day Execution Checklist</h2>
+                  <Checklist deepDiveResult={deepDiveResult} />
+                </div>
+
+                <div className="print-section">
+                  <h2 className="print-section-title">06. Investor Matchmaking</h2>
+                  <InvestorMatch deepDiveResult={deepDiveResult} />
+                </div>
               </div>
             </div>
           ) : null}

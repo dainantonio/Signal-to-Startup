@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { GoogleGenAI, Type } from "@google/genai";
 import { 
   Globe,
@@ -11,6 +11,9 @@ import { Opportunity, AnalysisResult, DeepDiveResult } from './types';
 import { SignalInput } from './SignalInput';
 import { ResultsDashboard } from './ResultsDashboard';
 import { DeepDiveModal } from './DeepDiveModal';
+import { Onboarding } from './Onboarding';
+import { PipelineProgress } from './PipelineProgress';
+import { Search, BarChart3, Target, Rocket } from 'lucide-react';
 
 // Define the response schema for Gemini
 const responseSchema = {
@@ -132,67 +135,7 @@ export default function TrendIntelligenceAgent() {
   const [deepDiveLoading, setDeepDiveLoading] = useState(false);
   const [activeDeepDiveTab, setActiveDeepDiveTab] = useState<'plan' | 'costs' | 'grants' | 'checklist' | 'investors'>('plan');
   const [copied, setCopied] = useState<string | null>(null);
-
-  const exampleSignals = [
-    {
-      label: "Rural Policy",
-      text: "New federal initiative announced to subsidize high-speed satellite internet for rural farming communities in the Midwest. $500M allocated for infrastructure and local tech support training.",
-      location: "Midwest, USA",
-      focus: "Tech Support"
-    },
-    {
-      label: "Green Energy",
-      text: "City council passes mandate requiring all commercial buildings over 10,000 sq ft to install EV charging stations by 2027. Rebates available for early adopters who install before 2025.",
-      location: "California",
-      focus: "Installation"
-    },
-    {
-      label: "Micro-Logistics",
-      text: "Major e-commerce platform opening 50 new 'last-mile' micro-fulfillment centers in dense urban areas. Seeking local partners for bicycle and electric scooter delivery fleets.",
-      location: "London, UK",
-      focus: "Delivery"
-    }
-  ];
-
-  const copyToClipboard = (text: string, id: string) => {
-    navigator.clipboard.writeText(text);
-    setCopied(id);
-    setTimeout(() => setCopied(null), 2000);
-  };
-
-  const filteredOpportunities = useMemo(() => {
-    if (!result) return [];
-    
-    let filtered = [...result.opportunities].filter(opp => 
-      opp.money_score >= minScore && 
-      (!grantOnly || opp.grant_eligible) &&
-      opp.startup_cost <= maxCost
-    );
-    
-    if (filterType === 'top') {
-      filtered.sort((a, b) => b.money_score - a.money_score);
-    } else if (filterType === 'hot') {
-      // Hot = High Urgency + High Money Score
-      filtered.sort((a, b) => (b.urgency * 10 + b.money_score) - (a.urgency * 10 + a.money_score));
-    } else if (filterType === 'fast') {
-      filtered.sort((a, b) => b.speed_to_launch - a.speed_to_launch);
-    }
-    
-    return filtered;
-  }, [result, filterType, minScore, grantOnly, maxCost]);
-
-  const shareOnTwitter = () => {
-    if (!result) return;
-    const text = `AI Trend Intelligence: ${result.trend}\nBest Idea: ${result.best_idea.name}\n\nAnalyzed via AI Trend Intelligence Agent`;
-    const url = window.location.href;
-    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
-  };
-
-  const shareOnLinkedIn = () => {
-    if (!result) return;
-    const url = window.location.href;
-    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank');
-  };
+  const [currentStep, setCurrentStep] = useState(1);
 
   const analyzeSignal = async () => {
     if (!input.trim()) return;
@@ -273,7 +216,7 @@ export default function TrendIntelligenceAgent() {
     }
   };
 
-  const generateDeepDive = async (opp: Opportunity) => {
+  const generateDeepDive = useCallback(async (opp: Opportunity) => {
     setSelectedOpportunity(opp);
     setDeepDiveLoading(true);
     setDeepDiveResult(null);
@@ -322,6 +265,117 @@ export default function TrendIntelligenceAgent() {
     } finally {
       setDeepDiveLoading(false);
     }
+  }, [location]);
+
+  const pipelineSteps = [
+    { id: 1, label: 'Ingestion', icon: Search },
+    { id: 2, label: 'Analysis', icon: BarChart3 },
+    { id: 3, label: 'Matrix', icon: Target },
+    { id: 4, label: 'Execution', icon: Rocket },
+  ];
+
+  // Sync selected opportunity with URL for shareability
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const oppName = params.get('opp');
+    if (oppName && result && !selectedOpportunity) {
+      const opp = result.opportunities.find(o => o.name === oppName);
+      if (opp) {
+        setSelectedOpportunity(opp);
+        generateDeepDive(opp);
+      }
+    }
+  }, [result, generateDeepDive, selectedOpportunity]);
+
+  React.useEffect(() => {
+    const url = new URL(window.location.href);
+    if (selectedOpportunity) {
+      url.searchParams.set('opp', selectedOpportunity.name);
+    } else {
+      url.searchParams.delete('opp');
+    }
+    window.history.replaceState({}, '', url);
+  }, [selectedOpportunity]);
+
+  // Scroll listener for pipeline progress
+  React.useEffect(() => {
+    const handleScroll = () => {
+      const steps = [1, 2, 3, 4];
+      for (const step of steps.reverse()) {
+        const el = document.getElementById(`step-${step}`);
+        if (el) {
+          const rect = el.getBoundingClientRect();
+          if (rect.top <= 150) {
+            setCurrentStep(step);
+            break;
+          }
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const exampleSignals = [
+    {
+      label: "Rural Policy",
+      text: "New federal initiative announced to subsidize high-speed satellite internet for rural farming communities in the Midwest. $500M allocated for infrastructure and local tech support training.",
+      location: "Midwest, USA",
+      focus: "Tech Support"
+    },
+    {
+      label: "Green Energy",
+      text: "City council passes mandate requiring all commercial buildings over 10,000 sq ft to install EV charging stations by 2027. Rebates available for early adopters who install before 2025.",
+      location: "California",
+      focus: "Installation"
+    },
+    {
+      label: "Micro-Logistics",
+      text: "Major e-commerce platform opening 50 new 'last-mile' micro-fulfillment centers in dense urban areas. Seeking local partners for bicycle and electric scooter delivery fleets.",
+      location: "London, UK",
+      focus: "Delivery"
+    }
+  ];
+
+  const copyToClipboard = (text: string, id: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(id);
+    setTimeout(() => setCopied(null), 2000);
+  };
+
+  const filteredOpportunities = useMemo(() => {
+    if (!result) return [];
+    
+    let filtered = [...result.opportunities].filter(opp => 
+      opp.money_score >= minScore && 
+      (!grantOnly || opp.grant_eligible) &&
+      opp.startup_cost <= maxCost
+    );
+    
+    if (filterType === 'top') {
+      filtered.sort((a, b) => b.money_score - a.money_score);
+    } else if (filterType === 'hot') {
+      // Hot = High Urgency + High Money Score
+      filtered.sort((a, b) => (b.urgency * 10 + b.money_score) - (a.urgency * 10 + a.money_score));
+    } else if (filterType === 'fast') {
+      filtered.sort((a, b) => b.speed_to_launch - a.speed_to_launch);
+    }
+    
+    return filtered;
+  }, [result, filterType, minScore, grantOnly, maxCost]);
+
+  const shareOnTwitter = () => {
+    if (!result) return;
+    const text = `AI Trend Intelligence: ${result.trend}\nBest Idea: ${result.best_idea.name}\n\nAnalyzed via AI Trend Intelligence Agent`;
+    const url = window.location.href;
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
+  };
+
+  const shareOnLinkedIn = () => {
+    if (!result) return;
+    const url = window.location.href;
+    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank');
   };
 
   return (
@@ -342,6 +396,10 @@ export default function TrendIntelligenceAgent() {
             LIVE FEED ACTIVE
           </div>
         </header>
+
+        {result && (
+          <PipelineProgress currentStep={currentStep} steps={pipelineSteps} />
+        )}
 
         <SignalInput 
           input={input}
@@ -365,6 +423,17 @@ export default function TrendIntelligenceAgent() {
               className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-8 font-mono text-sm"
             >
               {error}
+            </motion.div>
+          )}
+
+          {!result && !loading && !error && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.5 }}
+            >
+              <Onboarding />
             </motion.div>
           )}
 

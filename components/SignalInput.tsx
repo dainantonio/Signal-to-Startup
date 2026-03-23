@@ -25,7 +25,7 @@ export const SignalInput: React.FC<SignalInputProps> = ({
   exampleSignals
 }) => {
   return (
-    <section className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+    <section id="step-1" className="scroll-mt-24 grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
       <div className="lg:col-span-2 space-y-4">
         <div className="flex items-center gap-3 mb-2">
           <div className="w-8 h-8 rounded-full bg-[#141414] text-[#E4E3E0] flex items-center justify-center font-mono text-xs">01</div>

@@ -67,7 +67,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
       </div>
 
       {/* Layer 2: Analysis Summary */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <section id="step-2" className="scroll-mt-24 grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 bg-white border-2 border-[#141414] p-8 shadow-[8px_8px_0px_0px_rgba(20,20,20,1)]">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-8 h-8 rounded-full bg-[#141414] text-[#E4E3E0] flex items-center justify-center font-mono text-xs">02</div>
@@ -130,10 +130,10 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Layer 03: Opportunity Matrix */}
-      <div className="space-y-8">
+      <section id="step-3" className="scroll-mt-24 space-y-8">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-[#141414] text-[#E4E3E0] flex items-center justify-center font-mono text-xs">03</div>
@@ -227,17 +227,17 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
             <p className="font-mono text-sm uppercase">No opportunities match the current filter.</p>
           </div>
         )}
-      </div>
+      </section>
 
-      {/* Layer 5: Execution Layer */}
-      <div className="bg-[#141414] text-[#E4E3E0] p-8 md:p-12 relative overflow-hidden">
+      {/* Layer 4: Execution Layer */}
+      <section id="step-4" className="scroll-mt-24 bg-[#141414] text-[#E4E3E0] p-8 md:p-12 relative overflow-hidden">
         <div className="absolute top-0 right-0 p-8 opacity-10">
           <Trophy className="w-48 h-48" />
         </div>
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-6">
             <div className="bg-[#E4E3E0] text-[#141414] w-8 h-8 rounded-full flex items-center justify-center font-mono text-xs">
-              05
+              04
             </div>
             <h3 className="text-sm font-mono uppercase tracking-[0.3em]">🚀 Take Action</h3>
           </div>
@@ -299,7 +299,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
             </div>
           </div>
         </div>
-      </div>
+      </section>
     </motion.div>
   );
 };
