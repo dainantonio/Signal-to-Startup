@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Search, Lightbulb, MapPin, Zap, TrendingUp, Loader2, X, RefreshCw } from 'lucide-react';
+import { Search, Lightbulb, MapPin, Zap, TrendingUp, Loader2, X, RefreshCw, Sparkles } from 'lucide-react';
 import { MarketMode } from './types';
 import { MarketModeSelector } from './MarketModeSelector';
 
@@ -70,26 +70,29 @@ export const SignalInput: React.FC<SignalInputProps> = ({
   };
 
   const catStyle: Record<string, string> = {
-    Tech: 'bg-indigo-50 text-indigo-700 border-indigo-200',
-    Policy: 'bg-amber-50 text-amber-700 border-amber-200',
-    Markets: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    Tech: 'bg-indigo-50 text-indigo-700 border-indigo-100',
+    Policy: 'bg-amber-50 text-amber-700 border-amber-100',
+    Markets: 'bg-emerald-50 text-emerald-700 border-emerald-100',
   };
 
   return (
-    <section id="step-1" className="scroll-mt-24 mb-10">
-      <div className="flex items-center gap-3 mb-5">
-        <div className="w-8 h-8 rounded-full bg-[#141414] text-[#E4E3E0] flex items-center justify-center font-mono text-xs flex-shrink-0">01</div>
-        <h2 className="text-2xl font-serif italic border-b border-[#141414] pb-2 flex-grow">Signal Ingestion</h2>
+    <section id="step-1" className="scroll-mt-24 mb-12">
+      <div className="flex items-center gap-4 mb-6">
+        <div className="w-10 h-10 rounded-xl bg-foreground text-background flex items-center justify-center font-mono text-sm font-bold flex-shrink-0 shadow-lg shadow-foreground/10">01</div>
+        <div className="flex-grow">
+          <h2 className="text-2xl font-serif italic font-bold">Signal Ingestion</h2>
+          <p className="text-[10px] font-mono uppercase tracking-widest text-muted">Identify the market shift</p>
+        </div>
       </div>
 
-      <div className="flex w-full bg-white border-2 border-[#141414] shadow-[2px_2px_0px_0px_rgba(20,20,20,1)] mb-4">
+      <div className="flex w-full bg-white border border-border/10 p-1 rounded-2xl shadow-sm mb-6">
         <button
           onClick={() => setInputMode('paste')}
-          className={`flex-1 py-2.5 font-mono text-[11px] uppercase tracking-wider transition-all ${inputMode === 'paste' ? 'bg-[#141414] text-[#E4E3E0]' : 'hover:bg-gray-50'}`}
+          className={`flex-1 py-3 rounded-xl font-mono text-[11px] uppercase tracking-wider transition-all duration-200 ${inputMode === 'paste' ? 'bg-foreground text-background shadow-lg shadow-foreground/10' : 'text-muted hover:text-foreground hover:bg-gray-50'}`}
         >Paste Signal</button>
         <button
           onClick={() => setInputMode('feed')}
-          className={`flex-1 py-2.5 font-mono text-[11px] uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${inputMode === 'feed' ? 'bg-[#141414] text-[#E4E3E0]' : 'hover:bg-gray-50'}`}
+          className={`flex-1 py-3 rounded-xl font-mono text-[11px] uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 ${inputMode === 'feed' ? 'bg-foreground text-background shadow-lg shadow-foreground/10' : 'text-muted hover:text-foreground hover:bg-gray-50'}`}
         >
           <span className={`w-2 h-2 rounded-full flex-shrink-0 ${inputMode === 'feed' ? 'bg-red-400 animate-pulse' : 'bg-gray-300'}`} />
           Live Feed
@@ -97,71 +100,71 @@ export const SignalInput: React.FC<SignalInputProps> = ({
       </div>
 
       {inputMode === 'paste' ? (
-        <div className="space-y-3">
-          <div className="flex gap-2">
-            <div className="flex-1 relative">
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex-1 relative group">
               <input
                 type="text" value={urlInput} onChange={e => setUrlInput(e.target.value)}
-                placeholder="Or paste a URL to fetch content..."
-                className="w-full bg-white border-2 border-[#141414] p-3 pl-9 pr-8 focus:outline-none font-mono text-sm shadow-[2px_2px_0px_0px_rgba(20,20,20,1)]"
+                placeholder="Paste a URL to fetch content..."
+                className="w-full bg-white border border-border/10 rounded-xl p-4 pl-11 pr-10 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none font-sans text-sm transition-all shadow-sm"
               />
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 opacity-40" />
-              {urlInput && <button onClick={() => setUrlInput('')} className="absolute right-3 top-1/2 -translate-y-1/2 opacity-30 hover:opacity-80"><X className="w-3.5 h-3.5" /></button>}
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted group-focus-within:text-primary transition-colors" />
+              {urlInput && <button onClick={() => setUrlInput('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-muted hover:text-foreground transition-colors"><X className="w-4 h-4" /></button>}
             </div>
             <button onClick={fetchUrl} disabled={fetchingUrl || !urlInput.trim()}
-              className="bg-[#141414] text-[#E4E3E0] px-5 py-3 font-mono text-[11px] uppercase tracking-widest hover:bg-black disabled:opacity-40 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)] flex-shrink-0">
-              {fetchingUrl ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Fetch'}
+              className="bg-foreground text-background px-8 py-4 rounded-xl font-mono text-[11px] uppercase tracking-widest hover:bg-foreground/90 disabled:opacity-40 transition-all shadow-lg shadow-foreground/5 flex-shrink-0 flex items-center justify-center gap-2">
+              {fetchingUrl ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Fetch Content'}
             </button>
           </div>
 
-          <div className="relative">
+          <div className="relative group">
             <textarea
               value={input} onChange={e => setInput(e.target.value)}
               placeholder="Paste a news article, policy update, or market signal here..."
-              className="w-full h-44 md:h-56 bg-white border-2 border-[#141414] p-4 focus:outline-none resize-none font-mono text-sm leading-relaxed shadow-[4px_4px_0px_0px_rgba(20,20,20,1)]"
+              className="w-full h-48 md:h-64 bg-white border border-border/10 rounded-2xl p-6 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none resize-none font-sans text-base leading-relaxed transition-all shadow-sm"
             />
-            <div className="absolute bottom-3 right-3 opacity-20"><Zap className="w-5 h-5" /></div>
+            <div className="absolute bottom-4 right-4 text-primary/20 group-focus-within:text-primary/40 transition-colors"><Sparkles className="w-6 h-6" /></div>
           </div>
 
           <div className="flex flex-wrap gap-2 items-center">
-            <span className="text-[10px] font-mono uppercase opacity-40 flex items-center gap-1 w-full"><Lightbulb className="w-3 h-3" /> Try an example:</span>
+            <span className="text-[10px] font-mono uppercase text-muted flex items-center gap-1.5 w-full mb-1"><Lightbulb className="w-3 h-3" /> Try an example:</span>
             {exampleSignals.map((sig, i) => (
               <button key={i} onClick={() => { setInput(sig.text); setLocation(sig.location); setFocus(sig.focus); }}
-                className="px-3 py-1.5 bg-white border border-[#141414] text-[10px] font-mono uppercase hover:bg-[#141414] hover:text-[#E4E3E0] transition-all shadow-[2px_2px_0px_0px_rgba(20,20,20,1)] active:shadow-none active:translate-x-px active:translate-y-px">
+                className="px-4 py-2 bg-white border border-border/10 rounded-lg text-[10px] font-mono uppercase text-muted hover:text-foreground hover:border-border/30 hover:bg-gray-50 transition-all shadow-sm active:scale-95">
                 {sig.label}
               </button>
             ))}
           </div>
         </div>
       ) : (
-        <div className="space-y-3">
-          <div className="flex justify-between items-center">
-            <span className="text-[10px] font-mono uppercase opacity-40 flex items-center gap-2">
-              <span className="w-2 h-2 bg-red-400 rounded-full animate-pulse" />Real-time signals
+        <div className="space-y-4">
+          <div className="flex justify-between items-center px-1">
+            <span className="text-[10px] font-mono uppercase text-muted flex items-center gap-2">
+              <span className="w-2 h-2 bg-red-400 rounded-full animate-pulse" />Real-time market signals
             </span>
-            <button onClick={fetchFeed} disabled={fetchingFeed} className="p-2 hover:bg-white border border-transparent hover:border-[#141414] rounded transition-all">
+            <button onClick={fetchFeed} disabled={fetchingFeed} className="p-2 hover:bg-white border border-transparent hover:border-border/10 rounded-lg transition-all text-muted hover:text-foreground">
               <RefreshCw className={`w-4 h-4 ${fetchingFeed ? 'animate-spin' : ''}`} />
             </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {fetchingFeed
               ? Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="bg-white border-2 border-[#141414] p-4 space-y-3 animate-pulse">
-                    <div className="h-3 bg-gray-200 w-16 rounded" /><div className="h-10 bg-gray-200 rounded" /><div className="h-3 bg-gray-200 w-24 rounded" />
+                  <div key={i} className="bg-white border border-border/10 rounded-2xl p-6 space-y-4 animate-pulse shadow-sm">
+                    <div className="h-4 bg-gray-100 w-20 rounded-lg" /><div className="h-12 bg-gray-100 rounded-xl" /><div className="h-4 bg-gray-100 w-32 rounded-lg" />
                   </div>
                 ))
               : signals.map((sig, i) => (
-                  <div key={i} className="bg-white border-2 border-[#141414] p-4 flex flex-col gap-3 shadow-[2px_2px_0px_0px_rgba(20,20,20,1)] hover:shadow-[4px_4px_0px_0px_rgba(20,20,20,1)] transition-all">
+                  <div key={i} className="group bg-white border border-border/10 rounded-2xl p-6 flex flex-col gap-4 shadow-sm hover:shadow-md hover:border-primary/20 transition-all duration-300">
                     <div className="flex justify-between items-start gap-2">
-                      <span className={`px-2 py-0.5 text-[9px] font-mono uppercase font-bold border ${catStyle[sig.category]}`}>{sig.category}</span>
-                      <span className="text-[9px] font-mono opacity-30 flex-shrink-0">{timeAgo(sig.publishedAt)}</span>
+                      <span className={`px-2.5 py-1 text-[9px] font-mono uppercase font-bold border rounded-md ${catStyle[sig.category]}`}>{sig.category}</span>
+                      <span className="text-[9px] font-mono text-muted flex-shrink-0">{timeAgo(sig.publishedAt)}</span>
                     </div>
-                    <p className="text-sm font-serif italic font-bold leading-snug">{sig.title.length > 80 ? `${sig.title.substring(0, 80)}...` : sig.title}</p>
-                    <p className="text-[10px] font-mono opacity-50 truncate">Source: {sig.source}</p>
+                    <p className="text-lg font-serif italic font-bold leading-tight group-hover:text-primary transition-colors">{sig.title.length > 80 ? `${sig.title.substring(0, 80)}...` : sig.title}</p>
+                    <p className="text-[10px] font-mono text-muted truncate">Source: {sig.source}</p>
                     <button onClick={() => onAnalyzeSignal(sig)}
-                      className="w-full py-2.5 bg-[#141414] text-[#E4E3E0] font-mono text-[10px] uppercase tracking-wider hover:bg-black transition-all mt-auto">
-                      Analyze →
+                      className="w-full py-3 bg-foreground text-background rounded-xl font-mono text-[10px] uppercase tracking-widest hover:bg-foreground/90 transition-all mt-auto shadow-lg shadow-foreground/5">
+                      Analyze Signal →
                     </button>
                   </div>
                 ))}
@@ -169,27 +172,27 @@ export const SignalInput: React.FC<SignalInputProps> = ({
         </div>
       )}
 
-      <div id="analyze-actions" className="mt-5 space-y-3">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="relative">
+      <div id="analyze-actions" className="mt-8 space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="relative group">
             <input type="text" value={location} onChange={e => setLocation(e.target.value)}
               placeholder="Location (e.g. Kingston, New York)"
-              className="w-full bg-white border-2 border-[#141414] p-3 pl-9 focus:outline-none font-mono text-sm shadow-[2px_2px_0px_0px_rgba(20,20,20,1)]" />
-            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 opacity-40" />
+              className="w-full bg-white border border-border/10 rounded-xl p-4 pl-11 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none font-sans text-sm transition-all shadow-sm" />
+            <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted group-focus-within:text-primary transition-colors" />
           </div>
-          <div className="relative">
+          <div className="relative group">
             <input type="text" value={focus} onChange={e => setFocus(e.target.value)}
               placeholder="Niche (e.g. Vending, SaaS, Courier)"
-              className="w-full bg-white border-2 border-[#141414] p-3 pl-9 focus:outline-none font-mono text-sm shadow-[2px_2px_0px_0px_rgba(20,20,20,1)]" />
-            <Zap className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 opacity-40" />
+              className="w-full bg-white border border-border/10 rounded-xl p-4 pl-11 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none font-sans text-sm transition-all shadow-sm" />
+            <Zap className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted group-focus-within:text-primary transition-colors" />
           </div>
         </div>
 
         <MarketModeSelector selectedMode={selectedMode} onModeChange={setSelectedMode} />
 
         <button onClick={analyzeSignal} disabled={loading || !input.trim()}
-          className="w-full bg-[#141414] text-[#E4E3E0] py-4 font-mono text-sm uppercase tracking-widest hover:bg-black disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-3 shadow-[4px_4px_0px_0px_rgba(20,20,20,0.3)] active:translate-x-px active:translate-y-px active:shadow-none">
-          {loading ? (<><Loader2 className="w-4 h-4 animate-spin" />Analyzing...</>) : (<><TrendingUp className="w-4 h-4" />Extract Opportunities</>)}
+          className="w-full bg-primary text-white py-5 rounded-2xl font-mono text-sm uppercase tracking-widest hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-3 shadow-xl shadow-primary/20 active:scale-[0.98]">
+          {loading ? (<><Loader2 className="w-5 h-5 animate-spin" />Analyzing Signal...</>) : (<><TrendingUp className="w-5 h-5" />Extract Opportunities</>)}
         </button>
       </div>
     </section>

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowRight, X, Zap, BarChart3, Rocket } from 'lucide-react';
+import { ArrowRight, X, Zap, BarChart3, Rocket, Sparkles } from 'lucide-react';
 import demoResultData from '../demo-result.json';
 import { OpportunityCard } from './OpportunityCard';
 import { AnalysisResult } from './types';
@@ -15,27 +15,27 @@ const steps = [
     number: '01',
     title: 'Drop in a signal',
     body: 'Paste any news article, policy update, or market shift. Or pick from the Live Feed — real headlines updated every 30 minutes.',
-    color: 'text-amber-600',
-    bg: 'bg-amber-50',
-    border: 'border-amber-200',
+    color: 'text-accent',
+    bg: 'bg-accent/5',
+    border: 'border-accent/10',
   },
   {
     icon: BarChart3,
     number: '02',
     title: 'Get scored opportunities',
     body: 'The AI extracts business ideas with a Money Score (0–100) based on ROI, speed to launch, local fit, and competition gap.',
-    color: 'text-indigo-600',
-    bg: 'bg-indigo-50',
-    border: 'border-indigo-200',
+    color: 'text-primary',
+    bg: 'bg-primary/5',
+    border: 'border-primary/10',
   },
   {
     icon: Rocket,
     number: '03',
     title: 'Build your execution plan',
     body: 'One tap generates a 30-day checklist, cost breakdown, grant finder, and investor matches. Save it to your pipeline and track progress.',
-    color: 'text-emerald-600',
-    bg: 'bg-emerald-50',
-    border: 'border-emerald-200',
+    color: 'text-secondary',
+    bg: 'bg-secondary/5',
+    border: 'border-secondary/10',
   },
 ];
 
@@ -58,16 +58,19 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onDismiss }) => {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8 }}
       transition={{ duration: 0.4 }}
-      className="mt-8 mb-4"
+      className="mt-8 mb-8"
     >
       {/* Step Walkthrough */}
-      <div className="bg-white border-2 border-[#141414] shadow-[4px_4px_0px_0px_rgba(20,20,20,1)] overflow-hidden">
+      <div className="bg-white border border-border/10 rounded-3xl shadow-sm overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#141414]/10">
-          <span className="text-[10px] font-mono uppercase tracking-[0.2em] opacity-40">How it works</span>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border/5 bg-gray-50/50">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-3.5 h-3.5 text-primary" />
+            <span className="text-[10px] font-mono uppercase tracking-widest text-muted font-bold">Platform Guide</span>
+          </div>
           <button
             onClick={handleDismiss}
-            className="p-1.5 hover:bg-gray-100 rounded-full transition-colors opacity-40 hover:opacity-100"
+            className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-muted hover:text-foreground"
             aria-label="Dismiss"
           >
             <X className="w-4 h-4" />
@@ -75,24 +78,24 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onDismiss }) => {
         </div>
 
         {/* Step Tabs */}
-        <div className="flex border-b border-[#141414]/10">
+        <div className="flex border-b border-border/5 p-1 bg-gray-50/30">
           {steps.map((s, i) => (
             <button
               key={i}
               onClick={() => setActiveStep(i)}
-              className={`flex-1 py-3 text-[10px] font-mono uppercase tracking-wider transition-all border-r last:border-r-0 border-[#141414]/10 ${
+              className={`flex-1 py-3 rounded-xl text-[10px] font-mono uppercase tracking-widest transition-all duration-200 font-bold ${
                 activeStep === i
-                  ? 'bg-[#141414] text-[#E4E3E0]'
-                  : 'hover:bg-gray-50 opacity-50'
+                  ? 'bg-white text-foreground shadow-sm border border-border/5'
+                  : 'text-muted hover:text-foreground hover:bg-white/50'
               }`}
             >
-              {s.number}
+              Step {s.number}
             </button>
           ))}
         </div>
 
         {/* Step Content */}
-        <div className="p-5 md:p-8">
+        <div className="p-6 md:p-10">
           <AnimatePresence mode="wait">
             {steps.map((s, i) =>
               activeStep === i ? (
@@ -101,15 +104,15 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onDismiss }) => {
                   initial={{ opacity: 0, x: 12 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -12 }}
-                  transition={{ duration: 0.25 }}
-                  className="flex flex-col md:flex-row md:items-start gap-5"
+                  transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                  className="flex flex-col md:flex-row md:items-center gap-6 md:gap-10"
                 >
-                  <div className={`w-12 h-12 rounded-full ${s.bg} border ${s.border} flex items-center justify-center flex-shrink-0`}>
-                    <s.icon className={`w-5 h-5 ${s.color}`} />
+                  <div className={`w-16 h-16 rounded-2xl ${s.bg} border ${s.border} flex items-center justify-center flex-shrink-0 shadow-sm`}>
+                    <s.icon className={`w-7 h-7 ${s.color}`} />
                   </div>
-                  <div className="space-y-2 flex-1">
-                    <h3 className="font-serif italic text-xl md:text-2xl leading-tight">{s.title}</h3>
-                    <p className="text-sm text-[#141414]/60 leading-relaxed">{s.body}</p>
+                  <div className="space-y-3 flex-1">
+                    <h3 className="font-serif italic text-2xl md:text-3xl leading-tight tracking-tight">{s.title}</h3>
+                    <p className="text-base text-muted leading-relaxed font-medium">{s.body}</p>
                   </div>
                 </motion.div>
               ) : null
@@ -117,53 +120,55 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onDismiss }) => {
           </AnimatePresence>
 
           {/* Navigation */}
-          <div className="flex items-center justify-between mt-6 pt-5 border-t border-[#141414]/10">
-            <div className="flex gap-1.5">
+          <div className="flex items-center justify-between mt-10 pt-6 border-t border-border/5">
+            <div className="flex gap-2">
               {steps.map((_, i) => (
                 <button
                   key={i}
                   onClick={() => setActiveStep(i)}
-                  className={`w-2 h-2 rounded-full transition-all ${
-                    activeStep === i ? 'bg-[#141414] w-5' : 'bg-gray-300'
+                  className={`h-1.5 rounded-full transition-all duration-300 ${
+                    activeStep === i ? 'bg-primary w-8' : 'bg-gray-200 w-2'
                   }`}
                 />
               ))}
             </div>
 
-            {activeStep < steps.length - 1 ? (
-              <button
-                onClick={() => setActiveStep(i => i + 1)}
-                className="flex items-center gap-2 text-[11px] font-mono uppercase tracking-wider hover:opacity-60 transition-opacity"
-              >
-                Next <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            ) : (
-              <button
-                onClick={() => setShowPreview(v => !v)}
-                className="flex items-center gap-2 text-[11px] font-mono uppercase tracking-wider text-emerald-600 hover:opacity-70 transition-opacity"
-              >
-                {showPreview ? 'Hide example' : 'See example output'} <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            )}
+            <div className="flex items-center gap-4">
+              {activeStep < steps.length - 1 ? (
+                <button
+                  onClick={() => setActiveStep(i => i + 1)}
+                  className="flex items-center gap-2 text-[11px] font-mono uppercase tracking-widest font-bold text-foreground hover:text-primary transition-colors group"
+                >
+                  Next Step <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </button>
+              ) : (
+                <button
+                  onClick={() => setShowPreview(v => !v)}
+                  className="flex items-center gap-2 text-[11px] font-mono uppercase tracking-widest font-bold text-secondary hover:opacity-70 transition-opacity group"
+                >
+                  {showPreview ? 'Hide Preview' : 'See Example Output'} <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Example Output — only shown when user requests it */}
+      {/* Example Output */}
       <AnimatePresence>
         {showPreview && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.35 }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
             className="overflow-hidden"
           >
-            <div className="pt-4 space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="h-px flex-1 bg-[#141414]/10" />
-                <span className="text-[9px] font-mono uppercase tracking-[0.2em] opacity-30">Example output</span>
-                <div className="h-px flex-1 bg-[#141414]/10" />
+            <div className="pt-6 space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="h-px flex-1 bg-border/5" />
+                <span className="text-[9px] font-mono uppercase tracking-widest text-muted font-bold">Interactive Preview</span>
+                <div className="h-px flex-1 bg-border/5" />
               </div>
               <div className="relative">
                 <OpportunityCard
@@ -176,23 +181,23 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onDismiss }) => {
               </div>
               <button
                 onClick={handleDismiss}
-                className="w-full py-3.5 bg-[#141414] text-[#E4E3E0] font-mono text-[11px] uppercase tracking-[0.2em] hover:bg-black transition-all shadow-[4px_4px_0px_0px_rgba(20,20,20,0.2)] active:translate-x-px active:translate-y-px active:shadow-none"
+                className="w-full py-5 bg-foreground text-background rounded-2xl font-mono text-[11px] uppercase tracking-widest font-bold hover:bg-foreground/90 transition-all shadow-xl shadow-foreground/10 active:scale-[0.98]"
               >
-                Got it — start analyzing
+                Got it — Start Analyzing
               </button>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Quick dismiss if no preview */}
+      {/* Quick dismiss */}
       {!showPreview && (
-        <div className="mt-3 text-center">
+        <div className="mt-4 text-center">
           <button
             onClick={handleDismiss}
-            className="text-[10px] font-mono uppercase opacity-30 hover:opacity-60 transition-opacity tracking-wider"
+            className="text-[10px] font-mono uppercase text-muted hover:text-foreground transition-colors tracking-widest font-bold"
           >
-            Skip — I know what I'm doing
+            Skip Walkthrough
           </button>
         </div>
       )}

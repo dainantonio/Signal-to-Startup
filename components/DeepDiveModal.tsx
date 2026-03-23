@@ -16,7 +16,9 @@ import {
   Download,
   Bookmark,
   BookmarkCheck,
-  ExternalLink
+  ExternalLink,
+  MoreVertical,
+  ChevronRight
 } from 'lucide-react';
 import Markdown from 'react-markdown';
 import Link from 'next/link';
@@ -67,6 +69,7 @@ export const DeepDiveModal: React.FC<DeepDiveModalProps> = ({
   const [isSaved, setIsSaved] = React.useState(false);
   const [savedDocId, setSavedDocId] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
+  const [showActions, setShowActions] = React.useState(false);
 
   const checkIfSaved = React.useCallback(async () => {
     if (!selectedOpportunity || !auth.currentUser) return;
@@ -159,12 +162,20 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
     window.print();
   };
 
+  const tabs = [
+    { id: 'plan', label: 'Business Plan', icon: FileText },
+    { id: 'costs', label: 'Startup Costs', icon: Calculator },
+    { id: 'grants', label: 'Funding & Grants', icon: Coins },
+    { id: 'checklist', label: '30-Day Checklist', icon: CheckSquare },
+    { id: 'investors', label: 'Investor Match', icon: Users },
+  ] as const;
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-[#141414]/90 backdrop-blur-sm z-50 flex items-center justify-center p-4 md:p-8 no-print"
+      className="fixed inset-0 bg-foreground/40 backdrop-blur-md z-50 flex items-end md:items-center justify-center p-0 md:p-8 no-print"
     >
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
@@ -197,304 +208,282 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
         }
       `}} />
       <motion.div
-        initial={{ scale: 0.9, y: 20 }}
-        animate={{ scale: 1, y: 0 }}
-        exit={{ scale: 0.9, y: 20 }}
-        className="bg-[#E4E3E0] w-full max-w-5xl max-h-[90vh] overflow-hidden border border-[#141414] flex flex-col modal-container"
+        initial={{ y: '100%' }}
+        animate={{ y: 0 }}
+        exit={{ y: '100%' }}
+        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+        className="bg-background w-full max-w-6xl h-[92dvh] md:h-[85dvh] overflow-hidden rounded-t-3xl md:rounded-3xl border border-border/10 flex flex-col modal-container shadow-2xl"
       >
         {/* Modal Header */}
-        <div className="border-b-2 border-[#141414] p-6 flex items-center justify-between bg-white no-print">
-          <div className="flex items-center gap-4">
+        <div className="border-b border-border/10 p-4 md:p-6 flex items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-20 no-print">
+          <div className="flex items-center gap-3 md:gap-4">
             <button 
               onClick={() => setSelectedOpportunity(null)}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
               title="Back to list"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div>
-              <h2 className="text-2xl font-serif italic uppercase tracking-tighter">{selectedOpportunity.name}</h2>
-              <p className="text-[10px] font-mono uppercase opacity-50">Execution Suite & Strategy</p>
+              <h2 className="text-lg md:text-2xl font-serif italic font-bold tracking-tight line-clamp-1">{selectedOpportunity.name}</h2>
+              <p className="text-[10px] font-mono uppercase text-muted tracking-widest">Execution Suite</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            {auth.currentUser && deepDiveResult && (
-              !isSaved ? (
-                <button
-                  onClick={saveOpportunity}
-                  disabled={saving}
-                  className="flex items-center gap-2 px-3 py-1.5 border bg-white border-[#141414] hover:bg-gray-50 text-[10px] font-mono uppercase transition-all"
-                >
-                  {saving ? <Loader2 size={14} className="animate-spin" /> : <Bookmark size={14} />}
-                  {saving ? 'Saving...' : 'Save Opportunity'}
-                </button>
-              ) : (
-                <Link
-                  href="/dashboard"
-                  className="flex items-center gap-2 px-3 py-1.5 border bg-emerald-500 text-white border-emerald-600 hover:bg-emerald-600 text-[10px] font-mono uppercase transition-all"
-                >
-                  <BookmarkCheck size={14} />
-                  View in Pipeline →
-                </Link>
-              )
-            )}
-            <button
-              onClick={exportToNotion}
-              className="flex items-center gap-2 px-3 py-1.5 bg-black text-white border border-black text-[10px] font-mono uppercase hover:bg-gray-800 transition-all"
-              title="Copy for Notion"
-            >
-              {copied === 'notion-export' ? <Check size={14} /> : <ExternalLink size={14} />}
-              {copied === 'notion-export' ? 'Copied for Notion' : 'Export to Notion'}
-            </button>
-            <button
-              onClick={shareLink}
-              className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-mono uppercase hover:bg-emerald-100 transition-all"
-              title="Copy Shareable Link"
-            >
-              {copied === 'share-link' ? <Check size={14} /> : <Share2 size={14} />}
-              {copied === 'share-link' ? 'Link Copied' : 'Share Link'}
-            </button>
-            <button
-              onClick={exportToPDF}
-              className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-200 text-blue-700 text-[10px] font-mono uppercase hover:bg-blue-100 transition-all"
-              title="Export to PDF"
-            >
-              <Download size={14} />
-              Export PDF
-            </button>
-            <button
-              onClick={() => generateDeepDive(selectedOpportunity)}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors text-[#141414]"
-              title="Regenerate"
-            >
-              <RefreshCcw className="w-4 h-4" />
-            </button>
+          
+          <div className="flex items-center gap-2">
+            {/* Desktop Actions */}
+            <div className="hidden lg:flex items-center gap-2">
+              {auth.currentUser && deepDiveResult && (
+                !isSaved ? (
+                  <button
+                    onClick={saveOpportunity}
+                    disabled={saving}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-white border border-border/10 hover:border-border/30 rounded-xl text-[10px] font-mono uppercase font-bold transition-all shadow-sm"
+                  >
+                    {saving ? <Loader2 size={14} className="animate-spin" /> : <Bookmark size={14} />}
+                    {saving ? 'Saving...' : 'Save Opportunity'}
+                  </button>
+                ) : (
+                  <Link
+                    href="/dashboard"
+                    className="flex items-center gap-2 px-4 py-2.5 bg-secondary text-white rounded-xl text-[10px] font-mono uppercase font-bold transition-all shadow-lg shadow-secondary/20"
+                  >
+                    <BookmarkCheck size={14} />
+                    View in Pipeline
+                  </Link>
+                )
+              )}
+              <button
+                onClick={exportToNotion}
+                className="flex items-center gap-2 px-4 py-2.5 bg-foreground text-background rounded-xl text-[10px] font-mono uppercase font-bold hover:bg-foreground/90 transition-all shadow-lg shadow-foreground/10"
+              >
+                {copied === 'notion-export' ? <Check size={14} /> : <ExternalLink size={14} />}
+                {copied === 'notion-export' ? 'Copied' : 'Export to Notion'}
+              </button>
+              <button
+                onClick={shareLink}
+                className="flex items-center gap-2 px-4 py-2.5 bg-primary/5 border border-primary/10 text-primary rounded-xl text-[10px] font-mono uppercase font-bold hover:bg-primary/10 transition-all"
+              >
+                {copied === 'share-link' ? <Check size={14} /> : <Share2 size={14} />}
+                {copied === 'share-link' ? 'Link Copied' : 'Share Link'}
+              </button>
+              <button
+                onClick={exportToPDF}
+                className="p-2.5 hover:bg-gray-100 rounded-xl transition-colors text-muted"
+                title="Export PDF"
+              >
+                <Download size={18} />
+              </button>
+            </div>
+
+            {/* Mobile Actions Menu */}
+            <div className="lg:hidden relative">
+              <button 
+                onClick={() => setShowActions(!showActions)}
+                className="p-2.5 hover:bg-gray-100 rounded-xl transition-colors"
+              >
+                <MoreVertical className="w-5 h-5" />
+              </button>
+              
+              <AnimatePresence>
+                {showActions && (
+                  <>
+                    <motion.div 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      onClick={() => setShowActions(false)}
+                      className="fixed inset-0 z-30"
+                    />
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                      className="absolute right-0 mt-2 w-56 bg-white border border-border/10 rounded-2xl shadow-2xl z-40 p-2 overflow-hidden"
+                    >
+                      {auth.currentUser && deepDiveResult && (
+                        <button
+                          onClick={() => { saveOpportunity(); setShowActions(false); }}
+                          disabled={saving}
+                          className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 rounded-xl text-xs font-medium transition-colors"
+                        >
+                          {isSaved ? <BookmarkCheck className="w-4 h-4 text-secondary" /> : <Bookmark className="w-4 h-4" />}
+                          {isSaved ? 'Saved to Pipeline' : 'Save Opportunity'}
+                        </button>
+                      )}
+                      <button
+                        onClick={() => { exportToNotion(); setShowActions(false); }}
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 rounded-xl text-xs font-medium transition-colors"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                        Export to Notion
+                      </button>
+                      <button
+                        onClick={() => { shareLink(); setShowActions(false); }}
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 rounded-xl text-xs font-medium transition-colors"
+                      >
+                        <Share2 className="w-4 h-4" />
+                        Share Link
+                      </button>
+                      <button
+                        onClick={() => { exportToPDF(); setShowActions(false); }}
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 rounded-xl text-xs font-medium transition-colors"
+                      >
+                        <Download className="w-4 h-4" />
+                        Export PDF
+                      </button>
+                      <div className="h-px bg-border/5 my-1" />
+                      <button
+                        onClick={() => { generateDeepDive(selectedOpportunity); setShowActions(false); }}
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 rounded-xl text-xs font-medium transition-colors text-primary"
+                      >
+                        <RefreshCcw className="w-4 h-4" />
+                        Regenerate Plan
+                      </button>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </div>
+
             <button 
               onClick={() => setSelectedOpportunity(null)}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              className="p-2.5 hover:bg-gray-100 rounded-xl transition-colors"
             >
               <X className="w-6 h-6" />
             </button>
           </div>
         </div>
 
-        {/* Print Header (Only visible when printing) */}
+        {/* Print Header */}
         <div className="hidden print-only p-8 border-b-4 border-black mb-8">
-          <h1 className="text-4xl font-serif italic uppercase mb-2">Signal to Startup: Execution Report</h1>
-          <h2 className="text-2xl font-bold uppercase tracking-tighter">{selectedOpportunity.name}</h2>
-          <p className="text-xs font-mono uppercase opacity-60 mt-4">Generated via AI Trend Intelligence Agent • {new Date().toLocaleDateString()}</p>
+          <h1 className="text-4xl font-serif italic font-bold mb-2">Signal to Startup: Execution Report</h1>
+          <p className="text-xl font-bold uppercase tracking-widest">{selectedOpportunity.name}</p>
+          <p className="text-sm opacity-60 mt-4">Generated on {new Date().toLocaleDateString()}</p>
         </div>
 
-        {/* Modal Content */}
-        <div className="flex-grow overflow-y-auto p-6 md:p-10 bg-[#F5F5F0] modal-content">
-          {deepDiveLoading ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-6 no-print">
-              <div className="relative">
-                <Loader2 className="w-16 h-16 animate-spin text-[#141414] opacity-20" />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-2 h-2 bg-[#141414] rounded-full animate-ping" />
-                </div>
-              </div>
-              <div className="text-center space-y-2">
-                <p className="font-mono text-xs uppercase tracking-[0.3em] animate-pulse">Consulting AI Advisor...</p>
-                <p className="text-[10px] font-mono opacity-40 uppercase">Mapping market gaps and cost structures</p>
-              </div>
+        <div className="flex-grow overflow-hidden flex flex-col lg:flex-row">
+          {/* Sidebar Tabs */}
+          <div className="lg:w-72 border-r border-border/10 bg-gray-50/50 overflow-x-auto lg:overflow-y-auto no-print sidebar-tabs">
+            <div className="flex lg:flex-col p-3 lg:p-4 gap-2 min-w-max lg:min-w-0">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveDeepDiveTab(tab.id)}
+                  className={`flex items-center gap-3 px-4 py-3.5 rounded-xl text-xs font-bold transition-all ${
+                    activeDeepDiveTab === tab.id 
+                      ? 'bg-white text-primary shadow-md shadow-primary/5 border border-primary/10' 
+                      : 'text-muted hover:text-foreground hover:bg-white/50'
+                  }`}
+                >
+                  <tab.icon className={`w-4 h-4 ${activeDeepDiveTab === tab.id ? 'text-primary' : 'text-muted'}`} />
+                  <span className="whitespace-nowrap">{tab.label}</span>
+                  {activeDeepDiveTab === tab.id && <ChevronRight className="hidden lg:block w-4 h-4 ml-auto opacity-40" />}
+                </button>
+              ))}
             </div>
-          ) : deepDiveResult ? (
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-10">
-              {/* Sidebar Tabs */}
-              <div className="lg:col-span-1 space-y-3 sidebar-tabs">
-                <div className="bg-white border-2 border-[#141414] p-4 mb-4 shadow-[4px_4px_0px_0px_rgba(20,20,20,1)]">
-                  <div className="text-[10px] font-mono uppercase opacity-50 mb-2">Opportunity Score</div>
-                  <div className="text-3xl font-bold font-serif italic mb-4">{Math.round(selectedOpportunity.money_score)}/100</div>
-                  
-                  <div className="space-y-3 pt-4 border-t border-gray-100">
-                    <p className="text-[10px] font-mono uppercase font-bold tracking-widest mb-2">Detailed Metrics</p>
-                    {[
-                      { label: 'ROI', value: selectedOpportunity.roi_potential },
-                      { label: 'Urgency', value: selectedOpportunity.urgency },
-                      { label: 'Local Fit', value: selectedOpportunity.local_fit },
-                      { label: 'Gap', value: selectedOpportunity.competition_gap },
-                      { label: 'Speed', value: selectedOpportunity.speed_to_launch },
-                      { label: 'Ease', value: 10 - selectedOpportunity.difficulty },
-                    ].map((metric) => (
-                      <div key={metric.label} className="space-y-1">
-                        <div className="flex justify-between items-end">
-                          <p className="text-[8px] uppercase opacity-50 font-mono leading-none">{metric.label}</p>
-                          <p className="text-[8px] font-mono font-bold leading-none">{metric.value}/10</p>
-                        </div>
-                        <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                          <motion.div 
-                            initial={{ width: 0 }}
-                            animate={{ width: `${metric.value * 10}%` }}
-                            transition={{ duration: 1, delay: 0.5 }}
-                            className="h-full bg-[#141414]"
-                          />
-                        </div>
-                      </div>
-                    ))}
+          </div>
+
+          {/* Main Content Area */}
+          <div className="flex-grow overflow-y-auto p-6 md:p-10 bg-white main-content">
+            <AnimatePresence mode="wait">
+              {deepDiveLoading ? (
+                <motion.div 
+                  key="loading"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="h-full flex flex-col items-center justify-center py-20 text-center space-y-6"
+                >
+                  <div className="relative">
+                    <div className="w-20 h-20 border-4 border-primary/10 border-t-primary rounded-full animate-spin" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <TrendingUp className="w-8 h-8 text-primary animate-pulse" />
+                    </div>
                   </div>
-                </div>
-                
-                <button 
-                  onClick={() => setActiveDeepDiveTab('plan')}
-                  className={`w-full flex items-center gap-3 px-4 py-4 text-xs font-mono uppercase tracking-widest border-2 border-[#141414] transition-all shadow-[4px_4px_0px_0px_rgba(20,20,20,0.1)] active:shadow-none active:translate-x-1 active:translate-y-1 ${activeDeepDiveTab === 'plan' ? 'bg-[#141414] text-[#E4E3E0] shadow-[4px_4px_0px_0px_rgba(20,20,20,1)]' : 'bg-white hover:bg-gray-50'}`}
+                  <div className="space-y-2">
+                    <h3 className="text-xl font-serif italic font-bold">Building your execution suite...</h3>
+                    <p className="text-sm text-muted max-w-xs mx-auto">Gemini is analyzing market data, estimating costs, and finding funding sources.</p>
+                  </div>
+                </motion.div>
+              ) : deepDiveResult ? (
+                <motion.div
+                  key="content"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="max-w-3xl mx-auto"
                 >
-                  <FileText className="w-4 h-4" />
-                  Business Plan
-                </button>
-                <button 
-                  onClick={() => setActiveDeepDiveTab('costs')}
-                  className={`w-full flex items-center gap-3 px-4 py-4 text-xs font-mono uppercase tracking-widest border-2 border-[#141414] transition-all shadow-[4px_4px_0px_0px_rgba(20,20,20,0.1)] active:shadow-none active:translate-x-1 active:translate-y-1 ${activeDeepDiveTab === 'costs' ? 'bg-[#141414] text-[#E4E3E0] shadow-[4px_4px_0px_0px_rgba(20,20,20,1)]' : 'bg-white hover:bg-gray-50'}`}
-                >
-                  <Calculator className="w-4 h-4" />
-                  Cost Estimator
-                </button>
-                <button 
-                  onClick={() => setActiveDeepDiveTab('grants')}
-                  className={`w-full flex items-center gap-3 px-4 py-4 text-xs font-mono uppercase tracking-widest border-2 border-[#141414] transition-all shadow-[4px_4px_0px_0px_rgba(20,20,20,0.1)] active:shadow-none active:translate-x-1 active:translate-y-1 ${activeDeepDiveTab === 'grants' ? 'bg-[#141414] text-[#E4E3E0] shadow-[4px_4px_0px_0px_rgba(20,20,20,1)]' : 'bg-white hover:bg-gray-50'}`}
-                >
-                  <Coins className="w-4 h-4" />
-                  Grant Finder
-                </button>
-                <button 
-                  onClick={() => setActiveDeepDiveTab('checklist')}
-                  className={`w-full flex items-center gap-3 px-4 py-4 text-xs font-mono uppercase tracking-widest border-2 border-[#141414] transition-all shadow-[4px_4px_0px_0px_rgba(20,20,20,0.1)] active:shadow-none active:translate-x-1 active:translate-y-1 ${activeDeepDiveTab === 'checklist' ? 'bg-[#141414] text-[#E4E3E0] shadow-[4px_4px_0px_0px_rgba(20,20,20,1)]' : 'bg-white hover:bg-gray-50'}`}
-                >
-                  <CheckSquare className="w-4 h-4" />
-                  Checklist
-                </button>
-                <button 
-                  onClick={() => setActiveDeepDiveTab('investors')}
-                  className={`w-full flex items-center gap-3 px-4 py-4 text-xs font-mono uppercase tracking-widest border-2 border-[#141414] transition-all shadow-[4px_4px_0px_0px_rgba(20,20,20,0.1)] active:shadow-none active:translate-x-1 active:translate-y-1 ${activeDeepDiveTab === 'investors' ? 'bg-[#141414] text-[#E4E3E0] shadow-[4px_4px_0px_0px_rgba(20,20,20,1)]' : 'bg-white hover:bg-gray-50'}`}
-                >
-                  <Users className="w-4 h-4" />
-                  Investor Match
-                </button>
-              </div>
-
-              {/* Main Content Area */}
-              <div className="lg:col-span-3 bg-white border-2 border-[#141414] p-8 md:p-12 min-h-[500px] shadow-[8px_8px_0px_0px_rgba(20,20,20,1)] relative main-content print-target">
-                <div className="absolute top-4 right-4 no-print">
-                  <button
-                    onClick={() => {
-                      let text = "";
-                      if (activeDeepDiveTab === 'plan') text = deepDiveResult.business_plan;
-                      if (activeDeepDiveTab === 'costs') text = deepDiveResult.cost_breakdown.map(c => `${c.item}: $${c.cost}`).join('\n');
-                      if (activeDeepDiveTab === 'grants') text = deepDiveResult.grants.join('\n');
-                      if (activeDeepDiveTab === 'checklist') text = deepDiveResult.checklist.join('\n');
-                      if (activeDeepDiveTab === 'investors') text = deepDiveResult.investors.map(inv => `${inv.name} (${inv.stage}): ${inv.focus}`).join('\n');
-                      copyToClipboard(text, activeDeepDiveTab);
-                    }}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 border border-[#141414] text-[10px] font-mono uppercase hover:bg-[#141414] hover:text-[#E4E3E0] transition-all copy-button"
-                  >
-                    {copied === activeDeepDiveTab ? (
-                      <><Check className="w-3 h-3" /> Copied</>
-                    ) : (
-                      <><Copy className="w-3 h-3" /> Copy Text</>
-                    )}
-                  </button>
-                </div>
-
-                <AnimatePresence mode="wait">
                   {activeDeepDiveTab === 'plan' && (
-                    <motion.div
-                      key="plan"
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className="space-y-8"
-                    >
-                      <div className="bg-[#141414] text-[#E4E3E0] p-6 border-l-8 border-emerald-500 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)]">
-                        <h3 className="text-xs font-mono uppercase tracking-[0.3em] mb-2 opacity-60 text-emerald-400">Executive Summary</h3>
-                        <p className="font-serif italic text-lg leading-relaxed">
-                          {selectedOpportunity.description}
-                        </p>
+                    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                      <div className="flex items-center gap-3 text-primary bg-primary/5 px-4 py-2 rounded-full w-fit">
+                        <FileText className="w-4 h-4" />
+                        <span className="text-[10px] font-mono uppercase font-bold tracking-widest">Strategic Business Plan</span>
                       </div>
-                      
-                      <div className="prose prose-sm max-w-none font-serif prose-headings:font-serif prose-headings:italic prose-headings:tracking-tight prose-p:leading-relaxed prose-headings:border-b prose-headings:border-gray-100 prose-headings:pb-2">
+                      <div className="prose prose-slate prose-headings:font-serif prose-headings:italic prose-headings:tracking-tight prose-p:leading-relaxed prose-p:text-gray-600 max-w-none">
                         <Markdown>{deepDiveResult.business_plan}</Markdown>
                       </div>
-                    </motion.div>
+                    </div>
                   )}
 
                   {activeDeepDiveTab === 'costs' && (
-                    <CostEstimator deepDiveResult={deepDiveResult} />
+                    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                      <div className="flex items-center gap-3 text-primary bg-primary/5 px-4 py-2 rounded-full w-fit">
+                        <Calculator className="w-4 h-4" />
+                        <span className="text-[10px] font-mono uppercase font-bold tracking-widest">Startup Cost Breakdown</span>
+                      </div>
+                      <CostEstimator costs={deepDiveResult.cost_breakdown} />
+                    </div>
                   )}
 
                   {activeDeepDiveTab === 'grants' && (
-                    <GrantFinder deepDiveResult={deepDiveResult} selectedMode={selectedMode} />
+                    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                      <div className="flex items-center gap-3 text-primary bg-primary/5 px-4 py-2 rounded-full w-fit">
+                        <Coins className="w-4 h-4" />
+                        <span className="text-[10px] font-mono uppercase font-bold tracking-widest">Funding & Grant Opportunities</span>
+                      </div>
+                      <GrantFinder grants={deepDiveResult.grants} />
+                    </div>
                   )}
 
                   {activeDeepDiveTab === 'checklist' && (
-                    <Checklist 
-                      deepDiveResult={deepDiveResult} 
-                      savedDocId={savedDocId}
-                    />
+                    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                      <div className="flex items-center gap-3 text-primary bg-primary/5 px-4 py-2 rounded-full w-fit">
+                        <CheckSquare className="w-4 h-4" />
+                        <span className="text-[10px] font-mono uppercase font-bold tracking-widest">30-Day Execution Checklist</span>
+                      </div>
+                      <Checklist items={deepDiveResult.checklist} />
+                    </div>
                   )}
 
                   {activeDeepDiveTab === 'investors' && (
-                    <InvestorMatch deepDiveResult={deepDiveResult} />
+                    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                      <div className="flex items-center gap-3 text-primary bg-primary/5 px-4 py-2 rounded-full w-fit">
+                        <Users className="w-4 h-4" />
+                        <span className="text-[10px] font-mono uppercase font-bold tracking-widest">Potential Investor Match</span>
+                      </div>
+                      <InvestorMatch investors={deepDiveResult.investors} />
+                    </div>
                   )}
-                </AnimatePresence>
-              </div>
-
-              {/* Print-Only Full Report */}
-              <div className="print-only w-full">
-                <div className="print-report-header">
-                  <h1 className="text-4xl font-bold font-serif italic uppercase tracking-tighter">Execution Suite: {selectedOpportunity.name}</h1>
-                  <p className="text-sm font-mono uppercase tracking-widest opacity-60 mt-2">Intelligence Report • {new Date().toLocaleDateString()}</p>
-                  <div className="mt-4 flex items-center gap-4">
-                    <div className="px-4 py-2 bg-[#141414] text-white text-xl font-bold font-serif italic">
-                      Money Score: {Math.round(selectedOpportunity.money_score)}/100
-                    </div>
+                </motion.div>
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center py-20 text-center space-y-6">
+                  <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center text-muted">
+                    <FileText className="w-10 h-10" />
+                  </div>
+                  <div className="space-y-4">
+                    <h3 className="text-xl font-serif italic font-bold">Ready to deep dive?</h3>
+                    <p className="text-sm text-muted max-w-xs mx-auto">Generate a complete execution suite for this opportunity including a business plan, costs, and funding.</p>
+                    <button
+                      onClick={() => generateDeepDive(selectedOpportunity)}
+                      className="px-8 py-4 bg-primary text-white rounded-2xl font-mono text-xs uppercase font-bold tracking-widest hover:bg-primary/90 transition-all shadow-xl shadow-primary/20"
+                    >
+                      Generate Execution Suite
+                    </button>
                   </div>
                 </div>
-
-                <div className="print-section">
-                  <h2 className="print-section-title">01. Executive Summary</h2>
-                  <p className="font-serif italic text-lg leading-relaxed mb-4">{selectedOpportunity.description}</p>
-                  <div className="grid grid-cols-2 gap-4 text-sm font-mono uppercase">
-                    <div className="p-4 border border-gray-200">
-                      <div className="opacity-60 mb-1">Target Customer</div>
-                      <div className="font-bold">{selectedOpportunity.target_customer}</div>
-                    </div>
-                    <div className="p-4 border border-gray-200">
-                      <div className="opacity-60 mb-1">Monetization</div>
-                      <div className="font-bold">{selectedOpportunity.monetization}</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="print-section">
-                  <h2 className="print-section-title">02. Detailed Business Plan</h2>
-                  <div className="prose prose-sm max-w-none font-serif">
-                    <Markdown>{deepDiveResult.business_plan}</Markdown>
-                  </div>
-                </div>
-
-                <div className="print-section">
-                  <h2 className="print-section-title">03. Startup Cost Estimator</h2>
-                  <CostEstimator deepDiveResult={deepDiveResult} />
-                </div>
-
-                <div className="print-section">
-                  <h2 className="print-section-title">04. Grant & Funding Opportunities</h2>
-                  <GrantFinder deepDiveResult={deepDiveResult} selectedMode={selectedMode} />
-                </div>
-
-                <div className="print-section">
-                  <h2 className="print-section-title">05. 30-Day Execution Checklist</h2>
-                  <Checklist deepDiveResult={deepDiveResult} />
-                </div>
-
-                <div className="print-section">
-                  <h2 className="print-section-title">06. Investor Matchmaking</h2>
-                  <InvestorMatch deepDiveResult={deepDiveResult} />
-                </div>
-              </div>
-            </div>
-          ) : null}
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       </motion.div>
     </motion.div>

@@ -11,7 +11,11 @@ import {
   Users,
   Loader2,
   Copy,
-  Check
+  Check,
+  Sparkles,
+  ChevronRight,
+  Download,
+  Share2
 } from 'lucide-react';
 import Link from 'next/link';
 import Markdown from 'react-markdown';
@@ -91,10 +95,10 @@ export default function SavedOpportunityPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F5F5F0] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-12 h-12 animate-spin opacity-30" />
-          <p className="text-[10px] font-mono uppercase opacity-50">Loading execution plan...</p>
+      <div className="min-h-screen-safe bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-6">
+          <div className="w-16 h-16 border-4 border-primary/10 border-t-primary rounded-full animate-spin" />
+          <p className="text-[10px] font-mono uppercase font-bold tracking-widest text-muted">Loading Execution Plan...</p>
         </div>
       </div>
     );
@@ -102,14 +106,17 @@ export default function SavedOpportunityPage() {
 
   if (error || !savedOpp) {
     return (
-      <div className="min-h-screen bg-[#F5F5F0] flex items-center justify-center p-4">
-        <div className="bg-white border-2 border-[#141414] p-8 text-center shadow-[8px_8px_0px_0px_rgba(20,20,20,1)]">
-          <p className="text-sm font-serif italic mb-4">{error || 'Opportunity not found'}</p>
+      <div className="min-h-screen-safe bg-background flex items-center justify-center p-6">
+        <div className="bg-white border border-border/10 p-12 text-center rounded-[2.5rem] shadow-2xl shadow-black/5 max-w-md w-full">
+          <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6 text-red-500">
+            <X className="w-8 h-8" />
+          </div>
+          <p className="text-lg font-serif italic font-bold mb-6">{error || 'Opportunity not found'}</p>
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-2 bg-[#141414] text-[#E4E3E0] px-4 py-2 text-[10px] font-mono uppercase tracking-widest hover:bg-black transition-all"
+            className="w-full flex items-center justify-center gap-2 bg-foreground text-background px-6 py-4 rounded-2xl text-[11px] font-mono uppercase tracking-widest font-bold hover:bg-foreground/90 transition-all"
           >
-            <ArrowLeft className="w-3 h-3" />
+            <ArrowLeft className="w-4 h-4" />
             Back to Pipeline
           </Link>
         </div>
@@ -120,111 +127,166 @@ export default function SavedOpportunityPage() {
   const opp = savedOpp.opportunity;
   const deepDive = savedOpp.deepDive;
 
+  const tabs = [
+    { id: 'plan', label: 'Business Plan', icon: FileText },
+    { id: 'costs', label: 'Cost Estimator', icon: Calculator },
+    { id: 'grants', label: 'Grant Finder', icon: Coins },
+    { id: 'checklist', label: 'Checklist', icon: CheckSquare },
+    { id: 'investors', label: 'Investor Match', icon: Users },
+  ] as const;
+
   return (
-    <div className="min-h-screen bg-[#F5F5F0]">
-      <header className="sticky top-0 z-40 bg-white border-b-2 border-[#141414] shadow-[0px_4px_0px_0px_rgba(20,20,20,0.1)]">
+    <div className="min-h-screen-safe bg-background">
+      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-border/10">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/dashboard" className="flex items-center gap-2 text-[10px] font-mono uppercase hover:opacity-60 transition-opacity">
-            <ArrowLeft className="w-4 h-4" />
+          <Link href="/dashboard" className="flex items-center gap-2 text-[10px] font-mono uppercase font-bold text-muted hover:text-foreground transition-colors group">
+            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
             Back to Pipeline
           </Link>
           <div className="flex items-center gap-4">
-            <h1 className="text-xl font-serif italic font-bold">{opp.name}</h1>
-            <div className="bg-[#141414] text-[#E4E3E0] text-sm font-mono px-3 py-1 rounded">
-              {Math.round(opp.money_score)}/100
+            <h1 className="hidden md:block text-lg font-serif italic font-bold tracking-tight">{opp.name}</h1>
+            <div className="bg-primary text-white text-[10px] font-mono font-bold px-3 py-1.5 rounded-lg shadow-lg shadow-primary/20">
+              SCORE: {Math.round(opp.money_score)}
             </div>
           </div>
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-6 py-12">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-10">
-          <div className="lg:col-span-1 space-y-3">
-            <div className="bg-white border-2 border-[#141414] p-4 shadow-[4px_4px_0px_0px_rgba(20,20,20,1)]">
-              <div className="text-[10px] font-mono uppercase opacity-50 mb-2">Opportunity Score</div>
-              <div className="text-3xl font-bold font-serif italic mb-4">{Math.round(opp.money_score)}/100</div>
-              <div className="space-y-3 pt-4 border-t border-gray-100">
-                <p className="text-[10px] font-mono uppercase font-bold tracking-widest mb-2">Detailed Metrics</p>
+          {/* Sidebar */}
+          <div className="lg:col-span-1 space-y-6">
+            <div className="bg-white border border-border/10 p-8 rounded-3xl shadow-sm space-y-8">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-primary mb-1">
+                  <Sparkles className="w-4 h-4" />
+                  <span className="text-[9px] font-mono uppercase font-bold tracking-widest">Opportunity Score</span>
+                </div>
+                <div className="text-4xl font-bold font-serif italic">{Math.round(opp.money_score)}<span className="text-sm font-sans font-normal opacity-30 ml-1">/100</span></div>
+              </div>
+
+              <div className="space-y-4 pt-6 border-t border-border/5">
+                <p className="text-[10px] font-mono uppercase font-bold tracking-widest text-muted">Strategic Metrics</p>
                 {[
-                  { label: 'ROI', value: opp.roi_potential },
-                  { label: 'Urgency', value: opp.urgency },
-                  { label: 'Local Fit', value: opp.local_fit },
-                  { label: 'Gap', value: opp.competition_gap },
-                  { label: 'Speed', value: opp.speed_to_launch },
-                  { label: 'Ease', value: 10 - opp.difficulty },
+                  { label: 'ROI', value: opp.roi_potential, color: 'bg-primary' },
+                  { label: 'Urgency', value: opp.urgency, color: 'bg-accent' },
+                  { label: 'Local Fit', value: opp.local_fit, color: 'bg-secondary' },
+                  { label: 'Gap', value: opp.competition_gap, color: 'bg-primary' },
+                  { label: 'Speed', value: opp.speed_to_launch, color: 'bg-secondary' },
+                  { label: 'Ease', value: 10 - opp.difficulty, color: 'bg-gray-400' },
                 ].map((metric) => (
-                  <div key={metric.label} className="space-y-1">
+                  <div key={metric.label} className="space-y-1.5">
                     <div className="flex justify-between items-end">
-                      <p className="text-[8px] uppercase opacity-50 font-mono leading-none">{metric.label}</p>
-                      <p className="text-[8px] font-mono font-bold leading-none">{metric.value}/10</p>
+                      <p className="text-[9px] uppercase font-bold font-mono text-muted leading-none">{metric.label}</p>
+                      <p className="text-[9px] font-mono font-bold leading-none">{metric.value}/10</p>
                     </div>
                     <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
                       <motion.div 
                         initial={{ width: 0 }}
                         animate={{ width: `${metric.value * 10}%` }}
-                        transition={{ duration: 1, delay: 0.5 }}
-                        className="h-full bg-[#141414]"
+                        transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
+                        className={`h-full ${metric.color}`}
                       />
                     </div>
                   </div>
                 ))}
               </div>
             </div>
-            {['plan', 'costs', 'grants', 'checklist', 'investors'].map((tab) => {
-              const icons = { plan: FileText, costs: Calculator, grants: Coins, checklist: CheckSquare, investors: Users };
-              const labels = { plan: 'Business Plan', costs: 'Cost Estimator', grants: 'Grant Finder', checklist: 'Checklist', investors: 'Investor Match' };
-              const Icon = icons[tab as keyof typeof icons];
-              return (
+
+            <div className="flex flex-col gap-2">
+              {tabs.map((tab) => (
                 <button 
-                  key={tab}
-                  onClick={() => setActiveTab(tab as typeof activeTab)}
-                  className={`w-full flex items-center gap-3 px-4 py-4 text-xs font-mono uppercase tracking-widest border-2 border-[#141414] transition-all shadow-[4px_4px_0px_0px_rgba(20,20,20,0.1)] active:shadow-none active:translate-x-1 active:translate-y-1 ${activeTab === tab ? 'bg-[#141414] text-[#E4E3E0] shadow-[4px_4px_0px_0px_rgba(20,20,20,1)]' : 'bg-white hover:bg-gray-50'}`}
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-[10px] font-mono uppercase font-bold tracking-widest transition-all duration-200 ${
+                    activeTab === tab.id 
+                      ? 'bg-foreground text-background shadow-xl shadow-foreground/10' 
+                      : 'bg-white border border-border/10 text-muted hover:text-foreground hover:bg-gray-50'
+                  }`}
                 >
-                  <Icon className="w-4 h-4" />
-                  {labels[tab as keyof typeof labels]}
+                  <tab.icon className={`w-4 h-4 ${activeTab === tab.id ? 'text-background' : 'text-muted'}`} />
+                  {tab.label}
+                  {activeTab === tab.id && <ChevronRight className="w-4 h-4 ml-auto opacity-40" />}
                 </button>
-              );
-            })}
+              ))}
+            </div>
           </div>
 
-          <div className="relative lg:col-span-3 bg-white border-2 border-[#141414] p-8 md:p-12 min-h-[600px] shadow-[8px_8px_0px_0px_rgba(20,20,20,1)]">
-            <div className="absolute top-4 right-4">
-              <button
-                onClick={() => {
-                  let text = "";
-                  if (activeTab === 'plan') text = deepDive.business_plan;
-                  if (activeTab === 'costs') text = deepDive.cost_breakdown.map(c => `${c.item}: $${c.cost}`).join('\n');
-                  if (activeTab === 'grants') text = deepDive.grants.join('\n');
-                  if (activeTab === 'checklist') text = deepDive.checklist.join('\n');
-                  if (activeTab === 'investors') text = deepDive.investors.map(inv => `${inv.name} (${inv.stage}): ${inv.focus}`).join('\n');
-                  copyToClipboard(text, activeTab);
-                }}
-                className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 border border-[#141414] text-[10px] font-mono uppercase hover:bg-[#141414] hover:text-[#E4E3E0] transition-all"
-              >
-                {copied === activeTab ? (<><Check className="w-3 h-3" /> Copied</>) : (<><Copy className="w-3 h-3" /> Copy Text</>)}
-              </button>
+          {/* Main Content */}
+          <div className="lg:col-span-3 space-y-6">
+            <div className="bg-white border border-border/10 rounded-[2.5rem] shadow-sm overflow-hidden min-h-[700px] flex flex-col">
+              {/* Content Header */}
+              <div className="px-8 py-6 border-b border-border/5 flex items-center justify-between bg-gray-50/30">
+                <div className="flex items-center gap-3">
+                  {tabs.find(t => t.id === activeTab)?.icon && React.createElement(tabs.find(t => t.id === activeTab)!.icon, { className: "w-5 h-5 text-primary" })}
+                  <h2 className="text-sm font-mono uppercase font-bold tracking-widest">{tabs.find(t => t.id === activeTab)?.label}</h2>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      let text = "";
+                      if (activeTab === 'plan') text = deepDive.business_plan;
+                      if (activeTab === 'costs') text = deepDive.cost_breakdown.map(c => `${c.item}: $${c.cost}`).join('\n');
+                      if (activeTab === 'grants') text = deepDive.grants.join('\n');
+                      if (activeTab === 'checklist') text = deepDive.checklist.join('\n');
+                      if (activeTab === 'investors') text = deepDive.investors.map(inv => `${inv.name} (${inv.stage}): ${inv.focus}`).join('\n');
+                      copyToClipboard(text, activeTab);
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 bg-white border border-border/10 rounded-xl text-[10px] font-mono uppercase font-bold hover:bg-gray-50 transition-all shadow-sm"
+                  >
+                    {copied === activeTab ? (<><Check className="w-3.5 h-3.5 text-secondary" /> Copied</>) : (<><Copy className="w-3.5 h-3.5" /> Copy Text</>)}
+                  </button>
+                  <button className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-muted">
+                    <Download className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Content Body */}
+              <div className="p-8 md:p-12 flex-grow">
+                <AnimatePresence mode="wait">
+                  {activeTab === 'plan' && (
+                    <motion.div key="plan" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-10">
+                      <div className="bg-foreground text-background p-8 rounded-3xl relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-8 opacity-[0.05]">
+                          <FileText className="w-32 h-32 -mr-8 -mt-8" />
+                        </div>
+                        <div className="relative z-10 space-y-3">
+                          <h3 className="text-[10px] font-mono uppercase tracking-widest opacity-40 font-bold">Executive Summary</h3>
+                          <p className="font-serif italic text-xl md:text-2xl leading-relaxed">{opp.description}</p>
+                        </div>
+                      </div>
+                      <div className="prose prose-slate prose-headings:font-serif prose-headings:italic prose-headings:tracking-tight prose-p:leading-relaxed prose-p:text-gray-600 max-w-none">
+                        <Markdown>{deepDive.business_plan}</Markdown>
+                      </div>
+                    </motion.div>
+                  )}
+                  {activeTab === 'costs' && (
+                    <motion.div key="costs" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+                      <CostEstimator deepDiveResult={deepDive} />
+                    </motion.div>
+                  )}
+                  {activeTab === 'grants' && (
+                    <motion.div key="grants" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+                      <GrantFinder deepDiveResult={deepDive} selectedMode="global" />
+                    </motion.div>
+                  )}
+                  {activeTab === 'checklist' && (
+                    <motion.div key="checklist" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+                      <Checklist deepDiveResult={deepDive} savedDocId={savedOpp.id} />
+                    </motion.div>
+                  )}
+                  {activeTab === 'investors' && (
+                    <motion.div key="investors" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+                      <InvestorMatch deepDiveResult={deepDive} />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
-            <AnimatePresence mode="wait">
-              {activeTab === 'plan' && (
-                <motion.div key="plan" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-8">
-                  <div className="bg-[#141414] text-[#E4E3E0] p-6 border-l-8 border-emerald-500">
-                    <h3 className="text-xs font-mono uppercase tracking-[0.3em] mb-2 opacity-60 text-emerald-400">Executive Summary</h3>
-                    <p className="font-serif italic text-lg leading-relaxed">{opp.description}</p>
-                  </div>
-                  <div className="prose prose-sm max-w-none font-serif prose-headings:font-serif prose-headings:italic">
-                    <Markdown>{deepDive.business_plan}</Markdown>
-                  </div>
-                </motion.div>
-              )}
-              {activeTab === 'costs' && <CostEstimator deepDiveResult={deepDive} />}
-              {activeTab === 'grants' && <GrantFinder deepDiveResult={deepDive} selectedMode="global" />}
-              {activeTab === 'checklist' && <Checklist deepDiveResult={deepDive} savedDocId={savedOpp.id} />}
-              {activeTab === 'investors' && <InvestorMatch deepDiveResult={deepDive} />}
-            </AnimatePresence>
           </div>
         </div>
       </div>
     </div>
   );
 }
-

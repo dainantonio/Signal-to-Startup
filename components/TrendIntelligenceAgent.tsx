@@ -522,64 +522,71 @@ export default function TrendIntelligenceAgent() {
   };
 
   return (
-    <div className="min-h-screen bg-[#E4E3E0] text-[#141414] p-4 md:p-8 font-sans">
+    <div className="min-h-screen-safe bg-background text-foreground p-4 md:p-8 font-sans selection:bg-primary/20">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <header className="mb-12 border-b border-[#141414] pb-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
-          <div>
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tighter uppercase italic font-serif">
-              Signal to Startup
-            </h1>
-            <p className="text-sm uppercase tracking-widest opacity-60 mt-2">
+        <header className="mb-8 md:mb-12 border-b border-border/10 pb-6 flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div className="space-y-2">
+            <div className="flex items-center gap-3 mb-1">
+              <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/20">
+                <TrendingUp className="w-6 h-6" />
+              </div>
+              <h1 className="text-3xl md:text-5xl font-bold tracking-tighter uppercase italic font-serif">
+                Signal to Startup
+              </h1>
+            </div>
+            <p className="text-xs md:text-sm uppercase tracking-widest text-muted font-medium max-w-xl leading-relaxed">
               Turn news, policy, and market signals into actionable, low-cost business opportunities.
             </p>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 text-xs font-mono bg-[#141414] text-[#E4E3E0] px-3 py-1 rounded-full">
-              <Globe className="w-3 h-3" />
+          <div className="flex items-center gap-3 self-start md:self-auto">
+            <div className="hidden sm:flex items-center gap-2 text-[10px] font-mono bg-secondary/10 text-secondary px-3 py-1.5 rounded-full border border-secondary/20">
+              <span className="w-1.5 h-1.5 bg-secondary rounded-full animate-pulse" />
               LIVE FEED ACTIVE
             </div>
             
             {user ? (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <button 
                   onClick={() => setShowHistory(!showHistory)}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-white border border-[#141414] hover:bg-gray-50 transition-all shadow-[2px_2px_0px_0px_rgba(20,20,20,1)] relative group"
+                  className="flex items-center gap-2 px-3 py-2 bg-white border border-border/10 hover:border-border/30 hover:bg-gray-50 transition-all shadow-sm rounded-lg relative group"
                   title="History"
                 >
-                  <History className="w-4 h-4" />
-                  <span className="text-[10px] font-mono uppercase font-bold">History ({history.length})</span>
+                  <History className="w-4 h-4 text-muted group-hover:text-foreground transition-colors" />
+                  <span className="text-[10px] font-mono uppercase font-bold hidden sm:inline">History ({history.length})</span>
                 </button>
                 <Link
                   href="/dashboard"
-                  className="flex items-center gap-2 px-3 py-1.5 bg-white border border-[#141414] hover:bg-gray-50 transition-all shadow-[2px_2px_0px_0px_rgba(20,20,20,1)]"
+                  className="flex items-center gap-2 px-3 py-2 bg-white border border-border/10 hover:border-border/30 hover:bg-gray-50 transition-all shadow-sm rounded-lg group"
                   title="Your Pipeline"
                 >
-                  <LayoutDashboard className="w-4 h-4" />
-                  <span className="text-[10px] font-mono uppercase font-bold">Pipeline</span>
+                  <LayoutDashboard className="w-4 h-4 text-muted group-hover:text-foreground transition-colors" />
+                  <span className="text-[10px] font-mono uppercase font-bold hidden sm:inline">Pipeline</span>
                 </Link>
-                <div className="flex items-center gap-2 bg-white border border-[#141414] px-3 py-1 shadow-[2px_2px_0px_0px_rgba(20,20,20,1)]">
-                  <UserIcon className="w-3 h-3" />
-                  <span className="text-[10px] font-mono uppercase font-bold">{user.displayName?.split(' ')[0]}</span>
-                  <button onClick={logout} className="ml-2 hover:text-red-500">
-                    <LogOut className="w-3 h-3" />
+                <div className="flex items-center gap-2 bg-white border border-border/10 px-3 py-2 shadow-sm rounded-lg">
+                  <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                    <UserIcon className="w-3 h-3" />
+                  </div>
+                  <span className="text-[10px] font-mono uppercase font-bold hidden sm:inline">{user.displayName?.split(' ')[0]}</span>
+                  <button onClick={logout} className="ml-1 text-muted hover:text-red-500 transition-colors">
+                    <LogOut className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
             ) : (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <button 
                   onClick={() => setShowHistory(!showHistory)}
-                  className="p-2 hover:bg-[#141414]/5 rounded-full transition-colors"
+                  className="p-2.5 bg-white border border-border/10 hover:bg-gray-50 rounded-lg transition-all shadow-sm"
                   title="History"
                 >
-                  <History className="w-5 h-5" />
+                  <History className="w-5 h-5 text-muted" />
                 </button>
                 <button 
                   onClick={login}
-                  className="flex items-center gap-2 bg-[#141414] text-[#E4E3E0] px-4 py-2 text-[10px] font-mono uppercase tracking-widest hover:bg-[#333] transition-all shadow-[4px_4px_0px_0px_rgba(20,20,20,0.2)]"
+                  className="flex items-center gap-2 bg-foreground text-background px-5 py-2.5 text-[10px] font-mono uppercase tracking-widest hover:bg-foreground/90 transition-all shadow-lg shadow-foreground/10 rounded-lg"
                 >
-                  <LogIn className="w-3 h-3" />
+                  <LogIn className="w-3.5 h-3.5" />
                   Login to Save
                 </button>
               </div>
@@ -606,10 +613,15 @@ export default function TrendIntelligenceAgent() {
                 animate={{ x: 0 }}
                 exit={{ x: '100%' }}
                 transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                className="fixed right-0 top-0 bottom-0 w-full md:w-80 bg-[#E4E3E0] border-l-2 border-[#141414] z-50 flex flex-col shadow-[-10px_0px_30px_rgba(0,0,0,0.1)]"
+                className="fixed right-0 top-0 bottom-0 w-full md:w-96 bg-background border-l border-border/10 z-50 flex flex-col shadow-2xl"
               >
-                <div className="p-6 border-b border-[#141414] flex items-center justify-between bg-white">
-                  <h3 className="text-sm font-mono uppercase font-bold tracking-widest">Intelligence History</h3>
+                <div className="p-6 border-b border-border/10 flex items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-10">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center text-primary">
+                      <History className="w-4 h-4" />
+                    </div>
+                    <h3 className="text-sm font-mono uppercase font-bold tracking-widest">Intelligence History</h3>
+                  </div>
                   <button 
                     onClick={() => setShowHistory(false)} 
                     className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -618,21 +630,21 @@ export default function TrendIntelligenceAgent() {
                   </button>
                 </div>
                 
-                <div className="flex-grow overflow-y-auto p-4 space-y-3">
+                <div className="flex-grow overflow-y-auto p-6 space-y-4">
                   {!user ? (
-                    <div className="bg-white border-2 border-[#141414] p-6 text-center space-y-4 shadow-[4px_4px_0px_0px_rgba(20,20,20,1)]">
-                      <div className="w-12 h-12 bg-indigo-50 rounded-full flex items-center justify-center mx-auto">
-                        <LogIn className="w-6 h-6 text-indigo-600" />
+                    <div className="bg-white border border-border/10 p-8 text-center space-y-6 rounded-2xl shadow-sm">
+                      <div className="w-16 h-16 bg-primary/5 rounded-full flex items-center justify-center mx-auto">
+                        <LogIn className="w-8 h-8 text-primary" />
                       </div>
                       <div className="space-y-2">
-                        <p className="font-serif italic text-lg">Sign in to save history</p>
-                        <p className="text-[10px] font-mono uppercase opacity-50">Keep track of your market signals and execution plans across sessions.</p>
+                        <p className="font-serif italic text-xl font-bold">Sign in to save history</p>
+                        <p className="text-xs text-muted leading-relaxed">Keep track of your market signals and execution plans across sessions.</p>
                       </div>
                       <button 
                         onClick={login}
-                        className="w-full flex items-center justify-center gap-2 bg-[#141414] text-[#E4E3E0] px-4 py-3 text-[10px] font-mono uppercase tracking-widest hover:bg-[#333] transition-all"
+                        className="w-full flex items-center justify-center gap-2 bg-foreground text-background px-4 py-3.5 text-[10px] font-mono uppercase tracking-widest hover:bg-foreground/90 transition-all rounded-xl shadow-lg shadow-foreground/10"
                       >
-                        <Globe className="w-3 h-3" />
+                        <Globe className="w-4 h-4" />
                         Sign in with Google
                       </button>
                     </div>
@@ -640,7 +652,7 @@ export default function TrendIntelligenceAgent() {
                     history.map((item) => (
                       <div 
                         key={item.id} 
-                        className="group relative bg-white border border-[#141414] p-4 hover:shadow-[4px_4px_0px_0px_rgba(20,20,20,1)] transition-all cursor-pointer" 
+                        className="group relative bg-white border border-border/10 p-5 hover:border-primary/30 hover:shadow-md transition-all cursor-pointer rounded-xl" 
                         onClick={() => {
                           setResult(item);
                           if (item.marketMode) {
@@ -650,14 +662,14 @@ export default function TrendIntelligenceAgent() {
                           window.scrollTo({ top: 0, behavior: 'smooth' });
                         }}
                       >
-                        <div className="flex justify-between items-start mb-2">
+                        <div className="flex justify-between items-start mb-3">
                           <div className="flex items-center gap-2">
-                            <span className="text-[9px] font-mono uppercase font-bold text-indigo-600">
+                            <span className="text-[10px] font-mono uppercase font-bold text-primary bg-primary/5 px-2 py-0.5 rounded">
                               {item.createdAt ? new Date(item.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Unknown'}
                             </span>
                             {item.marketMode && (
-                              <span className="text-xs" title={marketModeConfigs[item.marketMode].label}>
-                                {marketModeConfigs[item.marketMode].flag}
+                              <span className="text-xs bg-gray-50 px-2 py-0.5 rounded border border-border/5" title={marketModeConfigs[item.marketMode].label}>
+                                {marketModeConfigs[item.marketMode].flag} {marketModeConfigs[item.marketMode].label}
                               </span>
                             )}
                           </div>
@@ -666,36 +678,36 @@ export default function TrendIntelligenceAgent() {
                               e.stopPropagation();
                               deleteAnalysis(item.id);
                             }}
-                            className="text-gray-400 hover:text-red-500 transition-colors"
+                            className="text-muted hover:text-red-500 transition-colors p-1"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
-                        <h4 className="text-xs font-serif italic font-bold leading-tight line-clamp-2">
-                          {item.trend.length > 60 ? `${item.trend.substring(0, 60)}...` : item.trend}
+                        <h4 className="text-sm font-serif italic font-bold leading-snug group-hover:text-primary transition-colors line-clamp-2">
+                          {item.trend}
                         </h4>
                       </div>
                     ))
                   ) : (
                     <div className="text-center py-20 opacity-30">
-                      <History className="w-12 h-12 mx-auto mb-4 opacity-20" />
+                      <History className="w-16 h-16 mx-auto mb-4 opacity-20" />
                       <p className="text-[10px] font-mono uppercase tracking-widest">No intelligence logs found</p>
                     </div>
                   )}
                 </div>
                 
                 {user && (
-                  <div className="p-4 border-t border-[#141414] bg-white">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-xs">
+                  <div className="p-6 border-t border-border/10 bg-white/80 backdrop-blur-md">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
                         {user.displayName?.[0] || 'U'}
                       </div>
                       <div className="flex-grow">
-                        <p className="text-[10px] font-mono uppercase font-bold leading-none">{user.displayName}</p>
-                        <p className="text-[8px] font-mono opacity-40 truncate">{user.email}</p>
+                        <p className="text-xs font-mono uppercase font-bold leading-none mb-1">{user.displayName}</p>
+                        <p className="text-[10px] font-mono text-muted truncate">{user.email}</p>
                       </div>
-                      <button onClick={logout} className="p-2 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-full transition-colors">
-                        <LogOut className="w-4 h-4" />
+                      <button onClick={logout} className="p-2.5 hover:bg-red-50 text-muted hover:text-red-500 rounded-xl transition-colors">
+                        <LogOut className="w-5 h-5" />
                       </button>
                     </div>
                   </div>
