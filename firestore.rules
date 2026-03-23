@@ -89,8 +89,8 @@ service cloud.firestore {
     function isValidAnalysis(data) {
       return data.keys().hasAll(['userId', 'signal', 'trend', 'createdAt']) &&
              data.userId == request.auth.uid &&
-             data.signal is string && data.signal.size() < 10000 &&
-             data.trend is string && data.trend.size() < 200 &&
+             data.signal is string &&
+             data.trend is string &&
              isValidDateString(data.createdAt);
     }
 
