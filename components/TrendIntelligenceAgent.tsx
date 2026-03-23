@@ -171,6 +171,9 @@ export default function TrendIntelligenceAgent() {
   const [activeDeepDiveTab, setActiveDeepDiveTab] = useState<'plan' | 'costs' | 'grants' | 'checklist' | 'investors'>('plan');
   const [copied, setCopied] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    try { return !localStorage.getItem('s2s_onboarded'); } catch { return true; }
+  });
   const [selectedMode, setSelectedMode] = useState<MarketMode>('global');
 
   // Firebase Auth Listener
@@ -256,7 +259,7 @@ export default function TrendIntelligenceAgent() {
     setError(null);
     
     try {
-      const genAI = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
+      const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
       const model = "gemini-2.5-flash";
       
       const prompt = `
@@ -737,14 +740,14 @@ export default function TrendIntelligenceAgent() {
             </motion.div>
           )}
 
-          {!result && !loading && !error && (
+          {!result && !loading && !error && showOnboarding && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.5 }}
             >
-              <Onboarding />
+              <Onboarding onDismiss={() => setShowOnboarding(false)} />
             </motion.div>
           )}
 
