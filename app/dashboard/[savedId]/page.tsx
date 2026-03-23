@@ -15,7 +15,8 @@ import {
   Sparkles,
   ChevronRight,
   Download,
-  Share2
+  Share2,
+  X
 } from 'lucide-react';
 import Link from 'next/link';
 import Markdown from 'react-markdown';
