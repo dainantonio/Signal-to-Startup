@@ -87,10 +87,6 @@ export const OpportunityCard: React.FC<OpportunityCardProps> = ({
           <div className="text-[9px] font-mono uppercase opacity-40 mb-1">
             ID_{index + 1}
           </div>
-          <div className={`flex flex-col items-center ${priorityColors.bg} border ${priorityColors.border} px-2 py-1 rounded-sm`}>
-            <span className={`text-[8px] font-mono uppercase ${priorityColors.text} font-bold leading-none mb-0.5`}>Money Score</span>
-            <span className={`text-xl font-bold ${priorityColors.text} leading-none font-serif italic`}>{Math.round(opp.money_score)}</span>
-          </div>
         </div>
       </div>
 
@@ -98,7 +94,23 @@ export const OpportunityCard: React.FC<OpportunityCardProps> = ({
         {opp.description}
       </p>
       
-      <div className="space-y-5 pt-5 border-t border-[#141414] border-dashed">
+      <div className="space-y-6 pt-5 border-t border-[#141414] border-dashed">
+        {/* Primary Metric: Money Score */}
+        <div className="space-y-3">
+          <div className="flex justify-between items-end">
+            <p className="text-[10px] uppercase font-mono font-bold tracking-widest text-indigo-600">Money Score</p>
+            <p className="text-sm font-mono font-bold leading-none text-indigo-600">{Math.round(opp.money_score)}/100</p>
+          </div>
+          <div className="h-3 w-full bg-indigo-50 rounded-full overflow-hidden border border-indigo-100">
+            <motion.div 
+              initial={{ width: 0 }}
+              animate={{ width: `${opp.money_score}%` }}
+              transition={{ duration: 1.2, ease: "easeOut" }}
+              className="h-full bg-indigo-600 shadow-[0_0_10px_rgba(79,70,229,0.3)]"
+            />
+          </div>
+        </div>
+
         <div className="grid grid-cols-2 gap-4">
           <div className="p-3 bg-gray-50 border border-gray-100 rounded-sm">
             <p className="text-[9px] uppercase opacity-50 font-mono mb-1 tracking-widest">Target Customer</p>
@@ -112,19 +124,15 @@ export const OpportunityCard: React.FC<OpportunityCardProps> = ({
         
         <div className="grid grid-cols-2 gap-y-5 gap-x-8 pt-2">
           {[
-            { label: 'Speed', value: opp.speed_to_launch },
-            { label: 'ROI', value: opp.roi_potential },
-            { label: 'Urgency', value: opp.urgency },
-            { label: 'Local Fit', value: opp.local_fit },
-            { label: 'Gap', value: opp.competition_gap },
+            { label: 'Speed to Launch', value: opp.speed_to_launch },
             { label: 'Ease', value: 10 - opp.difficulty },
           ].map((metric) => (
             <div key={metric.label} className="space-y-2">
               <div className="flex justify-between items-end">
                 <p className="text-[9px] uppercase opacity-40 font-mono leading-none tracking-wider">{metric.label}</p>
-                <p className="text-[9px] font-mono font-bold leading-none">{metric.value}/10</p>
+                <p className="text-[10px] font-mono font-bold leading-none">{metric.value}/10</p>
               </div>
-              <div className="h-1 w-full bg-gray-100 rounded-full overflow-hidden">
+              <div className="h-2.5 w-full bg-gray-100 rounded-full overflow-hidden">
                 <motion.div 
                   initial={{ width: 0 }}
                   animate={{ width: `${metric.value * 10}%` }}

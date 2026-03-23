@@ -293,7 +293,34 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
               <div className="lg:col-span-1 space-y-3 sidebar-tabs">
                 <div className="bg-white border-2 border-[#141414] p-4 mb-4 shadow-[4px_4px_0px_0px_rgba(20,20,20,1)]">
                   <div className="text-[10px] font-mono uppercase opacity-50 mb-2">Opportunity Score</div>
-                  <div className="text-3xl font-bold font-serif italic">{Math.round(selectedOpportunity.money_score)}/100</div>
+                  <div className="text-3xl font-bold font-serif italic mb-4">{Math.round(selectedOpportunity.money_score)}/100</div>
+                  
+                  <div className="space-y-3 pt-4 border-t border-gray-100">
+                    <p className="text-[10px] font-mono uppercase font-bold tracking-widest mb-2">Detailed Metrics</p>
+                    {[
+                      { label: 'ROI', value: selectedOpportunity.roi_potential },
+                      { label: 'Urgency', value: selectedOpportunity.urgency },
+                      { label: 'Local Fit', value: selectedOpportunity.local_fit },
+                      { label: 'Gap', value: selectedOpportunity.competition_gap },
+                      { label: 'Speed', value: selectedOpportunity.speed_to_launch },
+                      { label: 'Ease', value: 10 - selectedOpportunity.difficulty },
+                    ].map((metric) => (
+                      <div key={metric.label} className="space-y-1">
+                        <div className="flex justify-between items-end">
+                          <p className="text-[8px] uppercase opacity-50 font-mono leading-none">{metric.label}</p>
+                          <p className="text-[8px] font-mono font-bold leading-none">{metric.value}/10</p>
+                        </div>
+                        <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                          <motion.div 
+                            initial={{ width: 0 }}
+                            animate={{ width: `${metric.value * 10}%` }}
+                            transition={{ duration: 1, delay: 0.5 }}
+                            className="h-full bg-[#141414]"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 
                 <button 
