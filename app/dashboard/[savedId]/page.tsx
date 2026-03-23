@@ -31,7 +31,6 @@ import { CostEstimator } from '@/components/CostEstimator';
 import { GrantFinder } from '@/components/GrantFinder';
 import { InvestorMatch } from '@/components/InvestorMatch';
 import { Checklist } from '@/components/Checklist';
-import { marketModeConfigs } from '@/components/MarketModeSelector';
 
 export default function SavedOpportunityPage() {
   const params = useParams();
@@ -45,7 +44,6 @@ export default function SavedOpportunityPage() {
   const [activeTab, setActiveTab] = useState<'plan' | 'costs' | 'grants' | 'checklist' | 'investors'>('plan');
   const [copied, setCopied] = useState<string | null>(null);
 
-  // Auth listener
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
@@ -71,7 +69,6 @@ export default function SavedOpportunityPage() {
 
       const data = docSnap.data() as SavedOpportunity;
 
-      // Verify ownership
       if (data.userId !== uid) {
         router.push('/dashboard');
         return;
@@ -79,7 +76,8 @@ export default function SavedOpportunityPage() {
 
       setSavedOpp({ id: docSnap.id, ...data });
     } catch (err) {
-      handleFirestoreError(err, OperationType.READ, `saved_opportunities/${savedId}`);
+      // FIX: changed OperationType.READ to OperationType.GET
+      handleFirestoreError(err, OperationType.GET, `saved_opportunities/${savedId}`);
       setError('Failed to load opportunity');
     } finally {
       setLoading(false);
@@ -208,7 +206,7 @@ export default function SavedOpportunityPage() {
           </div>
 
           {/* Main Content Area */}
-          <div className="lg:col-span-3 bg-white border-2 border-[#141414] p-8 md:p-12 min-h-[600px] shadow-[8px_8px_0px_0px_rgba(20,20,20,1)]">
+          <div className="relative lg:col-span-3 bg-white border-2 border-[#141414] p-8 md:p-12 min-h-[600px] shadow-[8px_8px_0px_0px_rgba(20,20,20,1)]">
             <div className="absolute top-4 right-4">
               <button
                 onClick={() => {
