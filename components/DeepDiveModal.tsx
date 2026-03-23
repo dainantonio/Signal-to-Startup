@@ -18,7 +18,8 @@ import {
   BookmarkCheck,
   ExternalLink,
   MoreVertical,
-  ChevronRight
+  ChevronRight,
+  TrendingUp
 } from 'lucide-react';
 import Markdown from 'react-markdown';
 import Link from 'next/link';
