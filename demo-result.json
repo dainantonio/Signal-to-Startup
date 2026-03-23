@@ -1,0 +1,86 @@
+{
+  "summary": "The federal government has allocated $500M in subsidies for satellite internet infrastructure specifically targeting rural Midwest farming communities. This policy aims to bridge the digital divide for precision agriculture and remote work in underserved areas.",
+  "trend": "Rural Connectivity Subsidy Boom",
+  "affected_groups": [
+    "Midwest Farmers",
+    "Rural Small Businesses",
+    "Satellite ISP Installers",
+    "AgTech Startups"
+  ],
+  "problems": [
+    "High upfront hardware costs for Starlink/Satellite systems",
+    "Lack of local technical support for rural network maintenance",
+    "Complexity in navigating federal subsidy paperwork"
+  ],
+  "opportunities": [
+    {
+      "name": "Precision Ag Network Installation",
+      "description": "Specialized installation service for high-speed satellite links integrated with IoT soil sensors and autonomous tractor systems.",
+      "target_customer": "Large-scale corn and soy farmers in Iowa and Nebraska",
+      "why_now": "The $500M subsidy covers up to 80% of installation costs for qualified farms.",
+      "monetization": "Installation fee + monthly maintenance contract",
+      "pricing_model": "$2,500 per site + $99/mo support",
+      "status": "Ready to Launch",
+      "priority": "High",
+      "startup_cost": 5000,
+      "grant_eligible": true,
+      "speed_to_launch": 8,
+      "difficulty": 4,
+      "roi_potential": 9,
+      "urgency": 9,
+      "local_fit": 10,
+      "competition_gap": 7,
+      "money_score": 88
+    },
+    {
+      "name": "Rural Subsidy Concierge",
+      "description": "A consultancy that handles the application process for farmers to receive the federal internet subsidy in exchange for a success fee.",
+      "target_customer": "Independent family farms and rural cooperatives",
+      "why_now": "Federal paperwork is notoriously complex; farmers prefer turnkey solutions.",
+      "monetization": "Success fee based on subsidy amount",
+      "pricing_model": "10% of total subsidy granted",
+      "status": "Market Entry",
+      "priority": "Medium",
+      "startup_cost": 1000,
+      "grant_eligible": false,
+      "speed_to_launch": 9,
+      "difficulty": 3,
+      "roi_potential": 7,
+      "urgency": 8,
+      "local_fit": 8,
+      "competition_gap": 5,
+      "money_score": 74
+    },
+    {
+      "name": "Satellite Hardware Refurbishment",
+      "description": "Buying, refurbishing, and reselling satellite dishes and routers to farmers who don't qualify for the full subsidy.",
+      "target_customer": "Hobby farmers and rural residents",
+      "why_now": "Increased demand for hardware will lead to a secondary market for older models.",
+      "monetization": "Direct hardware sales",
+      "pricing_model": "$300 - $600 per unit",
+      "status": "Exploration",
+      "priority": "Low",
+      "startup_cost": 15000,
+      "grant_eligible": false,
+      "speed_to_launch": 5,
+      "difficulty": 6,
+      "roi_potential": 5,
+      "urgency": 4,
+      "local_fit": 6,
+      "competition_gap": 4,
+      "money_score": 52
+    }
+  ],
+  "best_idea": {
+    "name": "Precision Ag Network Installation",
+    "reason": "Highest ROI and direct alignment with the $500M federal subsidy which specifically targets infrastructure deployment.",
+    "who_should_build": "Former IT professionals or Ag-tech enthusiasts with field experience.",
+    "cost_estimate": "$5,000 for initial equipment and marketing",
+    "speed_rating": "8/10 - Can be operational in 2 weeks",
+    "first_steps": [
+      "Register as a certified federal contractor",
+      "Secure wholesale pricing for satellite hardware",
+      "Launch targeted Facebook ads for Iowa/Nebraska farmers"
+    ]
+  }
+}

@@ -3,6 +3,11 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Lightbulb, Zap, Target, ArrowRight, ShieldCheck, BarChart3 } from 'lucide-react';
+import demoResultData from '../demo-result.json';
+import { OpportunityCard } from './OpportunityCard';
+import { AnalysisResult } from './types';
+
+const demoResult = demoResultData as unknown as AnalysisResult;
 
 export const Onboarding = () => {
   return (
@@ -41,7 +46,7 @@ export const Onboarding = () => {
       </section>
 
       {/* Preview Section */}
-      <section className="relative overflow-hidden rounded-2xl border border-[#141414]/10 bg-[#f9f9f9] p-8 md:p-12">
+      <section className="relative overflow-hidden border-2 border-[#141414] bg-white p-8 md:p-12 shadow-[8px_8px_0px_0px_rgba(20,20,20,1)]">
         <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
           <Target size={200} />
         </div>
@@ -76,45 +81,14 @@ export const Onboarding = () => {
             </div>
           </div>
 
-          {/* Mock Opportunity Card */}
+          {/* Real Opportunity Card Preview */}
           <div className="relative">
-            <div className="absolute -inset-4 bg-gradient-to-tr from-emerald-500/10 to-transparent blur-2xl rounded-full opacity-50"></div>
-            <motion.div 
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.5, duration: 0.8 }}
-              className="relative bg-white border border-[#141414] p-6 shadow-2xl rotate-1 hover:rotate-0 transition-transform duration-500"
-            >
-              <div className="flex justify-between items-start mb-6">
-                <div className="space-y-1">
-                  <p className="text-[10px] font-mono uppercase tracking-widest opacity-40">Sample Opportunity</p>
-                  <h4 className="text-2xl font-serif italic">Micro-SaaS for Local Artisans</h4>
-                </div>
-                <div className="bg-[#141414] text-white px-3 py-1 text-[10px] font-mono uppercase">94 Score</div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="p-3 bg-stone-50 border border-[#141414]/5">
-                  <p className="text-[9px] font-mono uppercase opacity-40 mb-1">Setup Cost</p>
-                  <p className="font-mono text-sm tracking-tighter">$450</p>
-                </div>
-                <div className="p-3 bg-stone-50 border border-[#141414]/5">
-                  <p className="text-[9px] font-mono uppercase opacity-40 mb-1">Difficulty</p>
-                  <p className="font-mono text-sm tracking-tighter">Low (2/10)</p>
-                </div>
-              </div>
-
-              <div className="space-y-3 mb-8">
-                <div className="h-2 w-full bg-stone-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-emerald-500 w-[85%]"></div>
-                </div>
-                <p className="text-xs text-[#141414]/60 italic">&quot;High demand for digital inventory management in rural craft markets.&quot;</p>
-              </div>
-
-              <button className="w-full py-3 border border-[#141414] font-mono text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-[#141414] hover:text-white transition-colors group">
-                Deep Dive Analysis <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-              </button>
-            </motion.div>
+            <OpportunityCard 
+              opp={demoResult.opportunities[0]} 
+              index={0} 
+              isBestIdea={true} 
+              generateDeepDive={() => {}} 
+            />
           </div>
         </div>
       </section>
