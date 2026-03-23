@@ -83,10 +83,13 @@ export const Onboarding = () => {
 
           {/* Real Opportunity Card Preview */}
           <div className="relative">
+            <div className="absolute -top-4 left-4 z-20 bg-[#141414] text-[#E4E3E0] px-3 py-1 text-[9px] font-mono uppercase tracking-widest font-bold shadow-[2px_2px_0px_0px_rgba(20,20,20,0.2)]">
+              Example Output
+            </div>
             <OpportunityCard 
               opp={demoResult.opportunities[0]} 
               index={0} 
-              isBestIdea={true} 
+              isBestIdea={false} 
               generateDeepDive={() => {}} 
               isReadOnly={true}
             />
