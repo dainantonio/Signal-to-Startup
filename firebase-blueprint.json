@@ -1,0 +1,76 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile and preferences",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email"]
+    },
+    "Analysis": {
+      "title": "Analysis",
+      "description": "A complete trend analysis result",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner of the analysis" },
+        "signal": { "type": "string", "description": "The original input signal" },
+        "trend": { "type": "string" },
+        "summary": { "type": "string" },
+        "affected_groups": { "type": "array", "items": { "type": "string" } },
+        "problems": { "type": "array", "items": { "type": "string" } },
+        "opportunities": { "type": "array", "items": { "$ref": "Opportunity" } },
+        "best_idea": { "type": "object" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "signal", "trend", "createdAt"]
+    },
+    "Opportunity": {
+      "title": "Opportunity",
+      "description": "A specific business opportunity derived from a trend",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "money_score": { "type": "integer" },
+        "startup_cost": { "type": "string" },
+        "time_to_launch": { "type": "string" },
+        "difficulty": { "type": "string" },
+        "priority": { "type": "string", "enum": ["High", "Medium", "Low"] }
+      }
+    },
+    "SavedOpportunity": {
+      "title": "SavedOpportunity",
+      "description": "An opportunity saved by a user for execution",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "opportunity": { "$ref": "Opportunity" },
+        "analysisId": { "type": "string" },
+        "status": { "type": "string", "enum": ["Saved", "In Progress", "Launched"] },
+        "checklist": { "type": "array", "items": { "type": "object" } },
+        "savedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "opportunity", "savedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/analyses/{analysisId}": {
+      "schema": "Analysis",
+      "description": "Trend analyses"
+    },
+    "/saved_opportunities/{savedId}": {
+      "schema": "SavedOpportunity",
+      "description": "User's saved business opportunities"
+    }
+  }
+}

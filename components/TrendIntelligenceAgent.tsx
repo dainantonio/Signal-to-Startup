@@ -5,6 +5,13 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { 
   Globe,
   TrendingUp,
+  History,
+  LogIn,
+  LogOut,
+  User as UserIcon,
+  Link as LinkIcon,
+  Trash2,
+  ExternalLink
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Opportunity, AnalysisResult, DeepDiveResult } from './types';
@@ -14,6 +21,25 @@ import { DeepDiveModal } from './DeepDiveModal';
 import { Onboarding } from './Onboarding';
 import { PipelineProgress } from './PipelineProgress';
 import { Search, BarChart3, Target, Rocket } from 'lucide-react';
+import { 
+  auth, 
+  db, 
+  googleProvider, 
+  signInWithPopup, 
+  signOut, 
+  onAuthStateChanged, 
+  collection, 
+  addDoc, 
+  getDocs, 
+  query, 
+  where, 
+  orderBy, 
+  deleteDoc, 
+  doc, 
+  FirebaseUser,
+  handleFirestoreError,
+  OperationType
+} from '../firebase';
 
 // Define the response schema for Gemini
 const responseSchema = {
@@ -120,7 +146,12 @@ const deepDiveSchema = {
 };
 
 export default function TrendIntelligenceAgent() {
+  const [user, setUser] = useState<FirebaseUser | null>(null);
+  const [history, setHistory] = useState<(AnalysisResult & { id: string })[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
   const [input, setInput] = useState('');
+  const [urlInput, setUrlInput] = useState('');
+  const [fetchingUrl, setFetchingUrl] = useState(false);
   const [location, setLocation] = useState('');
   const [focus, setFocus] = useState('');
   const [loading, setLoading] = useState(false);
@@ -136,6 +167,82 @@ export default function TrendIntelligenceAgent() {
   const [activeDeepDiveTab, setActiveDeepDiveTab] = useState<'plan' | 'costs' | 'grants' | 'checklist' | 'investors'>('plan');
   const [copied, setCopied] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
+
+  // Firebase Auth Listener
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user);
+      if (user) {
+        loadHistory(user.uid);
+      } else {
+        setHistory([]);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const loadHistory = async (uid: string) => {
+    try {
+      const q = query(
+        collection(db, 'analyses'),
+        where('userId', '==', uid),
+        orderBy('createdAt', 'desc')
+      );
+      const querySnapshot = await getDocs(q);
+      const docs = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as (AnalysisResult & { id: string })[];
+      setHistory(docs);
+    } catch (err) {
+      handleFirestoreError(err, OperationType.LIST, 'analyses');
+    }
+  };
+
+  const login = async () => {
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch (err) {
+      console.error("Login failed", err);
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await signOut(auth);
+    } catch (err) {
+      console.error("Logout failed", err);
+    }
+  };
+
+  const deleteAnalysis = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'analyses', id));
+      setHistory(prev => prev.filter(a => a.id !== id));
+      if (result && (result as any).id === id) {
+        setResult(null);
+      }
+    } catch (err) {
+      handleFirestoreError(err, OperationType.DELETE, `analyses/${id}`);
+    }
+  };
+
+  const fetchUrl = async () => {
+    if (!urlInput.trim()) return;
+    setFetchingUrl(true);
+    try {
+      const response = await fetch(`/api/fetch-url?url=${encodeURIComponent(urlInput)}`);
+      if (!response.ok) throw new Error("Failed to fetch URL");
+      const data = await response.json();
+      setInput(data.content);
+      setUrlInput('');
+    } catch (err) {
+      console.error(err);
+      setError("Failed to fetch content from URL. Please ensure it's a public page.");
+    } finally {
+      setFetchingUrl(false);
+    }
+  };
 
   const analyzeSignal = async () => {
     if (!input.trim()) return;
@@ -175,7 +282,14 @@ export default function TrendIntelligenceAgent() {
         - Heavily weight opportunities toward the specified focus: ${focus || 'General Business'}
         - For 'best_idea', provide a realistic 'cost_estimate' and 'speed_rating' (Fast, Medium, Slow).
         
-        STEP 10: MONEY SCORE
+        CARIBBEAN CONTEXT (UNFAIR ADVANTAGE):
+        If the location is in the Caribbean (e.g., Jamaica, Barbados, Trinidad) or the informal economy:
+        - Leverage "YardieBiz" and "YardHub" intelligence.
+        - Focus on informal-to-formal transitions, mobile-first logistics, and community-based trust networks.
+        - Consider local constraints like high energy costs, import reliance, and tourism-heavy economies.
+        - Use local terminology where appropriate (e.g., "hustle", "link up", "yard").
+
+        STEP 10: MONEY SCORE & BENCHMARKING
         For each opportunity:
         - Rate (1-10):
           - ROI Potential (30%)
@@ -187,6 +301,7 @@ export default function TrendIntelligenceAgent() {
         - Calculate Money Score (0-100) using:
           Money Score = ((ROI * 0.30) + (Speed * 0.20) + ((10 - Difficulty) * 0.15) + (Urgency * 0.15) + (Local Fit * 0.10) + (Competition Gap * 0.10)) * 10
         - Return the final score as 'money_score'.
+        - BENCHMARK: In the 'description', briefly mention how this score compares to real-world sector averages (e.g., "This 72 is significantly higher than the 45 average for local retail due to low overhead").
 
         TONE:
         Clear, sharp, and execution-focused.
@@ -205,6 +320,26 @@ export default function TrendIntelligenceAgent() {
       if (response.text) {
         const parsedResult = JSON.parse(response.text);
         setResult(parsedResult);
+
+        // Save to Firebase if user is logged in
+        if (user) {
+          try {
+            const docRef = await addDoc(collection(db, 'analyses'), {
+              userId: user.uid,
+              signal: input,
+              trend: parsedResult.trend,
+              summary: parsedResult.summary,
+              affected_groups: parsedResult.affected_groups,
+              problems: parsedResult.problems,
+              opportunities: parsedResult.opportunities,
+              best_idea: parsedResult.best_idea,
+              createdAt: new Date().toISOString()
+            });
+            loadHistory(user.uid);
+          } catch (err) {
+            handleFirestoreError(err, OperationType.CREATE, 'analyses');
+          }
+        }
       } else {
         throw new Error("No response from AI");
       }
@@ -391,11 +526,92 @@ export default function TrendIntelligenceAgent() {
               Turn news, policy, and market signals into actionable, low-cost business opportunities.
             </p>
           </div>
-          <div className="flex items-center gap-2 text-xs font-mono bg-[#141414] text-[#E4E3E0] px-3 py-1 rounded-full">
-            <Globe className="w-3 h-3" />
-            LIVE FEED ACTIVE
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 text-xs font-mono bg-[#141414] text-[#E4E3E0] px-3 py-1 rounded-full">
+              <Globe className="w-3 h-3" />
+              LIVE FEED ACTIVE
+            </div>
+            
+            {user ? (
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={() => setShowHistory(!showHistory)}
+                  className="p-2 hover:bg-[#141414]/5 rounded-full transition-colors relative"
+                  title="History"
+                >
+                  <History className="w-5 h-5" />
+                  {history.length > 0 && (
+                    <span className="absolute top-0 right-0 w-2 h-2 bg-emerald-500 rounded-full" />
+                  )}
+                </button>
+                <div className="flex items-center gap-2 bg-white border border-[#141414] px-3 py-1 shadow-[2px_2px_0px_0px_rgba(20,20,20,1)]">
+                  <UserIcon className="w-3 h-3" />
+                  <span className="text-[10px] font-mono uppercase font-bold">{user.displayName?.split(' ')[0]}</span>
+                  <button onClick={logout} className="ml-2 hover:text-red-500">
+                    <LogOut className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button 
+                onClick={login}
+                className="flex items-center gap-2 bg-[#141414] text-[#E4E3E0] px-4 py-2 text-[10px] font-mono uppercase tracking-widest hover:bg-[#333] transition-all shadow-[4px_4px_0px_0px_rgba(20,20,20,0.2)]"
+              >
+                <LogIn className="w-3 h-3" />
+                Login to Save
+              </button>
+            )}
           </div>
         </header>
+
+        {/* History Panel */}
+        <AnimatePresence>
+          {showHistory && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="mb-12 overflow-hidden"
+            >
+              <div className="bg-white border-2 border-[#141414] p-6 shadow-[8px_8px_0px_0px_rgba(20,20,20,1)]">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-sm font-mono uppercase font-bold tracking-widest">Analysis History</h3>
+                  <button onClick={() => setShowHistory(false)} className="text-xs font-mono uppercase opacity-50 hover:opacity-100">Close</button>
+                </div>
+                
+                {history.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {history.map((item) => (
+                      <div key={item.id} className="group relative bg-gray-50 border border-[#141414] p-4 hover:bg-white transition-all cursor-pointer" onClick={() => {
+                        setResult(item);
+                        setShowHistory(false);
+                      }}>
+                        <div className="flex justify-between items-start mb-2">
+                          <span className="text-[8px] font-mono uppercase opacity-40">{item.createdAt ? new Date(item.createdAt).toLocaleDateString() : 'Unknown Date'}</span>
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteAnalysis(item.id);
+                            }}
+                            className="opacity-0 group-hover:opacity-100 text-red-500 hover:scale-110 transition-all"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                        <h4 className="text-sm font-serif italic font-bold leading-tight mb-1">{item.trend}</h4>
+                        <p className="text-[10px] font-sans opacity-60 line-clamp-2">{item.summary}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 opacity-40">
+                    <p className="text-xs font-mono uppercase">No history found. Start your first analysis.</p>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {result && (
           <PipelineProgress currentStep={currentStep} steps={pipelineSteps} />
@@ -404,6 +620,10 @@ export default function TrendIntelligenceAgent() {
         <SignalInput 
           input={input}
           setInput={setInput}
+          urlInput={urlInput}
+          setUrlInput={setUrlInput}
+          fetchingUrl={fetchingUrl}
+          fetchUrl={fetchUrl}
           location={location}
           setLocation={setLocation}
           focus={focus}

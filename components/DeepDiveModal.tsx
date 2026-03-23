@@ -13,7 +13,10 @@ import {
   Check, 
   Copy,
   Share2,
-  Download
+  Download,
+  Bookmark,
+  BookmarkCheck,
+  ExternalLink
 } from 'lucide-react';
 import Markdown from 'react-markdown';
 import { Opportunity, DeepDiveResult } from './types';
@@ -21,6 +24,19 @@ import { CostEstimator } from './CostEstimator';
 import { GrantFinder } from './GrantFinder';
 import { InvestorMatch } from './InvestorMatch';
 import { Checklist } from './Checklist';
+import { 
+  auth, 
+  db, 
+  collection, 
+  addDoc, 
+  getDocs, 
+  query, 
+  where, 
+  updateDoc, 
+  doc, 
+  handleFirestoreError, 
+  OperationType 
+} from '../firebase';
 
 interface DeepDiveModalProps {
   selectedOpportunity: Opportunity | null;
@@ -45,12 +61,95 @@ export const DeepDiveModal: React.FC<DeepDiveModalProps> = ({
   copyToClipboard,
   copied
 }) => {
+  const [isSaved, setIsSaved] = React.useState(false);
+  const [savedDocId, setSavedDocId] = React.useState<string | null>(null);
+  const [saving, setSaving] = React.useState(false);
+
+  const checkIfSaved = React.useCallback(async () => {
+    if (!selectedOpportunity || !auth.currentUser) return;
+    try {
+      const q = query(
+        collection(db, 'saved_opportunities'),
+        where('userId', '==', auth.currentUser.uid),
+        where('opportunity.name', '==', selectedOpportunity.name)
+      );
+      const querySnapshot = await getDocs(q);
+      if (!querySnapshot.empty) {
+        setIsSaved(true);
+        setSavedDocId(querySnapshot.docs[0].id);
+      } else {
+        setIsSaved(false);
+        setSavedDocId(null);
+      }
+    } catch (err) {
+      console.error("Error checking saved status", err);
+    }
+  }, [selectedOpportunity]);
+
+  React.useEffect(() => {
+    if (selectedOpportunity && auth.currentUser) {
+      checkIfSaved();
+    }
+  }, [selectedOpportunity, checkIfSaved]);
+
+  const saveOpportunity = async () => {
+    if (!selectedOpportunity || !auth.currentUser || !deepDiveResult) return;
+    setSaving(true);
+    try {
+      const docRef = await addDoc(collection(db, 'saved_opportunities'), {
+        userId: auth.currentUser.uid,
+        opportunity: selectedOpportunity,
+        deepDive: deepDiveResult,
+        status: 'Saved',
+        checklist: deepDiveResult.checklist.map(item => ({ text: item, completed: false })),
+        savedAt: new Date().toISOString()
+      });
+      setIsSaved(true);
+      setSavedDocId(docRef.id);
+    } catch (err) {
+      handleFirestoreError(err, OperationType.CREATE, 'saved_opportunities');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (!selectedOpportunity) return null;
 
   const shareLink = () => {
     const url = new URL(window.location.href);
     url.searchParams.set('opp', selectedOpportunity.name);
     copyToClipboard(url.toString(), 'share-link');
+  };
+
+  const exportToNotion = () => {
+    if (!deepDiveResult) return;
+    
+    const notionMarkdown = `
+# ${selectedOpportunity.name} - Execution Plan
+
+## Executive Summary
+${selectedOpportunity.description}
+
+## Business Plan
+${deepDiveResult.business_plan}
+
+## Startup Costs
+${deepDiveResult.cost_breakdown.map(c => `- [ ] ${c.item}: **$${c.cost}**`).join('\n')}
+
+## 30-Day Checklist
+${deepDiveResult.checklist.map(item => `- [ ] ${item}`).join('\n')}
+
+## Funding & Grants
+${deepDiveResult.grants.map(g => `- ${g}`).join('\n')}
+
+## Potential Investors
+${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.focus}`).join('\n')}
+
+---
+*Generated via AI Trend Intelligence Agent*
+    `;
+    
+    copyToClipboard(notionMarkdown, 'notion-export');
   };
 
   const exportToPDF = () => {
@@ -116,6 +215,24 @@ export const DeepDiveModal: React.FC<DeepDiveModalProps> = ({
             </div>
           </div>
           <div className="flex items-center gap-3">
+            {auth.currentUser && deepDiveResult && (
+              <button
+                onClick={saveOpportunity}
+                disabled={isSaved || saving}
+                className={`flex items-center gap-2 px-3 py-1.5 border text-[10px] font-mono uppercase transition-all ${isSaved ? 'bg-emerald-500 text-white border-emerald-600' : 'bg-white border-[#141414] hover:bg-gray-50'}`}
+              >
+                {saving ? <Loader2 size={14} className="animate-spin" /> : (isSaved ? <BookmarkCheck size={14} /> : <Bookmark size={14} />)}
+                {isSaved ? 'Saved to Dashboard' : 'Save Opportunity'}
+              </button>
+            )}
+            <button
+              onClick={exportToNotion}
+              className="flex items-center gap-2 px-3 py-1.5 bg-black text-white border border-black text-[10px] font-mono uppercase hover:bg-gray-800 transition-all"
+              title="Copy for Notion"
+            >
+              {copied === 'notion-export' ? <Check size={14} /> : <ExternalLink size={14} />}
+              {copied === 'notion-export' ? 'Copied for Notion' : 'Export to Notion'}
+            </button>
             <button
               onClick={shareLink}
               className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-mono uppercase hover:bg-emerald-100 transition-all"
@@ -270,7 +387,10 @@ export const DeepDiveModal: React.FC<DeepDiveModalProps> = ({
                   )}
 
                   {activeDeepDiveTab === 'checklist' && (
-                    <Checklist deepDiveResult={deepDiveResult} />
+                    <Checklist 
+                      deepDiveResult={deepDiveResult} 
+                      savedDocId={savedDocId}
+                    />
                   )}
 
                   {activeDeepDiveTab === 'investors' && (

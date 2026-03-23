@@ -32,6 +32,7 @@ export interface AnalysisResult {
     speed_rating: string;
     first_steps: string[];
   };
+  createdAt?: string;
 }
 
 export interface DeepDiveResult {

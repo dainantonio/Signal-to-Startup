@@ -1,9 +1,13 @@
 import React from 'react';
-import { Search, Lightbulb, MapPin, Zap, TrendingUp, Loader2 } from 'lucide-react';
+import { Search, Lightbulb, MapPin, Zap, TrendingUp, Loader2, X } from 'lucide-react';
 
 interface SignalInputProps {
   input: string;
   setInput: (val: string) => void;
+  urlInput: string;
+  setUrlInput: (val: string) => void;
+  fetchingUrl: boolean;
+  fetchUrl: () => void;
   location: string;
   setLocation: (val: string) => void;
   focus: string;
@@ -16,6 +20,10 @@ interface SignalInputProps {
 export const SignalInput: React.FC<SignalInputProps> = ({
   input,
   setInput,
+  urlInput,
+  setUrlInput,
+  fetchingUrl,
+  fetchUrl,
   location,
   setLocation,
   focus,
@@ -31,15 +39,45 @@ export const SignalInput: React.FC<SignalInputProps> = ({
           <div className="w-8 h-8 rounded-full bg-[#141414] text-[#E4E3E0] flex items-center justify-center font-mono text-xs">01</div>
           <h2 className="text-2xl font-serif italic border-b border-[#141414] pb-2 flex-grow">Signal Ingestion</h2>
         </div>
+
+        {/* URL Fetcher */}
+        <div className="flex gap-2 mb-4">
+          <div className="flex-1 relative">
+            <input
+              type="text"
+              value={urlInput}
+              onChange={(e) => setUrlInput(e.target.value)}
+              placeholder="Or paste a URL to fetch content (e.g. news article)..."
+              className="w-full bg-white border-2 border-[#141414] p-3 pl-10 pr-10 focus:outline-none font-mono text-sm shadow-[4px_4px_0px_0px_rgba(20,20,20,1)]"
+            />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-50" />
+            {urlInput && (
+              <button 
+                onClick={() => setUrlInput('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 opacity-30 hover:opacity-100 transition-opacity"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+          <button
+            onClick={fetchUrl}
+            disabled={fetchingUrl || !urlInput.trim()}
+            className="bg-[#141414] text-[#E4E3E0] px-6 py-3 font-mono text-[10px] uppercase tracking-widest hover:bg-black disabled:opacity-50 transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)]"
+          >
+            {fetchingUrl ? <Loader2 className="w-4 h-4 animate-spin" /> : "Fetch"}
+          </button>
+        </div>
+
         <div className="relative">
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Paste news article, policy update, or market summary here..."
-            className="w-full h-48 bg-white border-2 border-[#141414] p-4 focus:outline-none focus:ring-0 focus:border-black transition-all resize-none font-mono text-sm shadow-[4px_4px_0px_0px_rgba(20,20,20,1)]"
+            className="w-full h-64 bg-white border-2 border-[#141414] p-4 focus:outline-none focus:ring-0 focus:border-black transition-all resize-none font-mono text-sm leading-relaxed shadow-[4px_4px_0px_0px_rgba(20,20,20,1)]"
           />
           <div className="absolute bottom-4 right-4 opacity-30">
-            <Search className="w-6 h-6" />
+            <Zap className="w-6 h-6" />
           </div>
         </div>
 
