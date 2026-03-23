@@ -106,7 +106,7 @@ export const SignalInput: React.FC<SignalInputProps> = ({
           <div className="flex bg-white border-2 border-[#141414] p-1 shadow-[2px_2px_0px_0px_rgba(20,20,20,1)]">
             <button
               onClick={() => setInputMode('paste')}
-              className={`px-4 py-1.5 font-mono text-[10px] uppercase tracking-wider transition-all ${
+              className={`px-4 py-2 font-mono text-[11px] uppercase tracking-wider transition-all ${
                 inputMode === 'paste' ? 'bg-[#141414] text-[#E4E3E0]' : 'hover:bg-gray-100'
               }`}
             >
@@ -114,11 +114,13 @@ export const SignalInput: React.FC<SignalInputProps> = ({
             </button>
             <button
               onClick={() => setInputMode('feed')}
-              className={`px-4 py-1.5 font-mono text-[10px] uppercase tracking-wider transition-all flex items-center gap-2 ${
+              className={`px-4 py-2 font-mono text-[11px] uppercase tracking-wider transition-all flex items-center gap-2 ${
                 inputMode === 'feed' ? 'bg-[#141414] text-[#E4E3E0]' : 'hover:bg-gray-100'
               }`}
             >
-              <Radio className={`w-3 h-3 ${inputMode === 'feed' ? 'animate-pulse' : ''}`} />
+              <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                inputMode === 'feed' ? 'bg-red-400 animate-pulse' : 'bg-gray-300'
+              }`} />
               Live Feed
             </button>
           </div>
@@ -289,7 +291,7 @@ export const SignalInput: React.FC<SignalInputProps> = ({
         </div>
       </div>
 
-      <div className="space-y-6">
+      <div className="hidden md:block space-y-6">
         <div className="bg-white border border-[#141414] p-6 space-y-4">
           <h3 className="font-serif italic text-xl border-b border-[#141414] pb-2">Agent Directives</h3>
           <ul className="space-y-3 text-sm font-mono">

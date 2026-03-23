@@ -47,7 +47,9 @@ interface MarketModeSelectorProps {
 
 export const MarketModeSelector: React.FC<MarketModeSelectorProps> = ({ selectedMode, onModeChange }) => {
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="space-y-2">
+      <p className="text-[10px] font-mono uppercase tracking-widest opacity-50">Market Context</p>
+      <div className="flex flex-wrap gap-2">
       {(Object.values(marketModeConfigs) as MarketModeConfig[]).map((config) => (
         <button
           key={config.id}
@@ -63,6 +65,7 @@ export const MarketModeSelector: React.FC<MarketModeSelectorProps> = ({ selected
           <span className="hidden md:inline">{config.label}</span>
         </button>
       ))}
+    </div>
     </div>
   );
 };
