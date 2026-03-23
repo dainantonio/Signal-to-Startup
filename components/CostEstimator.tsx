@@ -24,7 +24,7 @@ export const CostEstimator: React.FC<CostEstimatorProps> = ({ deepDiveResult }) 
               <h3 className="text-2xl font-serif italic tracking-tight">Startup Cost Estimator</h3>
               <div className="text-right">
                 <div className="text-[10px] font-mono uppercase opacity-50">Total Capital Required</div>
-                <div className="text-3xl font-bold font-mono">${totalCost}</div>
+                <div className="text-3xl font-bold font-mono">${totalCost.toLocaleString()}</div>
               </div>
             </div>
 
@@ -39,7 +39,7 @@ export const CostEstimator: React.FC<CostEstimatorProps> = ({ deepDiveResult }) 
                 return (
                   <div key={i} className="grid grid-cols-4 px-4 py-4 border-b border-gray-100 hover:bg-gray-50 transition-colors items-center">
                     <div className="col-span-2 font-medium text-sm">{item.item}</div>
-                    <div className="text-right font-mono font-bold">${item.cost}</div>
+                    <div className="text-right font-mono font-bold">${item.cost.toLocaleString()}</div>
                     <div className="flex flex-col items-end gap-1 pl-4">
                       <div className="text-[10px] font-mono font-bold">{Math.round(percentage)}%</div>
                       <div className="w-full max-w-[80px] h-1.5 bg-gray-100 rounded-full overflow-hidden">

@@ -39,10 +39,15 @@ export const InvestorMatch: React.FC<InvestorMatchProps> = ({ deepDiveResult }) 
                   <p>{investor.focus}</p>
                 </div>
               </div>
-              <button className="flex items-center gap-2 text-[10px] font-mono uppercase font-bold border border-[#141414] px-4 py-2 hover:bg-[#141414] hover:text-[#E4E3E0] transition-all self-start md:self-center">
+              <a
+                href={`https://www.google.com/search?q=${encodeURIComponent(investor.name + ' investment thesis ' + investor.stage)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-[10px] font-mono uppercase font-bold border border-[#141414] px-4 py-2 hover:bg-[#141414] hover:text-[#E4E3E0] transition-all self-start md:self-center"
+              >
                 View Thesis
                 <ArrowUpRight className="w-3 h-3" />
-              </button>
+              </a>
             </div>
           </div>
         ))}
