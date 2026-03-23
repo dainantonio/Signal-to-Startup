@@ -12,9 +12,11 @@ import {
   User as UserIcon,
   Link as LinkIcon,
   Trash2,
-  ExternalLink
+  ExternalLink,
+  LayoutDashboard
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import Link from 'next/link';
 import { Opportunity, AnalysisResult, DeepDiveResult, MarketMode } from './types';
 import { SignalInput } from './SignalInput';
 import { marketModeConfigs } from './MarketModeSelector';
@@ -545,6 +547,14 @@ export default function TrendIntelligenceAgent() {
                   <History className="w-4 h-4" />
                   <span className="text-[10px] font-mono uppercase font-bold">History ({history.length})</span>
                 </button>
+                <Link
+                  href="/dashboard"
+                  className="flex items-center gap-2 px-3 py-1.5 bg-white border border-[#141414] hover:bg-gray-50 transition-all shadow-[2px_2px_0px_0px_rgba(20,20,20,1)]"
+                  title="Your Pipeline"
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                  <span className="text-[10px] font-mono uppercase font-bold">Pipeline</span>
+                </Link>
                 <div className="flex items-center gap-2 bg-white border border-[#141414] px-3 py-1 shadow-[2px_2px_0px_0px_rgba(20,20,20,1)]">
                   <UserIcon className="w-3 h-3" />
                   <span className="text-[10px] font-mono uppercase font-bold">{user.displayName?.split(' ')[0]}</span>

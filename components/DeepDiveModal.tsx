@@ -19,6 +19,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import Markdown from 'react-markdown';
+import Link from 'next/link';
 import { Opportunity, DeepDiveResult, MarketMode } from './types';
 import { CostEstimator } from './CostEstimator';
 import { GrantFinder } from './GrantFinder';
@@ -218,14 +219,24 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
           </div>
           <div className="flex items-center gap-3">
             {auth.currentUser && deepDiveResult && (
-              <button
-                onClick={saveOpportunity}
-                disabled={isSaved || saving}
-                className={`flex items-center gap-2 px-3 py-1.5 border text-[10px] font-mono uppercase transition-all ${isSaved ? 'bg-emerald-500 text-white border-emerald-600' : 'bg-white border-[#141414] hover:bg-gray-50'}`}
-              >
-                {saving ? <Loader2 size={14} className="animate-spin" /> : (isSaved ? <BookmarkCheck size={14} /> : <Bookmark size={14} />)}
-                {isSaved ? 'Saved to Dashboard' : 'Save Opportunity'}
-              </button>
+              !isSaved ? (
+                <button
+                  onClick={saveOpportunity}
+                  disabled={saving}
+                  className="flex items-center gap-2 px-3 py-1.5 border bg-white border-[#141414] hover:bg-gray-50 text-[10px] font-mono uppercase transition-all"
+                >
+                  {saving ? <Loader2 size={14} className="animate-spin" /> : <Bookmark size={14} />}
+                  {saving ? 'Saving...' : 'Save Opportunity'}
+                </button>
+              ) : (
+                <Link
+                  href="/dashboard"
+                  className="flex items-center gap-2 px-3 py-1.5 border bg-emerald-500 text-white border-emerald-600 hover:bg-emerald-600 text-[10px] font-mono uppercase transition-all"
+                >
+                  <BookmarkCheck size={14} />
+                  View in Pipeline →
+                </Link>
+              )
             )}
             <button
               onClick={exportToNotion}

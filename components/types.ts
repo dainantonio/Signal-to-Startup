@@ -55,3 +55,15 @@ export interface DeepDiveResult {
   checklist: string[];
   investors: { name: string; focus: string; stage: string }[];
 }
+
+export type OpportunityStatus = 'Saved' | 'In Progress' | 'Launched';
+
+export interface SavedOpportunity {
+  id?: string;
+  userId: string;
+  opportunity: Opportunity;
+  deepDive: DeepDiveResult;
+  status: OpportunityStatus;
+  checklist: { text: string; completed: boolean }[];
+  savedAt: string;
+}
