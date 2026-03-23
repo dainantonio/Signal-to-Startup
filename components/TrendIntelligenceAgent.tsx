@@ -8,6 +8,7 @@ import {
   History,
   LogIn,
   LogOut,
+  X,
   User as UserIcon,
   Link as LinkIcon,
   Trash2,
@@ -539,13 +540,11 @@ export default function TrendIntelligenceAgent() {
               <div className="flex items-center gap-3">
                 <button 
                   onClick={() => setShowHistory(!showHistory)}
-                  className="p-2 hover:bg-[#141414]/5 rounded-full transition-colors relative"
+                  className="flex items-center gap-2 px-3 py-1.5 bg-white border border-[#141414] hover:bg-gray-50 transition-all shadow-[2px_2px_0px_0px_rgba(20,20,20,1)] relative group"
                   title="History"
                 >
-                  <History className="w-5 h-5" />
-                  {history.length > 0 && (
-                    <span className="absolute top-0 right-0 w-2 h-2 bg-emerald-500 rounded-full" />
-                  )}
+                  <History className="w-4 h-4" />
+                  <span className="text-[10px] font-mono uppercase font-bold">History ({history.length})</span>
                 </button>
                 <div className="flex items-center gap-2 bg-white border border-[#141414] px-3 py-1 shadow-[2px_2px_0px_0px_rgba(20,20,20,1)]">
                   <UserIcon className="w-3 h-3" />
@@ -556,13 +555,22 @@ export default function TrendIntelligenceAgent() {
                 </div>
               </div>
             ) : (
-              <button 
-                onClick={login}
-                className="flex items-center gap-2 bg-[#141414] text-[#E4E3E0] px-4 py-2 text-[10px] font-mono uppercase tracking-widest hover:bg-[#333] transition-all shadow-[4px_4px_0px_0px_rgba(20,20,20,0.2)]"
-              >
-                <LogIn className="w-3 h-3" />
-                Login to Save
-              </button>
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={() => setShowHistory(!showHistory)}
+                  className="p-2 hover:bg-[#141414]/5 rounded-full transition-colors"
+                  title="History"
+                >
+                  <History className="w-5 h-5" />
+                </button>
+                <button 
+                  onClick={login}
+                  className="flex items-center gap-2 bg-[#141414] text-[#E4E3E0] px-4 py-2 text-[10px] font-mono uppercase tracking-widest hover:bg-[#333] transition-all shadow-[4px_4px_0px_0px_rgba(20,20,20,0.2)]"
+                >
+                  <LogIn className="w-3 h-3" />
+                  Login to Save
+                </button>
+              </div>
             )}
           </div>
         </header>
@@ -570,49 +578,108 @@ export default function TrendIntelligenceAgent() {
         {/* History Panel */}
         <AnimatePresence>
           {showHistory && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="mb-12 overflow-hidden"
-            >
-              <div className="bg-white border-2 border-[#141414] p-6 shadow-[8px_8px_0px_0px_rgba(20,20,20,1)]">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-sm font-mono uppercase font-bold tracking-widest">Analysis History</h3>
-                  <button onClick={() => setShowHistory(false)} className="text-xs font-mono uppercase opacity-50 hover:opacity-100">Close</button>
+            <>
+              {/* Backdrop */}
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setShowHistory(false)}
+                className="fixed inset-0 bg-[#141414]/40 backdrop-blur-sm z-50"
+              />
+              
+              {/* Sidebar / Bottom Sheet */}
+              <motion.div
+                initial={{ x: '100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '100%' }}
+                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                className="fixed right-0 top-0 bottom-0 w-full md:w-80 bg-[#E4E3E0] border-l-2 border-[#141414] z-50 flex flex-col shadow-[-10px_0px_30px_rgba(0,0,0,0.1)]"
+              >
+                <div className="p-6 border-b border-[#141414] flex items-center justify-between bg-white">
+                  <h3 className="text-sm font-mono uppercase font-bold tracking-widest">Intelligence History</h3>
+                  <button 
+                    onClick={() => setShowHistory(false)} 
+                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
                 </div>
                 
-                {history.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {history.map((item) => (
-                      <div key={item.id} className="group relative bg-gray-50 border border-[#141414] p-4 hover:bg-white transition-all cursor-pointer" onClick={() => {
-                        setResult(item);
-                        setShowHistory(false);
-                      }}>
+                <div className="flex-grow overflow-y-auto p-4 space-y-3">
+                  {!user ? (
+                    <div className="bg-white border-2 border-[#141414] p-6 text-center space-y-4 shadow-[4px_4px_0px_0px_rgba(20,20,20,1)]">
+                      <div className="w-12 h-12 bg-indigo-50 rounded-full flex items-center justify-center mx-auto">
+                        <LogIn className="w-6 h-6 text-indigo-600" />
+                      </div>
+                      <div className="space-y-2">
+                        <p className="font-serif italic text-lg">Sign in to save history</p>
+                        <p className="text-[10px] font-mono uppercase opacity-50">Keep track of your market signals and execution plans across sessions.</p>
+                      </div>
+                      <button 
+                        onClick={login}
+                        className="w-full flex items-center justify-center gap-2 bg-[#141414] text-[#E4E3E0] px-4 py-3 text-[10px] font-mono uppercase tracking-widest hover:bg-[#333] transition-all"
+                      >
+                        <Globe className="w-3 h-3" />
+                        Sign in with Google
+                      </button>
+                    </div>
+                  ) : history.length > 0 ? (
+                    history.map((item) => (
+                      <div 
+                        key={item.id} 
+                        className="group relative bg-white border border-[#141414] p-4 hover:shadow-[4px_4px_0px_0px_rgba(20,20,20,1)] transition-all cursor-pointer" 
+                        onClick={() => {
+                          setResult(item);
+                          setShowHistory(false);
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                      >
                         <div className="flex justify-between items-start mb-2">
-                          <span className="text-[8px] font-mono uppercase opacity-40">{item.createdAt ? new Date(item.createdAt).toLocaleDateString() : 'Unknown Date'}</span>
+                          <span className="text-[9px] font-mono uppercase font-bold text-indigo-600">
+                            {item.createdAt ? new Date(item.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Unknown'}
+                          </span>
                           <button 
                             onClick={(e) => {
                               e.stopPropagation();
                               deleteAnalysis(item.id);
                             }}
-                            className="opacity-0 group-hover:opacity-100 text-red-500 hover:scale-110 transition-all"
+                            className="text-gray-400 hover:text-red-500 transition-colors"
                           >
-                            <Trash2 className="w-3 h-3" />
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
-                        <h4 className="text-sm font-serif italic font-bold leading-tight mb-1">{item.trend}</h4>
-                        <p className="text-[10px] font-sans opacity-60 line-clamp-2">{item.summary}</p>
+                        <h4 className="text-xs font-serif italic font-bold leading-tight line-clamp-2">
+                          {item.trend.length > 60 ? `${item.trend.substring(0, 60)}...` : item.trend}
+                        </h4>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-12 opacity-40">
-                    <p className="text-xs font-mono uppercase">No history found. Start your first analysis.</p>
+                    ))
+                  ) : (
+                    <div className="text-center py-20 opacity-30">
+                      <History className="w-12 h-12 mx-auto mb-4 opacity-20" />
+                      <p className="text-[10px] font-mono uppercase tracking-widest">No intelligence logs found</p>
+                    </div>
+                  )}
+                </div>
+                
+                {user && (
+                  <div className="p-4 border-t border-[#141414] bg-white">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-xs">
+                        {user.displayName?.[0] || 'U'}
+                      </div>
+                      <div className="flex-grow">
+                        <p className="text-[10px] font-mono uppercase font-bold leading-none">{user.displayName}</p>
+                        <p className="text-[8px] font-mono opacity-40 truncate">{user.email}</p>
+                      </div>
+                      <button onClick={logout} className="p-2 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-full transition-colors">
+                        <LogOut className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 )}
-              </div>
-            </motion.div>
+              </motion.div>
+            </>
           )}
         </AnimatePresence>
 
