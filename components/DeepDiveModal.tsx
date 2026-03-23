@@ -19,7 +19,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import Markdown from 'react-markdown';
-import { Opportunity, DeepDiveResult } from './types';
+import { Opportunity, DeepDiveResult, MarketMode } from './types';
 import { CostEstimator } from './CostEstimator';
 import { GrantFinder } from './GrantFinder';
 import { InvestorMatch } from './InvestorMatch';
@@ -48,6 +48,7 @@ interface DeepDiveModalProps {
   generateDeepDive: (opp: Opportunity) => void;
   copyToClipboard: (text: string, id: string) => void;
   copied: string | null;
+  selectedMode: MarketMode;
 }
 
 export const DeepDiveModal: React.FC<DeepDiveModalProps> = ({
@@ -59,7 +60,8 @@ export const DeepDiveModal: React.FC<DeepDiveModalProps> = ({
   setActiveDeepDiveTab,
   generateDeepDive,
   copyToClipboard,
-  copied
+  copied,
+  selectedMode
 }) => {
   const [isSaved, setIsSaved] = React.useState(false);
   const [savedDocId, setSavedDocId] = React.useState<string | null>(null);
@@ -410,7 +412,7 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
                   )}
 
                   {activeDeepDiveTab === 'grants' && (
-                    <GrantFinder deepDiveResult={deepDiveResult} />
+                    <GrantFinder deepDiveResult={deepDiveResult} selectedMode={selectedMode} />
                   )}
 
                   {activeDeepDiveTab === 'checklist' && (
@@ -467,7 +469,7 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
 
                 <div className="print-section">
                   <h2 className="print-section-title">04. Grant & Funding Opportunities</h2>
-                  <GrantFinder deepDiveResult={deepDiveResult} />
+                  <GrantFinder deepDiveResult={deepDiveResult} selectedMode={selectedMode} />
                 </div>
 
                 <div className="print-section">

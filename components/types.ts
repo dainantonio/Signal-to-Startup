@@ -18,6 +18,17 @@ export interface Opportunity {
   money_score: number;
 }
 
+export type MarketMode = 'global' | 'caribbean' | 'uk' | 'africa';
+
+export interface MarketModeConfig {
+  id: MarketMode;
+  label: string;
+  flag: string;
+  description: string;
+  grantSources: string[];
+  promptContext: string;
+}
+
 export interface AnalysisResult {
   id?: string;
   summary: string;
@@ -34,6 +45,7 @@ export interface AnalysisResult {
     first_steps: string[];
   };
   createdAt?: string;
+  marketMode?: MarketMode;
 }
 
 export interface DeepDiveResult {

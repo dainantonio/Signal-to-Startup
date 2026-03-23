@@ -1,13 +1,18 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { Coins, Check, Lightbulb } from 'lucide-react';
-import { DeepDiveResult } from './types';
+import { DeepDiveResult, MarketMode } from './types';
+import { marketModeConfigs } from './MarketModeSelector';
 
 interface GrantFinderProps {
   deepDiveResult: DeepDiveResult;
+  selectedMode: MarketMode;
 }
 
-export const GrantFinder: React.FC<GrantFinderProps> = ({ deepDiveResult }) => {
+export const GrantFinder: React.FC<GrantFinderProps> = ({ deepDiveResult, selectedMode }) => {
+  const modeConfig = marketModeConfigs[selectedMode];
+  const hasModeSpecificGrants = selectedMode !== 'global' && modeConfig.grantSources.length > 0;
+
   return (
     <motion.div
       key="grants"
@@ -22,6 +27,25 @@ export const GrantFinder: React.FC<GrantFinderProps> = ({ deepDiveResult }) => {
         </div>
         <h3 className="text-2xl font-serif italic tracking-tight">Non-Dilutive Funding</h3>
       </div>
+
+      {hasModeSpecificGrants && (
+        <div className="bg-amber-50 border-2 border-[#141414] p-6 shadow-[4px_4px_0px_0px_rgba(20,20,20,1)] mb-8">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="text-xl">{modeConfig.flag}</span>
+            <h4 className="font-mono text-xs uppercase font-bold tracking-widest">
+              Recommended for {modeConfig.label}:
+            </h4>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {modeConfig.grantSources.map((grant, i) => (
+              <div key={`mode-${i}`} className="flex items-center gap-3 bg-white border border-[#141414] p-3 shadow-[2px_2px_0px_0px_rgba(20,20,20,1)]">
+                <div className="w-2 h-2 bg-amber-500 rounded-full" />
+                <span className="text-[10px] font-mono uppercase font-bold">{grant}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {deepDiveResult.grants.map((grant, i) => (

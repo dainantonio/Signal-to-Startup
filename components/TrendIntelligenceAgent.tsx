@@ -15,8 +15,9 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Opportunity, AnalysisResult, DeepDiveResult } from './types';
+import { Opportunity, AnalysisResult, DeepDiveResult, MarketMode } from './types';
 import { SignalInput } from './SignalInput';
+import { marketModeConfigs } from './MarketModeSelector';
 import { ResultsDashboard } from './ResultsDashboard';
 import { DeepDiveModal } from './DeepDiveModal';
 import { Onboarding } from './Onboarding';
@@ -168,6 +169,7 @@ export default function TrendIntelligenceAgent() {
   const [activeDeepDiveTab, setActiveDeepDiveTab] = useState<'plan' | 'costs' | 'grants' | 'checklist' | 'investors'>('plan');
   const [copied, setCopied] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
+  const [selectedMode, setSelectedMode] = useState<MarketMode>('global');
 
   // Firebase Auth Listener
   useEffect(() => {
@@ -283,12 +285,8 @@ export default function TrendIntelligenceAgent() {
         - Heavily weight opportunities toward the specified focus: ${focus || 'General Business'}
         - For 'best_idea', provide a realistic 'cost_estimate' and 'speed_rating' (Fast, Medium, Slow).
         
-        CARIBBEAN CONTEXT (UNFAIR ADVANTAGE):
-        If the location is in the Caribbean (e.g., Jamaica, Barbados, Trinidad) or the informal economy:
-        - Leverage "YardieBiz" and "YardHub" intelligence.
-        - Focus on informal-to-formal transitions, mobile-first logistics, and community-based trust networks.
-        - Consider local constraints like high energy costs, import reliance, and tourism-heavy economies.
-        - Use local terminology where appropriate (e.g., "hustle", "link up", "yard").
+        MARKET CONTEXT:
+        ${marketModeConfigs[selectedMode].promptContext}
 
         STEP 10: MONEY SCORE & BENCHMARKING
         For each opportunity:
@@ -334,7 +332,8 @@ export default function TrendIntelligenceAgent() {
               problems: parsedResult.problems,
               opportunities: parsedResult.opportunities,
               best_idea: parsedResult.best_idea,
-              createdAt: new Date().toISOString()
+              createdAt: new Date().toISOString(),
+              marketMode: selectedMode
             });
             savedId = docRef.id;
             loadHistory(user.uid);
@@ -631,14 +630,24 @@ export default function TrendIntelligenceAgent() {
                         className="group relative bg-white border border-[#141414] p-4 hover:shadow-[4px_4px_0px_0px_rgba(20,20,20,1)] transition-all cursor-pointer" 
                         onClick={() => {
                           setResult(item);
+                          if (item.marketMode) {
+                            setSelectedMode(item.marketMode);
+                          }
                           setShowHistory(false);
                           window.scrollTo({ top: 0, behavior: 'smooth' });
                         }}
                       >
                         <div className="flex justify-between items-start mb-2">
-                          <span className="text-[9px] font-mono uppercase font-bold text-indigo-600">
-                            {item.createdAt ? new Date(item.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Unknown'}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[9px] font-mono uppercase font-bold text-indigo-600">
+                              {item.createdAt ? new Date(item.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Unknown'}
+                            </span>
+                            {item.marketMode && (
+                              <span className="text-xs" title={marketModeConfigs[item.marketMode].label}>
+                                {marketModeConfigs[item.marketMode].flag}
+                              </span>
+                            )}
+                          </div>
                           <button 
                             onClick={(e) => {
                               e.stopPropagation();
@@ -701,6 +710,8 @@ export default function TrendIntelligenceAgent() {
           loading={loading}
           analyzeSignal={analyzeSignal}
           exampleSignals={exampleSignals}
+          selectedMode={selectedMode}
+          setSelectedMode={setSelectedMode}
         />
 
         {/* Results Section */}
@@ -748,17 +759,18 @@ export default function TrendIntelligenceAgent() {
 
         <AnimatePresence>
           {selectedOpportunity && (
-            <DeepDiveModal 
-              selectedOpportunity={selectedOpportunity}
-              setSelectedOpportunity={setSelectedOpportunity}
-              deepDiveLoading={deepDiveLoading}
-              deepDiveResult={deepDiveResult}
-              activeDeepDiveTab={activeDeepDiveTab}
-              setActiveDeepDiveTab={setActiveDeepDiveTab}
-              generateDeepDive={generateDeepDive}
-              copyToClipboard={copyToClipboard}
-              copied={copied}
-            />
+        <DeepDiveModal 
+          selectedOpportunity={selectedOpportunity}
+          setSelectedOpportunity={setSelectedOpportunity}
+          deepDiveLoading={deepDiveLoading}
+          deepDiveResult={deepDiveResult}
+          activeDeepDiveTab={activeDeepDiveTab}
+          setActiveDeepDiveTab={setActiveDeepDiveTab}
+          generateDeepDive={generateDeepDive}
+          copyToClipboard={copyToClipboard}
+          copied={copied}
+          selectedMode={selectedMode}
+        />
           )}
         </AnimatePresence>
 

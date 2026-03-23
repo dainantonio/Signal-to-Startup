@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Lightbulb, MapPin, Zap, TrendingUp, Loader2, X, RefreshCw, Radio } from 'lucide-react';
+import { MarketMode } from './types';
+import { MarketModeSelector } from './MarketModeSelector';
 
 interface Signal {
   title: string;
@@ -24,6 +26,8 @@ interface SignalInputProps {
   loading: boolean;
   analyzeSignal: () => void;
   exampleSignals: { label: string; text: string; location: string; focus: string }[];
+  selectedMode: MarketMode;
+  setSelectedMode: (mode: MarketMode) => void;
 }
 
 export const SignalInput: React.FC<SignalInputProps> = ({
@@ -39,7 +43,9 @@ export const SignalInput: React.FC<SignalInputProps> = ({
   setFocus,
   loading,
   analyzeSignal,
-  exampleSignals
+  exampleSignals,
+  selectedMode,
+  setSelectedMode
 }) => {
   const [inputMode, setInputMode] = useState<'paste' | 'feed'>('paste');
   const [signals, setSignals] = useState<Signal[]>([]);
@@ -283,26 +289,36 @@ export const SignalInput: React.FC<SignalInputProps> = ({
         </div>
       </div>
 
-      <div className="bg-white border border-[#141414] p-6 space-y-4">
-        <h3 className="font-serif italic text-xl border-b border-[#141414] pb-2">Agent Directives</h3>
-        <ul className="space-y-3 text-sm font-mono">
-          <li className="flex gap-2">
-            <span className="text-[#141414] font-bold">01</span>
-            <span>Identify regulatory & tech shifts</span>
-          </li>
-          <li className="flex gap-2">
-            <span className="text-[#141414] font-bold">02</span>
-            <span>Focus on execution speed</span>
-          </li>
-          <li className="flex gap-2">
-            <span className="text-[#141414] font-bold">03</span>
-            <span>Target underserved markets</span>
-          </li>
-          <li className="flex gap-2">
-            <span className="text-[#141414] font-bold">04</span>
-            <span>Monetization-first thinking</span>
-          </li>
-        </ul>
+      <div className="space-y-6">
+        <div className="bg-white border border-[#141414] p-6 space-y-4">
+          <h3 className="font-serif italic text-xl border-b border-[#141414] pb-2">Agent Directives</h3>
+          <ul className="space-y-3 text-sm font-mono">
+            <li className="flex gap-2">
+              <span className="text-[#141414] font-bold">01</span>
+              <span>Identify regulatory & tech shifts</span>
+            </li>
+            <li className="flex gap-2">
+              <span className="text-[#141414] font-bold">02</span>
+              <span>Focus on execution speed</span>
+            </li>
+            <li className="flex gap-2">
+              <span className="text-[#141414] font-bold">03</span>
+              <span>Target underserved markets</span>
+            </li>
+            <li className="flex gap-2">
+              <span className="text-[#141414] font-bold">04</span>
+              <span>Monetization-first thinking</span>
+            </li>
+          </ul>
+        </div>
+
+        <div className="bg-white border border-[#141414] p-6 space-y-4">
+          <h3 className="font-serif italic text-xl border-b border-[#141414] pb-2">Market Mode</h3>
+          <MarketModeSelector selectedMode={selectedMode} onModeChange={setSelectedMode} />
+          <p className="text-[10px] font-mono opacity-60 leading-relaxed">
+            Switching modes adjusts the AI's strategic context and recommended funding sources.
+          </p>
+        </div>
       </div>
     </section>
   );
