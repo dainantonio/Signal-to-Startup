@@ -35,6 +35,23 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
   shareOnTwitter,
   shareOnLinkedIn
 }) => {
+  const avgCost = filteredOpportunities.length > 0
+    ? `$${Math.round(filteredOpportunities.reduce((acc, curr) => acc + curr.startup_cost, 0) / filteredOpportunities.length).toLocaleString()}`
+    : '—';
+
+  const avgSpeedVal = filteredOpportunities.length > 0
+    ? filteredOpportunities.reduce((acc, curr) => acc + curr.speed_to_launch, 0) / filteredOpportunities.length
+    : null;
+
+  let avgSpeed = '—';
+  if (avgSpeedVal !== null) {
+    const s = Math.round(avgSpeedVal);
+    if (s >= 9) avgSpeed = "Under 7 Days";
+    else if (s >= 7) avgSpeed = "7-14 Days";
+    else if (s >= 4) avgSpeed = "2-3 Weeks";
+    else avgSpeed = "30+ Days";
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -248,11 +265,11 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
               <div className="flex flex-wrap gap-6 pt-6">
                 <div className="flex flex-col">
                   <span className="text-[10px] font-mono uppercase opacity-40 mb-1">Avg. Cost</span>
-                  <span className="text-2xl font-serif italic">$1,450</span>
+                  <span className="text-2xl font-serif italic">{avgCost}</span>
                 </div>
                 <div className="flex flex-col">
                   <span className="text-[10px] font-mono uppercase opacity-40 mb-1">Avg. Speed</span>
-                  <span className="text-2xl font-serif italic">14 Days</span>
+                  <span className="text-2xl font-serif italic">{avgSpeed}</span>
                 </div>
               </div>
             </div>
