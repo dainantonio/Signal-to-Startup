@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { Lightbulb, Zap, Target, ArrowRight, ShieldCheck, BarChart3 } from 'lucide-react';
 import demoResultData from '../demo-result.json';
 import { OpportunityCard } from './OpportunityCard';
