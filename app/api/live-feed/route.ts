@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const NEWS_API_KEY = process.env.NEXT_PUBLIC_NEWS_API_KEY;
+// FIX: Removed NEXT_PUBLIC_ prefix — this key is server-side only and must never reach the browser
+const NEWS_API_KEY = process.env.NEWS_API_KEY;
 
 const DEMO_SIGNALS = [
   {
@@ -46,11 +47,11 @@ export async function GET(req: NextRequest) {
       categories.map(async (cat) => {
         const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(cat.query)}&pageSize=5&sortBy=publishedAt&apiKey=${NEWS_API_KEY}`;
         const res = await fetch(url, { next: { revalidate: 1800 } }); // 30 minutes cache
-        
+
         if (!res.ok) {
           throw new Error(`NewsAPI failed for ${cat.query}`);
         }
-        
+
         const data = await res.json();
         return (data.articles || []).map((article: any) => ({
           title: article.title,
@@ -64,7 +65,7 @@ export async function GET(req: NextRequest) {
     );
 
     const allSignals = results.flat();
-    
+
     // Sort by publishedAt desc and take top 12
     const sortedSignals = allSignals
       .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())

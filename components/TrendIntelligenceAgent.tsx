@@ -256,8 +256,8 @@ export default function TrendIntelligenceAgent() {
     setError(null);
     
     try {
-      const genAI = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
-      const model = "gemini-3-flash-preview";
+      const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+      const model = "gemini-2.5-flash";
       
       const prompt = `
         You are an AI Trend Intelligence Agent.
@@ -364,7 +364,7 @@ export default function TrendIntelligenceAgent() {
     
     try {
       const genAI = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
-      const model = "gemini-3-flash-preview";
+      const model = "gemini-2.5-flash";
       
       const prompt = `
         You are an AI Business Advisor.
