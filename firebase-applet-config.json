@@ -1,12 +1,9 @@
-import { initializeApp } from "firebase/app";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyASD7anENBY2GP8fAIH9vwZYlMLDOnWdH8",
-  authDomain: "signal-to-startup.firebaseapp.com",
-  projectId: "signal-to-startup",
-  storageBucket: "signal-to-startup.firebasestorage.app",
-  messagingSenderId: "388085130460",
-  appId: "1:388085130460:web:6f12c3e1f15ef30a81c019"
-};
-
-const app = initializeApp(firebaseConfig);
+{
+  "apiKey": "AIzaSyASD7anENBY2GP8fAIH9vwZYlMLDOnWdH8",
+  "authDomain": "signal-to-startup.firebaseapp.com",
+  "projectId": "signal-to-startup",
+  "storageBucket": "signal-to-startup.firebasestorage.app",
+  "messagingSenderId": "388085130460",
+  "appId": "1:388085130460:web:6f12c3e1f15ef30a81c019",
+  "firestoreDatabaseId": "(default)"
+}
