@@ -76,7 +76,6 @@ export default function SavedOpportunityPage() {
 
       setSavedOpp({ id: docSnap.id, ...data });
     } catch (err) {
-      // FIX: changed OperationType.READ to OperationType.GET
       handleFirestoreError(err, OperationType.GET, `saved_opportunities/${savedId}`);
       setError('Failed to load opportunity');
     } finally {
@@ -123,7 +122,6 @@ export default function SavedOpportunityPage() {
 
   return (
     <div className="min-h-screen bg-[#F5F5F0]">
-      {/* Header */}
       <header className="sticky top-0 z-40 bg-white border-b-2 border-[#141414] shadow-[0px_4px_0px_0px_rgba(20,20,20,0.1)]">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/dashboard" className="flex items-center gap-2 text-[10px] font-mono uppercase hover:opacity-60 transition-opacity">
@@ -141,12 +139,10 @@ export default function SavedOpportunityPage() {
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-10">
-          {/* Sidebar Tabs */}
           <div className="lg:col-span-1 space-y-3">
             <div className="bg-white border-2 border-[#141414] p-4 shadow-[4px_4px_0px_0px_rgba(20,20,20,1)]">
               <div className="text-[10px] font-mono uppercase opacity-50 mb-2">Opportunity Score</div>
               <div className="text-3xl font-bold font-serif italic mb-4">{Math.round(opp.money_score)}/100</div>
-              
               <div className="space-y-3 pt-4 border-t border-gray-100">
                 <p className="text-[10px] font-mono uppercase font-bold tracking-widest mb-2">Detailed Metrics</p>
                 {[
@@ -174,24 +170,10 @@ export default function SavedOpportunityPage() {
                 ))}
               </div>
             </div>
-            
             {['plan', 'costs', 'grants', 'checklist', 'investors'].map((tab) => {
-              const icons = {
-                plan: FileText,
-                costs: Calculator,
-                grants: Coins,
-                checklist: CheckSquare,
-                investors: Users
-              };
-              const labels = {
-                plan: 'Business Plan',
-                costs: 'Cost Estimator',
-                grants: 'Grant Finder',
-                checklist: 'Checklist',
-                investors: 'Investor Match'
-              };
+              const icons = { plan: FileText, costs: Calculator, grants: Coins, checklist: CheckSquare, investors: Users };
+              const labels = { plan: 'Business Plan', costs: 'Cost Estimator', grants: 'Grant Finder', checklist: 'Checklist', investors: 'Investor Match' };
               const Icon = icons[tab as keyof typeof icons];
-              
               return (
                 <button 
                   key={tab}
@@ -205,7 +187,6 @@ export default function SavedOpportunityPage() {
             })}
           </div>
 
-          {/* Main Content Area */}
           <div className="relative lg:col-span-3 bg-white border-2 border-[#141414] p-8 md:p-12 min-h-[600px] shadow-[8px_8px_0px_0px_rgba(20,20,20,1)]">
             <div className="absolute top-4 right-4">
               <button
@@ -220,54 +201,25 @@ export default function SavedOpportunityPage() {
                 }}
                 className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 border border-[#141414] text-[10px] font-mono uppercase hover:bg-[#141414] hover:text-[#E4E3E0] transition-all"
               >
-                {copied === activeTab ? (
-                  <><Check className="w-3 h-3" /> Copied</>
-                ) : (
-                  <><Copy className="w-3 h-3" /> Copy Text</>
-                )}
+                {copied === activeTab ? (<><Check className="w-3 h-3" /> Copied</>) : (<><Copy className="w-3 h-3" /> Copy Text</>)}
               </button>
             </div>
-
             <AnimatePresence mode="wait">
               {activeTab === 'plan' && (
-                <motion.div
-                  key="plan"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="space-y-8"
-                >
-                  <div className="bg-[#141414] text-[#E4E3E0] p-6 border-l-8 border-emerald-500 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)]">
+                <motion.div key="plan" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-8">
+                  <div className="bg-[#141414] text-[#E4E3E0] p-6 border-l-8 border-emerald-500">
                     <h3 className="text-xs font-mono uppercase tracking-[0.3em] mb-2 opacity-60 text-emerald-400">Executive Summary</h3>
-                    <p className="font-serif italic text-lg leading-relaxed">
-                      {opp.description}
-                    </p>
+                    <p className="font-serif italic text-lg leading-relaxed">{opp.description}</p>
                   </div>
-                  
-                  <div className="prose prose-sm max-w-none font-serif prose-headings:font-serif prose-headings:italic prose-headings:tracking-tight prose-p:leading-relaxed prose-headings:border-b prose-headings:border-gray-100 prose-headings:pb-2">
+                  <div className="prose prose-sm max-w-none font-serif prose-headings:font-serif prose-headings:italic">
                     <Markdown>{deepDive.business_plan}</Markdown>
                   </div>
                 </motion.div>
               )}
-
-              {activeTab === 'costs' && (
-                <CostEstimator deepDiveResult={deepDive} />
-              )}
-
-              {activeTab === 'grants' && (
-                <GrantFinder deepDiveResult={deepDive} selectedMode="global" />
-              )}
-
-              {activeTab === 'checklist' && (
-                <Checklist 
-                  deepDiveResult={deepDive} 
-                  savedDocId={savedOpp.id}
-                />
-              )}
-
-              {activeTab === 'investors' && (
-                <InvestorMatch deepDiveResult={deepDive} />
-              )}
+              {activeTab === 'costs' && <CostEstimator deepDiveResult={deepDive} />}
+              {activeTab === 'grants' && <GrantFinder deepDiveResult={deepDive} selectedMode="global" />}
+              {activeTab === 'checklist' && <Checklist deepDiveResult={deepDive} savedDocId={savedOpp.id} />}
+              {activeTab === 'investors' && <InvestorMatch deepDiveResult={deepDive} />}
             </AnimatePresence>
           </div>
         </div>
@@ -275,3 +227,4 @@ export default function SavedOpportunityPage() {
     </div>
   );
 }
+
