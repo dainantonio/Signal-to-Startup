@@ -88,6 +88,7 @@ export const Onboarding = () => {
               index={0} 
               isBestIdea={true} 
               generateDeepDive={() => {}} 
+              isReadOnly={true}
             />
           </div>
         </div>

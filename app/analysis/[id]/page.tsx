@@ -156,6 +156,7 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
                   index={i}
                   isBestIdea={opp.name === analysis.best_idea.name}
                   generateDeepDive={() => {}} 
+                  isReadOnly={true}
                 />
               ))}
             </div>

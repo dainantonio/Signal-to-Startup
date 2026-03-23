@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { motion } from 'motion/react';
 import { ChevronRight } from 'lucide-react';
 import { Opportunity } from './types';
@@ -10,13 +11,15 @@ interface OpportunityCardProps {
   index: number;
   isBestIdea: boolean;
   generateDeepDive: (opp: Opportunity) => void;
+  isReadOnly?: boolean;
 }
 
 export const OpportunityCard: React.FC<OpportunityCardProps> = ({
   opp,
   index,
   isBestIdea,
-  generateDeepDive
+  generateDeepDive,
+  isReadOnly = false
 }) => {
   const priorityColors = {
     High: {
@@ -145,13 +148,22 @@ export const OpportunityCard: React.FC<OpportunityCardProps> = ({
         </div>
       </div>
       
-      <button 
-        onClick={() => generateDeepDive(opp)}
-        className={`mt-8 w-full border-2 border-[#141414] py-4 text-[10px] font-mono uppercase tracking-[0.2em] font-bold transition-all flex items-center justify-center gap-3 group shadow-[4px_4px_0px_0px_rgba(20,20,20,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 ${priorityColors.accent} text-white border-none`}
-      >
-        Generate Execution Suite
-        <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-      </button>
+      {isReadOnly ? (
+        <Link 
+          href="/"
+          className={`mt-8 w-full border-2 border-[#141414] py-4 text-[10px] font-mono uppercase tracking-[0.2em] font-bold transition-all flex items-center justify-center gap-3 group shadow-[4px_4px_0px_0px_rgba(20,20,20,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 ${priorityColors.accent} text-white border-none text-center`}
+        >
+          Analyze Your Own Signal →
+        </Link>
+      ) : (
+        <button 
+          onClick={() => generateDeepDive(opp)}
+          className={`mt-8 w-full border-2 border-[#141414] py-4 text-[10px] font-mono uppercase tracking-[0.2em] font-bold transition-all flex items-center justify-center gap-3 group shadow-[4px_4px_0px_0px_rgba(20,20,20,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 ${priorityColors.accent} text-white border-none`}
+        >
+          Generate Execution Suite
+          <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+        </button>
+      )}
     </motion.div>
   );
 };
