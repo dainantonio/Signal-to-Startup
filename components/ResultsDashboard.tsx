@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { Share2, Twitter, Linkedin, AlertTriangle, Lightbulb, Trophy, Users, ChevronRight } from 'lucide-react';
+import { Share2, Twitter, Linkedin, AlertTriangle, Lightbulb, Trophy, Users, ChevronRight, Link as LinkIcon, Check } from 'lucide-react';
 import { AnalysisResult, Opportunity } from './types';
 import { OpportunityCard } from './OpportunityCard';
 
@@ -35,6 +35,15 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
   shareOnTwitter,
   shareOnLinkedIn
 }) => {
+  const [copied, setCopied] = useState(false);
+
+  const copyLink = () => {
+    const url = result.id ? `${window.location.origin}/analysis/${result.id}` : window.location.href;
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   const avgCost = filteredOpportunities.length > 0
     ? `$${Math.round(filteredOpportunities.reduce((acc, curr) => acc + curr.startup_cost, 0) / filteredOpportunities.length).toLocaleString()}`
     : '—';
@@ -66,6 +75,22 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
           <span className="text-xs font-mono uppercase tracking-widest opacity-60">Share Insights</span>
         </div>
         <div className="flex gap-4">
+          <button 
+            onClick={copyLink}
+            className="flex items-center gap-2 text-xs font-mono uppercase hover:underline min-w-[100px]"
+          >
+            {copied ? (
+              <>
+                <Check className="w-4 h-4 text-emerald-500" />
+                Copied!
+              </>
+            ) : (
+              <>
+                <LinkIcon className="w-4 h-4" />
+                Copy Link
+              </>
+            )}
+          </button>
           <button 
             onClick={shareOnTwitter}
             className="flex items-center gap-2 text-xs font-mono uppercase hover:underline"

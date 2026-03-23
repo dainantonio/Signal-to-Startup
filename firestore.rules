@@ -114,7 +114,7 @@ service cloud.firestore {
     }
 
     match /analyses/{analysisId} {
-      allow read: if isDocOwner() || isAdmin();
+      allow read: if true; // Publicly readable for sharing
       allow create: if isAuthenticated() && isValidAnalysis(request.resource.data);
       allow update: if isDocOwner() && isValidAnalysis(request.resource.data) &&
                       request.resource.data.userId == resource.data.userId;

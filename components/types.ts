@@ -19,6 +19,7 @@ export interface Opportunity {
 }
 
 export interface AnalysisResult {
+  id?: string;
   summary: string;
   trend: string;
   affected_groups: string[];

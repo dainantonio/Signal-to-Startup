@@ -319,9 +319,9 @@ export default function TrendIntelligenceAgent() {
 
       if (response.text) {
         const parsedResult = JSON.parse(response.text);
-        setResult(parsedResult);
-
+        
         // Save to Firebase if user is logged in
+        let savedId = '';
         if (user) {
           try {
             const docRef = await addDoc(collection(db, 'analyses'), {
@@ -335,11 +335,14 @@ export default function TrendIntelligenceAgent() {
               best_idea: parsedResult.best_idea,
               createdAt: new Date().toISOString()
             });
+            savedId = docRef.id;
             loadHistory(user.uid);
           } catch (err) {
             handleFirestoreError(err, OperationType.CREATE, 'analyses');
           }
         }
+
+        setResult({ ...parsedResult, id: savedId });
       } else {
         throw new Error("No response from AI");
       }
@@ -503,13 +506,13 @@ export default function TrendIntelligenceAgent() {
   const shareOnTwitter = () => {
     if (!result) return;
     const text = `AI Trend Intelligence: ${result.trend}\nBest Idea: ${result.best_idea.name}\n\nAnalyzed via AI Trend Intelligence Agent`;
-    const url = window.location.href;
+    const url = result.id ? `${window.location.origin}/analysis/${result.id}` : window.location.href;
     window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
   };
 
   const shareOnLinkedIn = () => {
     if (!result) return;
-    const url = window.location.href;
+    const url = result.id ? `${window.location.origin}/analysis/${result.id}` : window.location.href;
     window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank');
   };
 
