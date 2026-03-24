@@ -44,7 +44,7 @@ interface MarketModeSelectorProps {
 export const MarketModeSelector: React.FC<MarketModeSelectorProps> = ({ selectedMode, onModeChange }) => {
   return (
     <div className="space-y-2">
-      <p className="text-[10px] font-mono uppercase tracking-widest opacity-40">Market Context</p>
+      <p className="text-[10px] font-mono uppercase tracking-widest text-muted font-bold">Select Market</p>
       <div className="flex flex-wrap gap-2">
         {(Object.values(marketModeConfigs) as MarketModeConfig[]).map((config) => (
           <button

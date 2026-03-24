@@ -21,11 +21,12 @@ export const PipelineProgress: React.FC<PipelineProgressProps> = ({ currentStep,
 
             return (
               <React.Fragment key={step.id}>
-                <div className="flex items-center gap-3 group relative">
-                  <div 
+                <div className="flex flex-col items-center gap-1 md:flex-row md:items-center md:gap-3">
+                  <div
+                    aria-label={`Step ${step.id}: ${step.label}${isActive && currentStep > step.id ? ' (completed)' : isCurrent ? ' (current)' : ''}`}
                     className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-all duration-500 ${
-                      isActive 
-                        ? 'bg-foreground border-foreground text-background shadow-lg shadow-foreground/10' 
+                      isActive
+                        ? 'bg-foreground border-foreground text-background shadow-lg shadow-foreground/10'
                         : 'bg-white border-border/10 text-muted'
                     } ${isCurrent ? 'ring-2 ring-offset-2 ring-primary/50' : ''}`}
                   >
@@ -35,22 +36,18 @@ export const PipelineProgress: React.FC<PipelineProgressProps> = ({ currentStep,
                       <Icon size={16} strokeWidth={isActive ? 2.5 : 2} />
                     )}
                   </div>
-                  <div className="hidden md:flex flex-col">
-                    <span className={`text-[8px] font-mono uppercase tracking-widest transition-opacity duration-500 ${
+                  {/* Label: always visible on mobile (below icon), inline on md+ */}
+                  <div className="flex flex-col items-center md:items-start">
+                    <span className={`hidden md:block text-[8px] font-mono uppercase tracking-widest transition-opacity duration-500 ${
                       isActive ? 'opacity-40 font-bold' : 'opacity-20'
                     }`}>
                       Step 0{step.id}
                     </span>
-                    <span className={`text-[10px] font-mono uppercase tracking-widest transition-opacity duration-500 ${
+                    <span className={`text-[8px] md:text-[10px] font-mono uppercase tracking-widest transition-opacity duration-500 ${
                       isActive ? 'opacity-100 font-bold' : 'opacity-30'
                     }`}>
                       {step.label}
                     </span>
-                  </div>
-                  
-                  {/* Tooltip for mobile */}
-                  <div className="md:hidden absolute -bottom-10 left-1/2 -translate-x-1/2 bg-foreground text-background text-[8px] font-mono uppercase tracking-widest px-2 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none shadow-xl">
-                    {step.label}
                   </div>
                 </div>
                 {index < steps.length - 1 && (

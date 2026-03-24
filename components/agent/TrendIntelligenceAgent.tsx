@@ -161,7 +161,7 @@ export default function TrendIntelligenceAgent() {
                     <UserIcon className="w-3 h-3" />
                   </div>
                   <span className="text-[10px] font-mono uppercase font-bold hidden sm:inline">{user.displayName?.split(' ')[0]}</span>
-                  <button onClick={logout} className="ml-1 text-muted hover:text-red-500 transition-colors">
+                  <button onClick={logout} aria-label="Sign out" className="ml-1 text-muted hover:text-red-500 transition-colors">
                     <LogOut className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -215,6 +215,7 @@ export default function TrendIntelligenceAgent() {
                   </div>
                   <button
                     onClick={() => setShowHistory(false)}
+                    aria-label="Close history panel"
                     className="p-2 hover:bg-gray-100 rounded-full transition-colors"
                   >
                     <X className="w-5 h-5" />
@@ -269,6 +270,7 @@ export default function TrendIntelligenceAgent() {
                               e.stopPropagation();
                               analysis.deleteAnalysis(item.id);
                             }}
+                            aria-label="Delete analysis"
                             className="text-muted hover:text-red-500 transition-colors p-1"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -297,7 +299,7 @@ export default function TrendIntelligenceAgent() {
                         <p className="text-xs font-mono uppercase font-bold leading-none mb-1">{user.displayName}</p>
                         <p className="text-[10px] font-mono text-muted truncate">{user.email}</p>
                       </div>
-                      <button onClick={logout} className="p-2.5 hover:bg-red-50 text-muted hover:text-red-500 rounded-xl transition-colors">
+                      <button onClick={logout} aria-label="Sign out" className="p-2.5 hover:bg-red-50 text-muted hover:text-red-500 rounded-xl transition-colors">
                         <LogOut className="w-5 h-5" />
                       </button>
                     </div>
@@ -360,12 +362,8 @@ export default function TrendIntelligenceAgent() {
               filteredOpportunities={analysis.filteredOpportunities}
               filterType={analysis.filterType}
               setFilterType={analysis.setFilterType}
-              minScore={analysis.minScore}
-              setMinScore={analysis.setMinScore}
               grantOnly={analysis.grantOnly}
               setGrantOnly={analysis.setGrantOnly}
-              maxCost={analysis.maxCost}
-              setMaxCost={analysis.setMaxCost}
               generateDeepDive={analysis.generateDeepDive}
               shareOnTwitter={analysis.shareOnTwitter}
               shareOnLinkedIn={analysis.shareOnLinkedIn}

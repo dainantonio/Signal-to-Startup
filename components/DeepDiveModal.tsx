@@ -217,10 +217,10 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
         {/* Modal Header */}
         <div className="border-b border-border/10 p-4 md:p-6 flex items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-20 no-print">
           <div className="flex items-center gap-3 md:gap-4">
-            <button 
+            <button
               onClick={() => setSelectedOpportunity(null)}
               className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
-              title="Back to list"
+              aria-label="Back to opportunities list"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
@@ -270,7 +270,7 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
               <button
                 onClick={exportToPDF}
                 className="p-2.5 hover:bg-gray-100 rounded-xl transition-colors text-muted"
-                title="Export PDF"
+                aria-label="Export as PDF"
               >
                 <Download size={18} />
               </button>
@@ -278,8 +278,9 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
 
             {/* Mobile Actions Menu */}
             <div className="lg:hidden relative">
-              <button 
+              <button
                 onClick={() => setShowActions(!showActions)}
+                aria-label="More actions"
                 className="p-2.5 hover:bg-gray-100 rounded-xl transition-colors"
               >
                 <MoreVertical className="w-5 h-5" />
@@ -346,8 +347,9 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
               </AnimatePresence>
             </div>
 
-            <button 
+            <button
               onClick={() => setSelectedOpportunity(null)}
+              aria-label="Close execution suite"
               className="p-2.5 hover:bg-gray-100 rounded-xl transition-colors"
             >
               <X className="w-6 h-6" />

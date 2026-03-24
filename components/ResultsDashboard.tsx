@@ -11,12 +11,8 @@ interface ResultsDashboardProps {
   filteredOpportunities: Opportunity[];
   filterType: 'top' | 'hot' | 'fast';
   setFilterType: (type: 'top' | 'hot' | 'fast') => void;
-  minScore: number;
-  setMinScore: (score: number) => void;
   grantOnly: boolean;
   setGrantOnly: (val: boolean) => void;
-  maxCost: number;
-  setMaxCost: (val: number) => void;
   generateDeepDive: (opp: Opportunity) => void;
   shareOnTwitter: () => void;
   shareOnLinkedIn: () => void;
