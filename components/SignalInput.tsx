@@ -258,10 +258,12 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                         <span className="text-[9px] font-mono text-muted truncate">
                           {sig.source}
                           {sig.url && sig.url !== '#' && (
-                            <a href={sig.url} target="_blank" rel="noopener noreferrer" className="ml-2 text-primary hover:underline" onClick={e => e.stopPropagation()}>↗</a>
+                            <a href={sig.url} target="_blank" rel="noopener noreferrer" aria-label={`Read full article: ${sig.title}`} className="ml-2 text-primary hover:underline" onClick={e => e.stopPropagation()}>↗</a>
                           )}
                         </span>
-                        <button onClick={() => onAnalyzeSignal(sig)}
+                        <button
+                          onClick={() => onAnalyzeSignal(sig)}
+                          aria-label={`Analyze: ${sig.title}`}
                           className="flex-shrink-0 px-4 py-2 bg-foreground text-background rounded-xl font-mono text-[9px] uppercase tracking-widest hover:bg-foreground/90 transition-all shadow-sm">
                           Analyze →
                         </button>

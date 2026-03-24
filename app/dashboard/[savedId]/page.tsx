@@ -217,7 +217,7 @@ export default function SavedOpportunityPage() {
               {/* Content Header */}
               <div className="px-8 py-6 border-b border-border/5 flex items-center justify-between bg-gray-50/30">
                 <div className="flex items-center gap-3">
-                  {tabs.find(t => t.id === activeTab)?.icon && React.createElement(tabs.find(t => t.id === activeTab)!.icon, { className: "w-5 h-5 text-primary" })}
+                  {(() => { const t = tabs.find(t => t.id === activeTab); return t ? <t.icon className="w-5 h-5 text-primary" /> : null; })()}
                   <h2 className="text-sm font-mono uppercase font-bold tracking-widest">{tabs.find(t => t.id === activeTab)?.label}</h2>
                 </div>
                 <div className="flex items-center gap-2">
@@ -235,7 +235,11 @@ export default function SavedOpportunityPage() {
                   >
                     {copied === activeTab ? (<><Check className="w-3.5 h-3.5 text-secondary" /> Copied</>) : (<><Copy className="w-3.5 h-3.5" /> Copy Text</>)}
                   </button>
-                  <button className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-muted">
+                  <button
+                    aria-label="Print / save as PDF"
+                    onClick={() => window.print()}
+                    className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-muted"
+                  >
                     <Download className="w-4 h-4" />
                   </button>
                 </div>
