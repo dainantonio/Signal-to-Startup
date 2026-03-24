@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 @plugin "@tailwindcss/typography";
 
 @theme {
@@ -45,6 +46,10 @@
   }
 }
 
+/* Hide scrollbar utility */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
@@ -72,22 +77,4 @@
   min-height: 100dvh;
 }
 
-@media print {
-  body > * {
-    display: none !important;
-  }
-  
-  .print-target,
-  .print-target * {
-    display: block !important;
-  }
-  
-  .print-target {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    padding: 2rem;
-    background: white;
-  }
-}
+/* Print styles are handled inline by DeepDiveModal and Checklist components. */
