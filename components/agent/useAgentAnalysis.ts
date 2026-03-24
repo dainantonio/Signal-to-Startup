@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { GoogleGenAI, Type } from '@google/genai';
 import { Opportunity, AnalysisResult, DeepDiveResult, MarketMode } from '../types';
 import { marketModeConfigs } from '../MarketModeSelector';
@@ -134,6 +134,8 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
   const [minScore, setMinScore] = useState(0);
   const [grantOnly, setGrantOnly] = useState(false);
   const [maxCost, setMaxCost] = useState(2000);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
   const [selectedOpportunity, setSelectedOpportunity] = useState<Opportunity | null>(null);
   const [deepDiveResult, setDeepDiveResult] = useState<DeepDiveResult | null>(null);
   const [deepDiveLoading, setDeepDiveLoading] = useState(false);
@@ -195,8 +197,18 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
     }
   };
 
+  const cancelAnalysis = () => {
+    abortControllerRef.current?.abort();
+    setLoading(false);
+    setResult(null);
+  };
+
   const analyzeSignal = async () => {
     if (!input.trim()) return;
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    const { signal } = controller;
 
     setLoading(true);
     setError(null);
@@ -264,8 +276,12 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
         },
       });
 
+      if (signal.aborted) return;
+
       if (response.text) {
         const parsedResult = JSON.parse(response.text);
+
+        if (signal.aborted) return;
 
         let savedId = '';
         if (user) {
@@ -285,19 +301,29 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
             savedId = docRef.id;
             loadHistory(user.uid);
           } catch (err) {
-            console.error('Failed to save analysis to Firestore:', err);
+            if (!signal.aborted) {
+              console.error('Failed to save analysis to Firestore:', err);
+            }
           }
         }
 
-        setResult({ ...parsedResult, id: savedId });
+        if (!signal.aborted) {
+          setResult({ ...parsedResult, id: savedId });
+        }
       } else {
-        throw new Error('No response from AI');
+        if (!signal.aborted) {
+          throw new Error('No response from AI');
+        }
       }
     } catch (err) {
-      console.error(err);
-      setError('Failed to analyze signal. Please check your input and try again.');
+      if (!signal.aborted) {
+        console.error(err);
+        setError('Failed to analyze signal. Please check your input and try again.');
+      }
     } finally {
-      setLoading(false);
+      if (!signal.aborted) {
+        setLoading(false);
+      }
     }
   };
 
@@ -408,6 +434,7 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
     deepDiveLoading,
     activeDeepDiveTab, setActiveDeepDiveTab,
     analyzeSignal,
+    cancelAnalysis,
     generateDeepDive,
     deleteAnalysis,
     filteredOpportunities,

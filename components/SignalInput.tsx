@@ -20,6 +20,7 @@ interface SignalInputProps {
   setFocus: (val: string) => void;
   loading: boolean;
   analyzeSignal: () => void;
+  cancelAnalysis: () => void;
   exampleSignals: { label: string; text: string; location: string; focus: string }[];
   selectedMode: MarketMode;
   setSelectedMode: (mode: MarketMode) => void;
@@ -27,7 +28,7 @@ interface SignalInputProps {
 
 export const SignalInput: React.FC<SignalInputProps> = ({
   input, setInput, urlInput, setUrlInput, fetchingUrl, fetchUrl,
-  location, setLocation, focus, setFocus, loading, analyzeSignal,
+  location, setLocation, focus, setFocus, loading, analyzeSignal, cancelAnalysis,
   exampleSignals, selectedMode, setSelectedMode,
 }) => {
   const [inputMode, setInputMode] = useState<'paste' | 'feed'>('paste');
@@ -296,10 +297,32 @@ export const SignalInput: React.FC<SignalInputProps> = ({
           </div>
         </div>
         <MarketModeSelector selectedMode={selectedMode} onModeChange={setSelectedMode} />
-        <button onClick={analyzeSignal} disabled={loading || !input.trim()}
-          className="w-full bg-primary text-white py-5 rounded-2xl font-mono text-sm uppercase tracking-widest hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-3 shadow-xl shadow-primary/20 active:scale-[0.98]">
-          {loading ? (<><Loader2 className="w-5 h-5 animate-spin" />Analyzing Signal...</>) : (<><TrendingUp className="w-5 h-5" />Extract Opportunities</>)}
-        </button>
+        {loading ? (
+          <div className="flex gap-3">
+            <div className="flex-1 flex items-center justify-center gap-3 bg-primary/50 text-white py-5 rounded-2xl font-mono text-sm uppercase tracking-widest cursor-not-allowed select-none">
+              <Loader2 className="w-5 h-5 animate-spin" />
+              Analyzing Signal...
+            </div>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); cancelAnalysis(); }}
+              aria-label="Cancel analysis"
+              className="px-5 py-5 bg-white border border-border/10 rounded-2xl text-muted hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition-all shadow-sm"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={analyzeSignal}
+            disabled={!input.trim()}
+            className="w-full bg-primary text-white py-5 rounded-2xl font-mono text-sm uppercase tracking-widest hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-3 shadow-xl shadow-primary/20 active:scale-[0.98]"
+          >
+            <TrendingUp className="w-5 h-5" />
+            Extract Opportunities
+          </button>
+        )}
       </div>
     </section>
   );
