@@ -34,9 +34,38 @@ export const SignalInput: React.FC<SignalInputProps> = ({
   const [signals, setSignals] = useState<FeedSignal[]>([]);
   const [fetchingFeed, setFetchingFeed] = useState(false);
   const [lastFetchKey, setLastFetchKey] = useState('');
+  const [duplicatesRemoved, setDuplicatesRemoved] = useState(0);
   const [filters, setFilters] = useState<FeedFilters>({ sectors: ALL_SECTORS, recency: '3d' });
 
   const fetchKey = `${selectedMode}|${filters.sectors.join(',')}|${filters.recency}|${focus}`;
+
+  const deduplicateSignals = (raw: FeedSignal[]): { signals: FeedSignal[]; removed: number } => {
+    const seenUrls = new Set<string>();
+    const deduped: FeedSignal[] = [];
+
+    for (const sig of raw) {
+      // URL deduplication
+      if (sig.url && sig.url !== '#') {
+        if (seenUrls.has(sig.url)) continue;
+        seenUrls.add(sig.url);
+      }
+
+      // Title similarity deduplication (>70% word overlap)
+      const words = (t: string) => new Set(t.toLowerCase().split(/\s+/).filter(w => w.length > 2));
+      const titleWords = words(sig.title);
+      const isTitleDuplicate = deduped.some(existing => {
+        const existingWords = words(existing.title);
+        const shared = [...titleWords].filter(w => existingWords.has(w)).length;
+        return shared / Math.max(titleWords.size, existingWords.size) > 0.7;
+      });
+
+      if (!isTitleDuplicate) {
+        deduped.push(sig);
+      }
+    }
+
+    return { signals: deduped, removed: raw.length - deduped.length };
+  };
 
   const fetchFeed = useCallback(async (force = false) => {
     if (!force && fetchKey === lastFetchKey && signals.length > 0) return;
@@ -50,7 +79,10 @@ export const SignalInput: React.FC<SignalInputProps> = ({
       });
       const res = await fetch(`/api/live-feed?${params.toString()}`);
       if (!res.ok) throw new Error('Feed fetch failed');
-      setSignals(await res.json());
+      const raw: FeedSignal[] = await res.json();
+      const { signals: deduped, removed } = deduplicateSignals(raw);
+      setSignals(deduped);
+      setDuplicatesRemoved(removed);
       setLastFetchKey(fetchKey);
     } catch (err) {
       console.error('Feed error:', err);
@@ -179,6 +211,11 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                 <span className="w-2 h-2 bg-red-400 rounded-full animate-pulse" />
                 {selectedMode !== 'global' ? `${selectedMode} signals` : 'Global'}
               </span>
+              {duplicatesRemoved > 0 && (
+                <span className="text-[9px] font-mono uppercase tracking-wider text-muted bg-gray-100 border border-border/10 px-2 py-1 rounded-full">
+                  {duplicatesRemoved} duplicate{duplicatesRemoved > 1 ? 's' : ''} removed
+                </span>
+              )}
               <button onClick={() => fetchFeed(true)} disabled={fetchingFeed}
                 className="p-2 hover:bg-white border border-transparent hover:border-border/10 rounded-lg transition-all text-muted hover:text-foreground" title="Refresh">
                 <RefreshCw className={`w-4 h-4 ${fetchingFeed ? 'animate-spin' : ''}`} />
