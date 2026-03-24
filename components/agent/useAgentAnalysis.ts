@@ -287,7 +287,7 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
             savedId = docRef.id;
             loadHistory(user.uid);
           } catch (err) {
-            handleFirestoreError(err, OperationType.CREATE, 'analyses');
+            console.error('Failed to save analysis to Firestore:', err);
           }
         }
 
