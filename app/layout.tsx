@@ -21,6 +21,21 @@ const jetbrains = JetBrains_Mono({
 export const metadata: Metadata = {
   title: 'Signal to Startup — Turn Market Signals into Business Ideas',
   description: 'Analyze news, policy, and market signals to identify actionable, low-cost business opportunities. Powered by AI.',
+  manifest: '/manifest.json',
+  icons: {
+    icon: [
+      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Signal to Startup',
+  },
   openGraph: {
     title: 'Signal to Startup',
     description: 'Turn news and market signals into actionable business opportunities. Powered by Gemini AI.',
@@ -37,6 +52,17 @@ export const metadata: Metadata = {
 export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
     <html lang="en" className={`${inter.variable} ${playfair.variable} ${jetbrains.variable}`}>
+      <head>
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" href="/favicon-32x32.png" type="image/png" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#0f0f0f" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="Signal to Startup" />
+      </head>
       <body suppressHydrationWarning className="font-sans flex flex-col min-h-screen">
         <div className="flex-1">{children}</div>
         <footer className="border-t border-border/10 bg-white/60 backdrop-blur-sm">
