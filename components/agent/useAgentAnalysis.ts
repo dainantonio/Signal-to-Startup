@@ -314,10 +314,14 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
     }
     console.log('[KEY] Gemini API key present:', true);
 
-    // Return cached result immediately
+    // Return cached result — cycle loading true→false so card pop-out clears
     if (analysisCache.has(signalText)) {
       console.log('[CACHE HIT] returning cached result');
+      setLoading(true);
       setResult(analysisCache.get(signalText)!);
+      // requestAnimationFrame ensures loading=true commits before false,
+      // triggering the prevLoadingRef transition detector in SignalInput
+      requestAnimationFrame(() => setLoading(false));
       return;
     }
 
