@@ -442,7 +442,7 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
                         <Coins className="w-4 h-4" />
                         <span className="text-[10px] font-mono uppercase font-bold tracking-widest">Funding & Grant Opportunities</span>
                       </div>
-                      <GrantFinder grants={deepDiveResult.grants} />
+                      <GrantFinder deepDiveResult={deepDiveResult} selectedMode={selectedMode} />
                     </div>
                   )}
 
@@ -452,7 +452,7 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
                         <CheckSquare className="w-4 h-4" />
                         <span className="text-[10px] font-mono uppercase font-bold tracking-widest">30-Day Execution Checklist</span>
                       </div>
-                      <Checklist items={deepDiveResult.checklist} />
+                      <Checklist deepDiveResult={deepDiveResult} savedDocId={savedDocId} />
                     </div>
                   )}
 
@@ -462,7 +462,7 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
                         <Users className="w-4 h-4" />
                         <span className="text-[10px] font-mono uppercase font-bold tracking-widest">Potential Investor Match</span>
                       </div>
-                      <InvestorMatch investors={deepDiveResult.investors} />
+                      <InvestorMatch deepDiveResult={deepDiveResult} />
                     </div>
                   )}
                 </motion.div>
