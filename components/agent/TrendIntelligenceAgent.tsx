@@ -26,7 +26,7 @@ import { useAgentAuth } from './useAgentAuth';
 import { useAgentAnalysis } from './useAgentAnalysis';
 
 export default function TrendIntelligenceAgent() {
-  const { user, login, logout } = useAgentAuth();
+  const { user, login, logout, loginError } = useAgentAuth();
 
   const [showHistory, setShowHistory] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
@@ -175,13 +175,18 @@ export default function TrendIntelligenceAgent() {
                 >
                   <History className="w-5 h-5 text-muted" />
                 </button>
-                <button
-                  onClick={login}
-                  className="flex items-center gap-2 bg-foreground text-background px-5 py-2.5 text-[10px] font-mono uppercase tracking-widest hover:bg-foreground/90 transition-all shadow-lg shadow-foreground/10 rounded-lg"
-                >
-                  <LogIn className="w-3.5 h-3.5" />
-                  Login to Save
-                </button>
+                <div className="flex flex-col items-end gap-1">
+                  <button
+                    onClick={login}
+                    className="flex items-center gap-2 bg-foreground text-background px-5 py-2.5 text-[10px] font-mono uppercase tracking-widest hover:bg-foreground/90 transition-all shadow-lg shadow-foreground/10 rounded-lg"
+                  >
+                    <LogIn className="w-3.5 h-3.5" />
+                    Login to Save
+                  </button>
+                  {loginError && (
+                    <p className="text-[10px] font-mono text-red-500">{loginError}</p>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -239,6 +244,9 @@ export default function TrendIntelligenceAgent() {
                         <Globe className="w-4 h-4" />
                         Sign in with Google
                       </button>
+                      {loginError && (
+                        <p className="text-[10px] font-mono text-red-500 text-center">{loginError}</p>
+                      )}
                     </div>
                   ) : analysis.history.length > 0 ? (
                     analysis.history.map((item) => (

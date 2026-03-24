@@ -18,8 +18,19 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'AI Trend Intelligence Agent',
-  description: 'Analyze news and market signals to identify actionable business opportunities.',
+  title: 'Signal to Startup — Turn Market Signals into Business Ideas',
+  description: 'Analyze news, policy, and market signals to identify actionable, low-cost business opportunities. Powered by AI.',
+  openGraph: {
+    title: 'Signal to Startup',
+    description: 'Turn news and market signals into actionable business opportunities. Powered by Gemini AI.',
+    type: 'website',
+    siteName: 'Signal to Startup',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Signal to Startup',
+    description: 'Turn news and market signals into actionable business opportunities. Powered by Gemini AI.',
+  },
 };
 
 export default function RootLayout({children}: {children: React.ReactNode}) {

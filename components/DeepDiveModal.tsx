@@ -258,7 +258,7 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
                 className="flex items-center gap-2 px-4 py-2.5 bg-foreground text-background rounded-xl text-[10px] font-mono uppercase font-bold hover:bg-foreground/90 transition-all shadow-lg shadow-foreground/10"
               >
                 {copied === 'notion-export' ? <Check size={14} /> : <ExternalLink size={14} />}
-                {copied === 'notion-export' ? 'Copied' : 'Export to Notion'}
+                {copied === 'notion-export' ? 'Copied' : 'Copy for Notion'}
               </button>
               <button
                 onClick={shareLink}
@@ -317,7 +317,7 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
                         className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 rounded-xl text-xs font-medium transition-colors"
                       >
                         <ExternalLink className="w-4 h-4" />
-                        Export to Notion
+                        Copy for Notion
                       </button>
                       <button
                         onClick={() => { shareLink(); setShowActions(false); }}
