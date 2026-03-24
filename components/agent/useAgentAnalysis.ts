@@ -437,10 +437,15 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
         setLoadingProgress(100);
         setResult({ ...parsedResult, id: savedId });
       }
-    } catch (err) {
+    } catch (err: unknown) {
       if (!signal.aborted) {
         console.error(err);
-        setError('Failed to analyze signal. Please check your input and try again.');
+        const msg = err instanceof Error ? err.message : String(err);
+        if (msg.includes('429') || msg.toLowerCase().includes('quota') || msg.toLowerCase().includes('resource_exhausted')) {
+          setError('API quota exceeded. You\'ve hit the free-tier daily limit (20 requests/day). Please try again tomorrow or upgrade your Gemini API plan at ai.google.dev.');
+        } else {
+          setError('Failed to analyze signal. Please check your input and try again.');
+        }
       }
     } finally {
       if (!signal.aborted) {
@@ -492,9 +497,14 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
       if (response.text) {
         setDeepDiveResult(JSON.parse(response.text));
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error(err);
-      setError('Failed to generate execution plan.');
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes('429') || msg.toLowerCase().includes('quota') || msg.toLowerCase().includes('resource_exhausted')) {
+        setError('API quota exceeded. You\'ve hit the free-tier daily limit. Please try again tomorrow or upgrade your Gemini API plan at ai.google.dev.');
+      } else {
+        setError('Failed to generate execution plan.');
+      }
     } finally {
       setDeepDiveLoading(false);
     }
