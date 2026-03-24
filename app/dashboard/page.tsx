@@ -151,7 +151,7 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-6 py-12">
+      <main className="max-w-7xl mx-auto px-6 py-12">
         {/* Page Title */}
         <div className="mb-12 space-y-2">
           <div className="flex items-center gap-3 text-primary mb-2">
@@ -261,7 +261,7 @@ export default function DashboardPage() {
             ))}
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
 }
