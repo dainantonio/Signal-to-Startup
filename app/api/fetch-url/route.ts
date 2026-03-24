@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
       }
     });
-    
+
     if (!response.ok) {
       throw new Error(`Failed to fetch URL: ${response.statusText}`);
     }
@@ -24,41 +24,55 @@ export async function GET(req: NextRequest) {
     const $ = cheerio.load(html);
 
     // Remove unwanted elements
-    $('script, style, nav, footer, header, aside, iframe, noscript, .ads, .sidebar, #comments').remove();
+    $('script, style, nav, footer, header, aside, figure, iframe, noscript, .ads, .sidebar, #comments').remove();
 
     // Try to find the main content area
-    let mainContent = $('article').html() || 
-                      $('main').html() || 
-                      $('#content').html() || 
-                      $('.content').html() || 
-                      $('.post-content').html() ||
-                      $('body').html();
+    const mainContent =
+      $('article').html() ||
+      $('main').html() ||
+      $('#content').html() ||
+      $('.content').html() ||
+      $('.post-content').html() ||
+      $('body').html();
 
     if (!mainContent) {
-      throw new Error("Could not extract main content");
+      throw new Error('Could not extract main content');
     }
 
-    // Initialize Turndown
-    const turndownService = new TurndownService({
-      headingStyle: 'atx',
-      codeBlockStyle: 'fenced',
-      hr: '---'
-    });
+    // Convert HTML to intermediate text via Turndown (preserves paragraph breaks)
+    const turndownService = new TurndownService({ headingStyle: 'atx', codeBlockStyle: 'fenced' });
+    let text = turndownService.turndown(mainContent);
 
-    // Convert to Markdown
-    let markdown = turndownService.turndown(mainContent);
+    // Strip markdown syntax characters
+    text = text
+      .replace(/!\[.*?\]\(.*?\)/g, '')               // images
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')        // links → keep label
+      .replace(/`{1,3}[\s\S]*?`{1,3}/g, '')           // inline code / code blocks
+      .replace(/#{1,6}\s*/gm, '')                     // headings ##
+      .replace(/\*{1,2}(.+?)\*{1,2}/g, '$1')          // bold / italic **
+      .replace(/_{1,2}(.+?)_{1,2}/g, '$1')            // bold / italic __
+      .replace(/^\s*[-*_]{3,}\s*$/gm, '')             // horizontal rules
+      .replace(/^\s*>\s*/gm, '')                      // blockquotes
+      .replace(/^\s*[-*+]\s+/gm, '')                  // unordered list markers
+      .replace(/^\s*\d+\.\s+/gm, '');                 // ordered list markers
 
-    // Clean up excessive whitespace and empty lines
-    markdown = markdown
-      .replace(/\n{3,}/g, '\n\n')
-      .replace(/!\[.*?\]\(.*?\)/g, '') // Remove images for cleaner text analysis
-      .trim();
+    // Strip lines that look like code
+    text = text
+      .split('\n')
+      .filter(line => {
+        const t = line.trim();
+        if (!t) return true;
+        return !/^(\/\/|import\s|const\s|var\s|let\s|function\s|<|{|})/.test(t);
+      })
+      .join('\n');
 
-    // Add source info at the top
+    // Collapse multiple blank lines into one and trim
+    text = text.replace(/\n{3,}/g, '\n\n').trim();
+
     const title = $('title').text() || 'Fetched Content';
-    const formattedContent = `TITLE: ${title}\nSOURCE: ${url}\n---\n\n${markdown}`;
+    const output = `TITLE: ${title}\nSOURCE: ${url}\n\n${text}`;
 
-    return NextResponse.json({ content: formattedContent.substring(0, 15000) });
+    return NextResponse.json({ content: output.substring(0, 15000) });
   } catch (error) {
     console.error('Fetch URL error:', error);
     return NextResponse.json({ error: 'Failed to fetch content from URL' }, { status: 500 });
