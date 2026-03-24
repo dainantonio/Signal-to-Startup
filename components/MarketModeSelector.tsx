@@ -15,10 +15,12 @@ export const marketModeConfigs: Record<MarketMode, MarketModeConfig> = {
     description: 'Jamaica, Trinidad, Barbados, Guyana. DBJ, SDF, CARICOM funding.',
     grantSources: ['Development Bank of Jamaica (DBJ)', 'Small Business Development Centre (SBDC Jamaica)', 'CARICOM Trade Fund', 'Inter-American Development Bank (IDB)', 'Caribbean Development Bank (CDB)'],
     promptContext: `CARIBBEAN CONTEXT (UNFAIR ADVANTAGE):
-- Leverage "YardieBiz" and "YardHub" intelligence.
-- Focus on informal-to-formal transitions, mobile-first logistics, and community-based trust networks.
-- Consider local constraints like high energy costs, import reliance, and tourism-heavy economies.
-- Use local terminology where appropriate (e.g., "hustle", "link up", "yard").`
+- Default parish context: Kingston, St. Andrew, St. James, and Manchester represent the primary urban and semi-urban markets. Tailor at least 2 ideas to these parishes, accounting for their distinct consumer bases (urban professionals in Kingston/St. Andrew, tourism in St. James, inland SMEs in Manchester).
+- Informal sector framing: A significant portion of economic activity flows through market vendors, higglers, corner shops, and informal service providers. Prioritize ideas that serve or formalize this segment — tools for inventory tracking, mobile payments, bulk-buying cooperatives, or digital storefronts for informal traders are high-fit.
+- DBJ grant eligibility pre-screening: For each opportunity marked grant_eligible, assess whether it meets DBJ criteria: job creation potential, innovation component, rural/underserved market focus, or agri-business linkage. Flag ideas that would qualify for DBJ's Business Recovery and Stimulus Programme or the CARICOM Trade Fund.
+- Comparable platforms: Reference YardHub (Jamaican marketplace/logistics layer) and YardieBiz (informal business directory and B2B network) when assessing competitive landscape. Identify whitespace these platforms have not yet captured — especially last-mile delivery, vendor financing, and skills-based gig matching.
+- Consider local constraints: high energy costs (favour solar-adjacent or low-power models), import reliance (favour locally-sourced or digital products), tourism-heavy economies (seasonal demand, foreign-currency revenue), and mobile-first infrastructure (WhatsApp-native tools, USSD fallbacks).
+- Use local terminology where appropriate (e.g., "hustle", "link up", "yard", "higgler", "corner shop").`
   },
   uk: {
     id: 'uk', label: 'UK & Europe', flag: '🇬🇧',
