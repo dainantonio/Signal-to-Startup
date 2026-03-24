@@ -4,6 +4,7 @@ import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { GoogleGenAI, Type } from '@google/genai';
 import { Opportunity, AnalysisResult, DeepDiveResult, MarketMode } from '../types';
 import { marketModeConfigs } from '../MarketModeSelector';
+import { COUNTRY_CONTEXT } from '../../lib/rss-sources';
 import {
   db,
   collection,
@@ -30,6 +31,62 @@ function sanitizeInput(raw: string): string {
     .replace(/\s+/g, ' ')               // collapse whitespace
     .trim()
     .slice(0, 2000);                     // cap at 2000 chars
+}
+
+// ---------------------------------------------------------------------------
+// Country context prompt builder
+// ---------------------------------------------------------------------------
+
+function buildCountryPrompt(countryTags: string[]): string {
+  if (!countryTags.length) return '';
+
+  return countryTags.map(tag => {
+    const ctx = COUNTRY_CONTEXT[tag.toLowerCase()];
+    if (!ctx) return '';
+
+    const base = `
+COUNTRY CONTEXT — ${tag.toUpperCase()}:
+You are analyzing this signal specifically for small business opportunities in ${tag}.
+Tailor every opportunity to the following local realities:
+- Local currency is ${ctx.currency} — express all startup costs in BOTH USD and ${ctx.currency}
+- Focus on problems that exist specifically in this market
+- Consider local infrastructure constraints (power, internet, logistics, banking access)
+- Identify which opportunities can be started informally (no company registration required to begin)
+- Flag which grants or funding sources are available specifically in ${tag}
+- Use language and examples that resonate locally
+- Target customers must be described in local context (e.g. "market vendors in Kingston" not just "small businesses")`;
+
+    const extras: Record<string, string> = {
+      jamaica: `
+FOR JAMAICA SPECIFICALLY:
+- Reference DBJ (Development Bank of Jamaica) loans for qualifying ventures
+- Reference JBDC (Jamaica Business Development Corporation) for business support services
+- Reference MSME policy incentives under the Jamaica MSME & Entrepreneurship Policy
+- Consider remittance economy opportunities (Jamaica receives ~$3B USD/year in remittances)
+- Consider tourism-adjacent business models given Jamaica's 4M+ annual tourist visits
+- Reference HEART/NSTA Trust for workforce training opportunities
+- Consider Jamaica's creative economy (music, film, fashion exports)`,
+      nigeria: `
+FOR NIGERIA SPECIFICALLY:
+- Reference CBN (Central Bank of Nigeria) SME funding schemes
+- Reference SMEDAN (Small and Medium Enterprises Development Agency of Nigeria)
+- Consider fintech and mobile money given Nigeria's large unbanked population
+- Reference Lagos, Abuja, and Port Harcourt as key commercial centers
+- Consider informal sector integration strategies`,
+      ghana: `
+FOR GHANA SPECIFICALLY:
+- Reference NBSSI (National Board for Small Scale Industries) support
+- Reference Ghana Export Promotion Authority for export-oriented ideas
+- Consider mobile money ecosystem (MTN MoMo widely used)`,
+      kenya: `
+FOR KENYA SPECIFICALLY:
+- Reference Kenya Industrial Estates (KIE) for SME support
+- Reference M-Pesa ecosystem for mobile payment integration
+- Consider Nairobi as East Africa's tech hub (Silicon Savannah)`,
+    };
+
+    return base + (extras[tag.toLowerCase()] ?? '');
+  }).filter(Boolean).join('\n\n');
 }
 
 // ---------------------------------------------------------------------------
@@ -145,7 +202,7 @@ const deepDiveSchema = {
   required: ["business_plan", "cost_breakdown", "grants", "checklist", "investors"]
 };
 
-export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: MarketMode) {
+export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: MarketMode, countryTags: string[] = []) {
   const [history, setHistory] = useState<(AnalysisResult & { id: string })[]>([]);
   const [input, setInput] = useState('');
   const [urlInput, setUrlInput] = useState('');
@@ -294,6 +351,8 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
         Return as 'money_score'. In 'description', briefly compare to real-world sector averages.
 
         TONE: Clear, sharp, execution-focused. Think: "What can someone start THIS WEEK?"
+
+        ${buildCountryPrompt(countryTags)}
       `;
 
       const responseStream = await genAI.models.generateContentStream({
@@ -356,6 +415,7 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
             best_idea: parsedResult.best_idea,
             createdAt: new Date().toISOString(),
             marketMode: selectedMode,
+            countryTag: countryTags.length > 0 ? countryTags.join(',') : null,
           });
           savedId = docRef.id;
           loadHistory(user.uid);

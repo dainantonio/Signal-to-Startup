@@ -17,6 +17,8 @@ export interface RSSFeedItem {
   strength: number;
   category: string;
   color: string;
+  isLocalSource?: boolean;
+  isGlobalMention?: boolean;
 }
 
 export interface FetchRSSOptions {

@@ -5,6 +5,7 @@ import { motion } from 'motion/react';
 import { Share2, Twitter, Linkedin, AlertTriangle, Users, ChevronRight, Link as LinkIcon, Check, TrendingUp, Zap, Sparkles, ArrowRight, Search } from 'lucide-react';
 import { AnalysisResult, Opportunity } from './types';
 import { OpportunityCard } from './OpportunityCard';
+import { COUNTRY_CONTEXT } from '@/lib/rss-sources';
 
 interface ResultsDashboardProps {
   result: AnalysisResult;
@@ -16,11 +17,12 @@ interface ResultsDashboardProps {
   generateDeepDive: (opp: Opportunity) => void;
   shareOnTwitter: () => void;
   shareOnLinkedIn: () => void;
+  countryTags?: string[];
 }
 
 export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
   result, filteredOpportunities, filterType, setFilterType,
-  grantOnly, setGrantOnly, generateDeepDive, shareOnTwitter, shareOnLinkedIn
+  grantOnly, setGrantOnly, generateDeepDive, shareOnTwitter, shareOnLinkedIn, countryTags = []
 }) => {
   const [copied, setCopied] = useState(false);
 
@@ -52,6 +54,22 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
       transition={{ duration: 0.4 }}
       className="space-y-12"
     >
+      {/* Country-tailored banner */}
+      {countryTags.length > 0 && (
+        <div className="flex items-center gap-3 px-5 py-3 bg-primary/5 border border-primary/15 rounded-2xl text-sm font-medium">
+          <span className="text-lg">{countryTags.map(t => COUNTRY_CONTEXT[t.toLowerCase()]?.flag ?? '🌍').join(' ')}</span>
+          <span>
+            Analysis tailored for{' '}
+            <strong>{countryTags.join(' & ')}</strong> small businesses
+            {countryTags.some(t => COUNTRY_CONTEXT[t.toLowerCase()]?.currency && COUNTRY_CONTEXT[t.toLowerCase()]?.currency !== 'USD') && (
+              <span className="text-muted text-xs font-mono ml-2">
+                · Costs shown in USD &amp; local currency
+              </span>
+            )}
+          </span>
+        </div>
+      )}
+
       {/* Analysis Summary */}
       <section id="step-2" className="scroll-mt-24">
         <div className="flex items-center gap-4 mb-6">
@@ -153,6 +171,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                 key={i} opp={opp} index={i}
                 isBestIdea={opp.name === result.best_idea.name}
                 generateDeepDive={generateDeepDive}
+                countryTags={countryTags}
               />
             ))}
           </div>

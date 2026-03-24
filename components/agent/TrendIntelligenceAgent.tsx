@@ -35,8 +35,22 @@ export default function TrendIntelligenceAgent() {
     try { return !localStorage.getItem('s2s_onboarded'); } catch { return true; }
   });
   const [selectedMode, setSelectedMode] = useState<MarketMode>('global');
+  const [countryTags, setCountryTags] = useState<string[]>(() => {
+    try { const s = localStorage.getItem('s2s_country_tags'); return s ? JSON.parse(s) : []; } catch { return []; }
+  });
 
-  const analysis = useAgentAnalysis(user, selectedMode);
+  // Persist country tags
+  React.useEffect(() => {
+    try { localStorage.setItem('s2s_country_tags', JSON.stringify(countryTags)); } catch {}
+  }, [countryTags]);
+
+  // Clear country tags when market mode changes
+  const handleSetSelectedMode = (mode: MarketMode) => {
+    setSelectedMode(mode);
+    setCountryTags([]);
+  };
+
+  const analysis = useAgentAnalysis(user, selectedMode, countryTags);
 
   const pipelineSteps = [
     { id: 1, label: 'Ingestion', icon: Search },
@@ -342,7 +356,9 @@ export default function TrendIntelligenceAgent() {
           cancelAnalysis={analysis.cancelAnalysis}
           exampleSignals={exampleSignals}
           selectedMode={selectedMode}
-          setSelectedMode={setSelectedMode}
+          setSelectedMode={handleSetSelectedMode}
+          countryTags={countryTags}
+          setCountryTags={setCountryTags}
         />
 
         {/* Results Section */}
@@ -380,6 +396,7 @@ export default function TrendIntelligenceAgent() {
               generateDeepDive={analysis.generateDeepDive}
               shareOnTwitter={analysis.shareOnTwitter}
               shareOnLinkedIn={analysis.shareOnLinkedIn}
+              countryTags={countryTags}
             />
           )}
         </AnimatePresence>

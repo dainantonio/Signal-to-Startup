@@ -1,5 +1,38 @@
 import type { SectorKey, MarketMode } from '@/components/types';
 
+// ---------------------------------------------------------------------------
+// Country context — keywords, flag, currency, home region
+// ---------------------------------------------------------------------------
+
+export interface CountryContext {
+  keywords: string[];
+  flag: string;
+  currency: string;
+  region: MarketMode | 'global';
+}
+
+export const COUNTRY_CONTEXT: Record<string, CountryContext> = {
+  jamaica:      { keywords: ['Jamaica', 'Jamaican', 'Kingston', 'JA', 'Montego Bay'],          flag: '🇯🇲', currency: 'JMD', region: 'caribbean' },
+  trinidad:     { keywords: ['Trinidad', 'Tobago', 'Port of Spain', 'TT'],                      flag: '🇹🇹', currency: 'TTD', region: 'caribbean' },
+  barbados:     { keywords: ['Barbados', 'Bajan', 'Bridgetown', 'BB'],                          flag: '🇧🇧', currency: 'BBD', region: 'caribbean' },
+  guyana:       { keywords: ['Guyana', 'Guyanese', 'Georgetown', 'GY'],                         flag: '🇬🇾', currency: 'GYD', region: 'caribbean' },
+  haiti:        { keywords: ['Haiti', 'Haitian', 'Port-au-Prince', 'HT'],                       flag: '🇭🇹', currency: 'HTG', region: 'caribbean' },
+  bahamas:      { keywords: ['Bahamas', 'Bahamian', 'Nassau', 'BS'],                            flag: '🇧🇸', currency: 'BSD', region: 'caribbean' },
+  nigeria:      { keywords: ['Nigeria', 'Nigerian', 'Lagos', 'Abuja', 'NG'],                    flag: '🇳🇬', currency: 'NGN', region: 'africa'    },
+  ghana:        { keywords: ['Ghana', 'Ghanaian', 'Accra', 'GH'],                               flag: '🇬🇭', currency: 'GHS', region: 'africa'    },
+  kenya:        { keywords: ['Kenya', 'Kenyan', 'Nairobi', 'KE'],                               flag: '🇰🇪', currency: 'KES', region: 'africa'    },
+  'south africa': { keywords: ['South Africa', 'South African', 'Johannesburg', 'Cape Town', 'ZA'], flag: '🇿🇦', currency: 'ZAR', region: 'africa' },
+  rwanda:       { keywords: ['Rwanda', 'Rwandan', 'Kigali', 'RW'],                              flag: '🇷🇼', currency: 'RWF', region: 'africa'    },
+  uk:           { keywords: ['UK', 'Britain', 'British', 'England', 'London'],                  flag: '🇬🇧', currency: 'GBP', region: 'uk'        },
+  london:       { keywords: ['London', 'Greater London', 'UK'],                                  flag: '🇬🇧', currency: 'GBP', region: 'uk'        },
+  manchester:   { keywords: ['Manchester', 'Greater Manchester', 'UK'],                          flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', currency: 'GBP', region: 'uk' },
+  scotland:     { keywords: ['Scotland', 'Scottish', 'Edinburgh', 'Glasgow'],                   flag: '🏴󠁧󠁢󠁳󠁣󠁴󠁿', currency: 'GBP', region: 'uk' },
+  'new york':   { keywords: ['New York', 'NYC', 'Manhattan', 'Brooklyn', 'NY'],                 flag: '🗽', currency: 'USD', region: 'global'    },
+  atlanta:      { keywords: ['Atlanta', 'Georgia', 'ATL'],                                       flag: '🇺🇸', currency: 'USD', region: 'global'    },
+  miami:        { keywords: ['Miami', 'South Florida', 'Dade'],                                  flag: '🇺🇸', currency: 'USD', region: 'global'    },
+  houston:      { keywords: ['Houston', 'Texas', 'HTX'],                                         flag: '🇺🇸', currency: 'USD', region: 'global'    },
+};
+
 export interface RSSSource {
   url: string;
   market: MarketMode | 'global';

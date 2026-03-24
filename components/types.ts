@@ -46,6 +46,7 @@ export interface AnalysisResult {
   };
   createdAt?: string;
   marketMode?: MarketMode;
+  countryTag?: string;
 }
 
 export interface DeepDiveResult {
@@ -102,6 +103,9 @@ export interface FeedSignal {
   color: string;
   snippet: string;
   strength: number;
+  market?: string;
+  isLocalSource?: boolean;
+  isGlobalMention?: boolean;
 }
 
 export type RecencyFilter = '24h' | '3d' | '7d';

@@ -12,10 +12,11 @@ interface OpportunityCardProps {
   isBestIdea: boolean;
   generateDeepDive: (opp: Opportunity) => void;
   isReadOnly?: boolean;
+  countryTags?: string[];
 }
 
 export const OpportunityCard: React.FC<OpportunityCardProps> = ({
-  opp, index, isBestIdea, generateDeepDive, isReadOnly = false
+  opp, index, isBestIdea, generateDeepDive, isReadOnly = false, countryTags = []
 }) => {
   const colors = {
     High:   { bg: 'bg-emerald-50',  text: 'text-emerald-700',  border: 'border-emerald-200',  accent: 'bg-emerald-500',  light: 'bg-emerald-50',  ring: 'ring-emerald-200' },
@@ -46,7 +47,7 @@ export const OpportunityCard: React.FC<OpportunityCardProps> = ({
       <div className="p-6 md:p-8 flex flex-col flex-1 gap-6">
         {/* Header row */}
         <div className="space-y-3">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span className={`text-[9px] font-mono px-2 py-0.5 uppercase font-bold rounded-md border ${colors.light} ${colors.text} ${colors.border}`}>
               {opp.priority} Priority
             </span>
@@ -54,6 +55,16 @@ export const OpportunityCard: React.FC<OpportunityCardProps> = ({
               <span className="text-[9px] font-mono px-2 py-0.5 uppercase font-bold rounded-md border border-secondary/20 bg-secondary/5 text-secondary flex items-center gap-1">
                 <Coins className="w-3 h-3" />
                 Grant Eligible
+              </span>
+            )}
+            {countryTags.length > 0 && (
+              <span className={`text-[9px] font-mono px-2 py-0.5 uppercase font-bold rounded-md border flex items-center gap-1 ${
+                opp.local_fit >= 8 ? 'bg-green-50 text-green-700 border-green-200' :
+                opp.local_fit >= 5 ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                                     'bg-gray-50 text-gray-500 border-gray-200'
+              }`}>
+                <Target className="w-3 h-3" />
+                Local fit {opp.local_fit}/10
               </span>
             )}
           </div>
