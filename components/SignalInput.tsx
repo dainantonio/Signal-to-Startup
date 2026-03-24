@@ -34,6 +34,7 @@ interface SignalInputProps {
   loading: boolean;
   loadingStage?: number;
   loadingProgress?: number;
+  result: unknown | null;
   analyzeSignal: (overrideInput?: string) => void;
   cancelAnalysis: () => void;
   exampleSignals: { label: string; text: string; location: string; focus: string }[];
@@ -45,7 +46,8 @@ interface SignalInputProps {
 
 export const SignalInput: React.FC<SignalInputProps> = ({
   input, setInput, urlInput, setUrlInput, fetchingUrl, fetchUrl,
-  location, setLocation, focus, setFocus, loading, loadingStage = 0, loadingProgress = 5, analyzeSignal, cancelAnalysis,
+  location, setLocation, focus, setFocus, loading, loadingStage = 0, loadingProgress = 5,
+  result, analyzeSignal, cancelAnalysis,
   countryTags, setCountryTags,
   exampleSignals, selectedMode, setSelectedMode,
 }) => {
@@ -148,7 +150,7 @@ export const SignalInput: React.FC<SignalInputProps> = ({
     return () => timers.forEach(clearTimeout);
   }, [analyzingUrl]);
 
-  // Detect when analysis completes → success flash then clear
+  // Detect when analysis completes (loading true→false) → success flash then clear
   useEffect(() => {
     if (prevLoadingRef.current && !loading && analyzingUrl !== null) {
       setAnalyzeProgress(100);
@@ -163,6 +165,23 @@ export const SignalInput: React.FC<SignalInputProps> = ({
     }
     prevLoadingRef.current = loading;
   }, [loading, analyzingUrl]);
+
+  // Handle cache-hit: result set without loading ever becoming true
+  const prevResultRef = useRef<typeof result>(result);
+  useEffect(() => {
+    if (prevResultRef.current !== result && result !== null && !loading && analyzingUrl !== null) {
+      setSuccessUrl(analyzingUrl);
+      const timer = setTimeout(() => {
+        setAnalyzingUrl(null);
+        setAnalyzeProgress(0);
+        setAnalyzeStage('');
+        setSuccessUrl(null);
+      }, 600);
+      prevResultRef.current = result;
+      return () => clearTimeout(timer);
+    }
+    prevResultRef.current = result;
+  }, [result, loading, analyzingUrl]);
 
   const timeAgo = (d: string) => {
     const h = Math.floor((Date.now() - new Date(d).getTime()) / 3600000);

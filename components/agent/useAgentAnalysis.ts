@@ -284,18 +284,39 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
   const cancelAnalysis = () => {
     abortControllerRef.current?.abort();
     setLoading(false);
-    setResult(null);
+    // Do NOT clear result — keep existing results visible after cancel
   };
 
   const analyzeSignal = async (overrideInput?: string) => {
+    console.log('[1] analyzeSignal called');
+
     const rawText = overrideInput ?? input;
-    if (!rawText.trim()) return;
+
+    // [CHECK] Input validation
+    if (!rawText || rawText.trim().length < 10) {
+      console.error('[FAIL] Input text is empty or too short:', rawText?.length ?? 0, 'chars');
+      setError('No article text to analyze. Please try another article.');
+      return;
+    }
+    console.log('[2] input text length:', rawText.length);
+
     if (overrideInput) setInput(overrideInput);
 
     const signalText = sanitizeInput(rawText);
+    console.log('[2b] sanitized text length:', signalText.length);
 
-    // Return cached result immediately if available
+    // [CHECK] API key
+    const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+    if (!apiKey) {
+      console.error('[FAIL] NEXT_PUBLIC_GEMINI_API_KEY is not set');
+      setError('Gemini API key not configured. Check your environment variables.');
+      return;
+    }
+    console.log('[KEY] Gemini API key present:', true);
+
+    // Return cached result immediately
     if (analysisCache.has(signalText)) {
+      console.log('[CACHE HIT] returning cached result');
       setResult(analysisCache.get(signalText)!);
       return;
     }
@@ -310,8 +331,10 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
     setLoadingProgress(5);
 
     try {
-      const genAI = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
+      const genAI = new GoogleGenAI({ apiKey });
       const model = 'gemini-2.5-flash';
+      console.log('[3] calling Gemini API with model:', model);
+      console.log('[ABORT] signal aborted at start:', signal.aborted);
 
       const prompt = `
         You are an AI Trend Intelligence Agent.
@@ -364,17 +387,23 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
           maxOutputTokens: 8192,
         },
       });
+      console.log('[4] Gemini stream opened');
 
       let accumulated = '';
       let chunksReceived = 0;
       let localStage = 0;
 
       for await (const chunk of responseStream) {
-        if (signal.aborted) return;
-        accumulated += chunk.text ?? '';
+        if (signal.aborted) {
+          console.log('[ABORT] signal aborted mid-stream, exiting');
+          return;
+        }
+        const text = chunk.text ?? '';
+        accumulated += text;
         chunksReceived++;
 
         if (chunksReceived === 1 && localStage === 0) {
+          console.log('[4a] first chunk received, text length:', text.length);
           localStage = 1;
           setLoadingStage(1);
           setLoadingProgress(25);
@@ -387,20 +416,33 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
         }
       }
 
-      if (signal.aborted) return;
+      console.log('[4b] stream complete. chunks:', chunksReceived, 'accumulated length:', accumulated.length);
+
+      // Bail cleanly if cancelled after stream ends
+      if (signal.aborted) {
+        console.log('[ABORT] signal aborted after stream, exiting');
+        return;
+      }
+
+      if (!accumulated.trim()) {
+        console.error('[FAIL] Gemini returned empty response after', chunksReceived, 'chunks');
+        throw new Error('Gemini returned an empty response. This can happen with structured output — please try again.');
+      }
+
       setLoadingProgress(95);
+      console.log('[5] parsing response, first 200 chars:', accumulated.slice(0, 200));
 
       let parsedResult: AnalysisResult;
       try {
         parsedResult = JSON.parse(accumulated);
-      } catch {
-        console.error('JSON parse failed. Raw response:', accumulated.slice(0, 500));
+      } catch (parseErr) {
+        console.error('[FAIL] JSON parse failed:', parseErr);
+        console.error('[RAW RESPONSE]', accumulated.slice(0, 500));
         throw new Error('The AI returned an incomplete response. Please try again.');
       }
+      console.log('[6] parsed result — trend:', parsedResult?.trend, '| opportunities:', parsedResult?.opportunities?.length);
 
-      if (signal.aborted) return;
-
-      // Evict oldest entry if at capacity
+      // Evict oldest cache entry if at capacity
       if (analysisCache.size >= MAX_CACHE_SIZE) {
         const firstKey = analysisCache.keys().next().value;
         if (firstKey !== undefined) analysisCache.delete(firstKey);
@@ -409,6 +451,7 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
 
       let savedId = '';
       if (user) {
+        console.log('[7] saving to Firestore...');
         try {
           const docRef = await addDoc(collection(db, 'analyses'), {
             userId: user.uid,
@@ -424,33 +467,44 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
             countryTag: countryTags.length > 0 ? countryTags.join(',') : null,
           });
           savedId = docRef.id;
+          console.log('[8] Firestore save complete, id:', savedId);
           loadHistory(user.uid);
-        } catch (err) {
-          if (!signal.aborted) {
-            console.error('Failed to save analysis to Firestore:', err);
-          }
+        } catch (firestoreErr) {
+          // Firestore failure must NOT prevent results from showing
+          console.warn('[FIRESTORE] Save failed, continuing without save:', firestoreErr);
         }
       }
 
-      if (!signal.aborted) {
-        setLoadingStage(3);
-        setLoadingProgress(100);
-        setResult({ ...parsedResult, id: savedId });
+      if (signal.aborted) {
+        console.log('[ABORT] signal aborted before setResult, exiting');
+        return;
       }
+
+      console.log('[9] setting result state...');
+      setLoadingStage(3);
+      setLoadingProgress(100);
+      setResult({ ...parsedResult, id: savedId });
+      console.log('[10] result set — analysis complete');
+
     } catch (err: unknown) {
+      // Always log — never silently swallow errors
+      console.error('[ANALYSIS FAILED]', err);
+      console.error('[ERROR TYPE]', typeof err);
+      console.error('[ERROR MESSAGE]', err instanceof Error ? err.message : String(err));
+      console.error('[ERROR STACK]', err instanceof Error ? err.stack : 'no stack');
+
       if (!signal.aborted) {
-        console.error(err);
         const msg = err instanceof Error ? err.message : String(err);
         if (msg.includes('429') || msg.toLowerCase().includes('quota') || msg.toLowerCase().includes('resource_exhausted')) {
-          setError('API quota exceeded. You\'ve hit the free-tier daily limit (20 requests/day). Please try again tomorrow or upgrade your Gemini API plan at ai.google.dev.');
+          setError('API quota exceeded. Please try again tomorrow or upgrade your Gemini API plan at ai.google.dev.');
         } else {
-          setError('Failed to analyze signal. Please check your input and try again.');
+          setError(err instanceof Error ? err.message : 'Failed to analyze signal. Please check your input and try again.');
         }
       }
     } finally {
-      if (!signal.aborted) {
-        setLoading(false);
-      }
+      // ALWAYS clear loading state — never leave the UI stuck
+      console.log('[FINALLY] clearing loading. aborted:', signal.aborted);
+      setLoading(false);
     }
   };
 

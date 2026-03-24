@@ -352,6 +352,7 @@ export default function TrendIntelligenceAgent() {
           loading={analysis.loading}
           loadingStage={analysis.loadingStage}
           loadingProgress={analysis.loadingProgress}
+          result={analysis.result}
           analyzeSignal={analysis.analyzeSignal}
           cancelAnalysis={analysis.cancelAnalysis}
           exampleSignals={exampleSignals}
