@@ -91,14 +91,14 @@ service cloud.firestore {
              data.userId == request.auth.uid &&
              data.signal is string &&
              data.trend is string &&
-             isValidDateString(data.createdAt);
+             data.createdAt is string;
     }
 
     function isValidSavedOpportunity(data) {
       return data.keys().hasAll(['userId', 'opportunity', 'status', 'savedAt']) &&
              data.userId == request.auth.uid &&
              data.status in ['Saved', 'In Progress', 'Launched'] &&
-             isValidDateString(data.savedAt);
+             data.savedAt is string;
     }
 
     // ===============================================================
