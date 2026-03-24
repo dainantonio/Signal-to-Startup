@@ -138,6 +138,7 @@ export const OpportunityCard: React.FC<OpportunityCardProps> = ({
           </Link>
         ) : (
           <button
+            type="button"
             onClick={() => generateDeepDive(opp)}
             className={`mt-auto w-full ${colors.accent} text-white py-4 rounded-2xl text-[10px] font-mono uppercase tracking-widest font-bold transition-all flex items-center justify-center gap-2 shadow-xl ${colors.ring.replace('ring-', 'shadow-')} hover:scale-[1.02] active:scale-[0.98] group`}
           >

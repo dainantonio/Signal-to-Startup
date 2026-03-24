@@ -49,12 +49,14 @@ export const MarketModeSelector: React.FC<MarketModeSelectorProps> = ({ selected
         {(Object.values(marketModeConfigs) as MarketModeConfig[]).map((config) => (
           <button
             key={config.id}
+            type="button"
             onClick={() => onModeChange(config.id)}
+            aria-pressed={selectedMode === config.id}
             title={config.description}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-full border-2 border-[#141414] font-mono text-[10px] uppercase tracking-wider transition-all shadow-[2px_2px_0px_0px_rgba(20,20,20,1)] active:shadow-none active:translate-x-px active:translate-y-px ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-full border-2 border-foreground font-mono text-[10px] uppercase tracking-wider transition-all shadow-[2px_2px_0px_0px_rgba(26,26,26,1)] active:shadow-none active:translate-x-px active:translate-y-px ${
               selectedMode === config.id
-                ? 'bg-[#141414] text-[#E4E3E0]'
-                : 'bg-white text-[#141414] hover:bg-gray-100'
+                ? 'bg-foreground text-background'
+                : 'bg-white text-foreground hover:bg-gray-100'
             }`}
           >
             <span>{config.flag}</span>

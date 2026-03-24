@@ -152,7 +152,7 @@ ${deepDiveResult.grants.map(g => `- ${g}`).join('\n')}
 ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.focus}`).join('\n')}
 
 ---
-*Generated via AI Trend Intelligence Agent*
+*Generated via Signal to Startup*
     `;
     
     copyToClipboard(notionMarkdown, 'notion-export');
@@ -303,16 +303,29 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
                       className="absolute right-0 mt-2 w-56 bg-white border border-border/10 rounded-2xl shadow-2xl z-40 p-2 overflow-hidden"
                     >
                       {auth.currentUser && deepDiveResult && (
-                        <button
-                          onClick={() => { saveOpportunity(); setShowActions(false); }}
-                          disabled={saving}
-                          className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 rounded-xl text-xs font-medium transition-colors"
-                        >
-                          {isSaved ? <BookmarkCheck className="w-4 h-4 text-secondary" /> : <Bookmark className="w-4 h-4" />}
-                          {isSaved ? 'Saved to Pipeline' : 'Save Opportunity'}
-                        </button>
+                        isSaved ? (
+                          <Link
+                            href="/dashboard"
+                            onClick={() => setShowActions(false)}
+                            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 rounded-xl text-xs font-medium transition-colors text-secondary"
+                          >
+                            <BookmarkCheck className="w-4 h-4" />
+                            View in Pipeline
+                          </Link>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => { saveOpportunity(); setShowActions(false); }}
+                            disabled={saving}
+                            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 rounded-xl text-xs font-medium transition-colors"
+                          >
+                            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Bookmark className="w-4 h-4" />}
+                            {saving ? 'Saving...' : 'Save Opportunity'}
+                          </button>
+                        )
                       )}
                       <button
+                        type="button"
                         onClick={() => { exportToNotion(); setShowActions(false); }}
                         className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 rounded-xl text-xs font-medium transition-colors"
                       >
@@ -320,6 +333,7 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
                         Copy for Notion
                       </button>
                       <button
+                        type="button"
                         onClick={() => { shareLink(); setShowActions(false); }}
                         className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 rounded-xl text-xs font-medium transition-colors"
                       >
@@ -327,6 +341,7 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
                         Share Link
                       </button>
                       <button
+                        type="button"
                         onClick={() => { exportToPDF(); setShowActions(false); }}
                         className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 rounded-xl text-xs font-medium transition-colors"
                       >
@@ -335,6 +350,7 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
                       </button>
                       <div className="h-px bg-border/5 my-1" />
                       <button
+                        type="button"
                         onClick={() => { generateDeepDive(selectedOpportunity); setShowActions(false); }}
                         className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 rounded-xl text-xs font-medium transition-colors text-primary"
                       >
@@ -476,6 +492,7 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
                     <h3 className="text-xl font-serif italic font-bold">Ready to deep dive?</h3>
                     <p className="text-sm text-muted max-w-xs mx-auto">Generate a complete execution suite for this opportunity including a business plan, costs, and funding.</p>
                     <button
+                      type="button"
                       onClick={() => generateDeepDive(selectedOpportunity)}
                       className="px-8 py-4 bg-primary text-white rounded-2xl font-mono text-xs uppercase font-bold tracking-widest hover:bg-primary/90 transition-all shadow-xl shadow-primary/20"
                     >

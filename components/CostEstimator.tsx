@@ -20,7 +20,7 @@ export const CostEstimator: React.FC<CostEstimatorProps> = ({ deepDiveResult }) 
         const totalCost = deepDiveResult.cost_breakdown.reduce((acc, curr) => acc + curr.cost, 0);
         return (
           <>
-            <div className="flex items-end justify-between border-b-2 border-[#141414] pb-4">
+            <div className="flex items-end justify-between border-b-2 border-foreground pb-4">
               <h3 className="text-2xl font-serif italic tracking-tight">Startup Cost Estimator</h3>
               <div className="text-right">
                 <div className="text-[10px] font-mono uppercase opacity-50">Total Capital Required</div>

@@ -16,7 +16,7 @@ export const InvestorMatch: React.FC<InvestorMatchProps> = ({ deepDiveResult }) 
       exit={{ opacity: 0, x: -20 }}
       className="space-y-8"
     >
-      <div className="flex items-center gap-4 border-b-2 border-[#141414] pb-4">
+      <div className="flex items-center gap-4 border-b-2 border-foreground pb-4">
         <div className="p-3 bg-indigo-100 text-indigo-600 rounded-xl">
           <Users className="w-6 h-6" />
         </div>
@@ -25,7 +25,7 @@ export const InvestorMatch: React.FC<InvestorMatchProps> = ({ deepDiveResult }) 
 
       <div className="space-y-4">
         {deepDiveResult.investors.map((investor, i) => (
-          <div key={i} className="bg-white border-2 border-[#141414] p-6 hover:bg-gray-50 transition-all group">
+          <div key={i} className="bg-white border-2 border-foreground p-6 hover:bg-gray-50 transition-all group">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="flex-grow">
                 <div className="flex items-center gap-3 mb-2">
@@ -43,7 +43,7 @@ export const InvestorMatch: React.FC<InvestorMatchProps> = ({ deepDiveResult }) 
                 href={`https://www.google.com/search?q=${encodeURIComponent(investor.name + ' investment thesis ' + investor.stage)}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 text-[10px] font-mono uppercase font-bold border border-[#141414] px-4 py-2 hover:bg-[#141414] hover:text-[#E4E3E0] transition-all self-start md:self-center"
+                className="flex items-center gap-2 text-[10px] font-mono uppercase font-bold border border-foreground px-4 py-2 hover:bg-foreground hover:text-background transition-all self-start md:self-center"
               >
                 View Thesis
                 <ArrowUpRight className="w-3 h-3" />

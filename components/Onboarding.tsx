@@ -71,7 +71,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onDismiss }) => {
           <button
             onClick={handleDismiss}
             className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-muted hover:text-foreground"
-            aria-label="Dismiss"
+            aria-label="Dismiss platform guide"
           >
             <X className="w-4 h-4" />
           </button>
@@ -82,7 +82,10 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onDismiss }) => {
           {steps.map((s, i) => (
             <button
               key={i}
+              type="button"
               onClick={() => setActiveStep(i)}
+              aria-selected={activeStep === i}
+              role="tab"
               className={`flex-1 py-3 rounded-xl text-[10px] font-mono uppercase tracking-widest transition-all duration-200 font-bold ${
                 activeStep === i
                   ? 'bg-white text-foreground shadow-sm border border-border/5'

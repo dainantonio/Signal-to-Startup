@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'motion/react';
-import { Check, Search, BarChart3, Target, Rocket } from 'lucide-react';
+import { Check } from 'lucide-react';
 
 interface PipelineProgressProps {
   currentStep: number;

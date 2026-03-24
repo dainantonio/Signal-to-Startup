@@ -98,7 +98,7 @@ export default function TrendIntelligenceAgent() {
   React.useEffect(() => {
     const handleScroll = () => {
       const steps = [1, 2, 3, 4];
-      for (const step of steps.reverse()) {
+      for (const step of [...steps].reverse()) {
         const el = document.getElementById(`step-${step}`);
         if (el) {
           const rect = el.getBoundingClientRect();
@@ -142,8 +142,9 @@ export default function TrendIntelligenceAgent() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setShowHistory(!showHistory)}
+                  aria-expanded={showHistory}
+                  aria-label="Toggle analysis history"
                   className="flex items-center gap-2 px-3 py-2 bg-white border border-border/10 hover:border-border/30 hover:bg-gray-50 transition-all shadow-sm rounded-lg relative group"
-                  title="History"
                 >
                   <History className="w-4 h-4 text-muted group-hover:text-foreground transition-colors" />
                   <span className="text-[10px] font-mono uppercase font-bold hidden sm:inline">History ({analysis.history.length})</span>
@@ -170,8 +171,9 @@ export default function TrendIntelligenceAgent() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setShowHistory(!showHistory)}
+                  aria-expanded={showHistory}
+                  aria-label="Toggle analysis history"
                   className="p-2.5 bg-white border border-border/10 hover:bg-gray-50 rounded-lg transition-all shadow-sm"
-                  title="History"
                 >
                   <History className="w-5 h-5 text-muted" />
                 </button>

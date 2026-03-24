@@ -400,7 +400,7 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
 
   const shareOnTwitter = () => {
     if (!result) return;
-    const text = `AI Trend Intelligence: ${result.trend}\nBest Idea: ${result.best_idea.name}\n\nAnalyzed via AI Trend Intelligence Agent`;
+    const text = `AI Trend Intelligence: ${result.trend}\nBest Idea: ${result.best_idea.name}\n\nAnalyzed via Signal to Startup`;
     const url = (result as AnalysisResult & { id: string }).id
       ? `${window.location.origin}/analysis/${(result as AnalysisResult & { id: string }).id}`
       : window.location.href;

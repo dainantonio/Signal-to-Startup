@@ -71,14 +71,14 @@ export const Checklist: React.FC<ChecklistProps> = ({ deepDiveResult, savedDocId
       exit={{ opacity: 0, x: -20 }}
       className="space-y-8"
     >
-      <div className="border-b-2 border-[#141414] pb-4 flex justify-between items-end">
+      <div className="border-b-2 border-foreground pb-4 flex justify-between items-end">
         <div>
           <h3 className="text-2xl font-serif italic tracking-tight">30-Day Launch Sequence</h3>
           <p className="text-[10px] font-mono uppercase opacity-50 mt-1">From Signal to First Dollar</p>
         </div>
         <div className="text-right">
           <div className="text-xs font-mono uppercase mb-1">{completedCount}/{items.length} Tasks</div>
-          <div className="w-32 h-2 bg-gray-100 border border-[#141414] overflow-hidden">
+          <div className="w-32 h-2 bg-gray-100 border border-foreground overflow-hidden">
             <motion.div 
               initial={{ width: 0 }}
               animate={{ width: `${progress}%` }}
@@ -100,7 +100,7 @@ export const Checklist: React.FC<ChecklistProps> = ({ deepDiveResult, savedDocId
               className={`relative flex gap-8 group cursor-pointer transition-opacity ${item.completed ? 'opacity-50' : ''}`}
               onClick={() => toggleItem(i)}
             >
-              <div className={`relative z-10 flex-shrink-0 w-10 h-10 rounded-full bg-white border-2 border-[#141414] flex items-center justify-center font-bold font-serif italic text-lg transition-all ${item.completed ? 'bg-emerald-500 text-white border-emerald-600' : 'group-hover:bg-[#141414] group-hover:text-[#E4E3E0]'}`}>
+              <div className={`relative z-10 flex-shrink-0 w-10 h-10 rounded-full bg-white border-2 border-foreground flex items-center justify-center font-bold font-serif italic text-lg transition-all ${item.completed ? 'bg-emerald-500 text-white border-emerald-600' : 'group-hover:bg-foreground group-hover:text-background'}`}>
                 {item.completed ? <Check className="w-6 h-6" /> : i + 1}
               </div>
               <div className="flex-grow pt-1.5">
@@ -129,13 +129,14 @@ export const Checklist: React.FC<ChecklistProps> = ({ deepDiveResult, savedDocId
         </div>
       )}
 
-      <div className="bg-[#141414] text-[#E4E3E0] p-8 text-center relative overflow-hidden">
+      <div className="bg-foreground text-background p-8 text-center relative overflow-hidden rounded-2xl">
         <div className="relative z-10">
           <h4 className="text-xl font-serif italic mb-2 tracking-tight">Ready to execute?</h4>
           <p className="text-xs font-mono uppercase tracking-[0.2em] opacity-60 mb-6">Day 31 starts with your first customer.</p>
-          <button 
+          <button
+            type="button"
             onClick={() => window.print()}
-            className="bg-[#E4E3E0] text-[#141414] px-8 py-3 text-[10px] font-mono uppercase tracking-widest font-bold hover:bg-white transition-all"
+            className="bg-background text-foreground px-8 py-3 text-[10px] font-mono uppercase tracking-widest font-bold hover:bg-white transition-all rounded-lg"
           >
             Download PDF Checklist
           </button>
