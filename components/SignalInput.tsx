@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Lightbulb, MapPin, Zap, TrendingUp, Loader2, X, RefreshCw, Sparkles } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Search, Lightbulb, MapPin, Zap, TrendingUp, Loader2, X, RefreshCw, Sparkles, FileUp, CheckCircle2, AlertCircle } from 'lucide-react';
 import { MarketMode, FeedSignal, SectorKey, RecencyFilter, FeedFilters, SECTOR_CONFIGS } from './types';
 import { MarketModeSelector } from './MarketModeSelector';
 
@@ -32,6 +32,32 @@ export const SignalInput: React.FC<SignalInputProps> = ({
   exampleSignals, selectedMode, setSelectedMode,
 }) => {
   const [inputMode, setInputMode] = useState<'paste' | 'feed'>('paste');
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [pdfStatus, setPdfStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const uploadPdf = async (file: File) => {
+    setPdfLoading(true);
+    setPdfStatus(null);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/parse-pdf', { method: 'POST', body: formData });
+      const data = await res.json();
+      if (!res.ok) {
+        setPdfStatus({ type: 'error', message: data.error || 'Could not read PDF.' });
+        return;
+      }
+      setInput(data.content);
+      setPdfStatus({ type: 'success', message: 'PDF text extracted — ready to analyze' });
+    } catch {
+      setPdfStatus({ type: 'error', message: 'Failed to upload PDF. Please try again.' });
+    } finally {
+      setPdfLoading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   const [signals, setSignals] = useState<FeedSignal[]>([]);
   const [fetchingFeed, setFetchingFeed] = useState(false);
   const [lastFetchKey, setLastFetchKey] = useState('');
@@ -146,18 +172,45 @@ export const SignalInput: React.FC<SignalInputProps> = ({
       {inputMode === 'paste' ? (
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-[10px] font-mono uppercase tracking-widest text-muted font-bold">Import from URL</label>
+            <label className="text-[10px] font-mono uppercase tracking-widest text-muted font-bold">Import from URL or PDF</label>
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="flex-1 relative group">
-                <input type="text" value={urlInput} onChange={e => setUrlInput(e.target.value)} placeholder="Paste a URL to fetch content..."
+                <input type="text" value={urlInput} onChange={e => setUrlInput(e.target.value)} placeholder="Paste a URL or PDF link to fetch content..."
                   className="w-full bg-white border border-border/10 rounded-xl p-4 pl-11 pr-10 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none font-sans text-sm transition-all shadow-sm" />
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted group-focus-within:text-primary transition-colors" />
-                {urlInput && <button onClick={() => setUrlInput('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-muted hover:text-foreground"><X className="w-4 h-4" /></button>}
+                {urlInput && <button type="button" onClick={() => setUrlInput('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-muted hover:text-foreground"><X className="w-4 h-4" /></button>}
               </div>
               <button onClick={fetchUrl} disabled={fetchingUrl || !urlInput.trim()}
                 className="bg-foreground text-background px-8 py-4 rounded-xl font-mono text-[11px] uppercase tracking-widest hover:bg-foreground/90 disabled:opacity-40 transition-all shadow-lg shadow-foreground/5 flex-shrink-0 flex items-center justify-center gap-2">
                 {fetchingUrl ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Fetch Content'}
               </button>
+            </div>
+            {/* PDF file upload */}
+            <div className="flex items-center gap-3 flex-wrap">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,application/pdf"
+                className="hidden"
+                onChange={e => { const f = e.target.files?.[0]; if (f) uploadPdf(f); }}
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={pdfLoading}
+                className="flex items-center gap-2 px-4 py-2 bg-white border border-border/10 rounded-xl text-[10px] font-mono uppercase tracking-widest font-bold text-muted hover:text-foreground hover:border-border/30 hover:bg-gray-50 disabled:opacity-40 transition-all shadow-sm"
+              >
+                {pdfLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileUp className="w-3.5 h-3.5" />}
+                {pdfLoading ? 'Reading PDF...' : 'Upload PDF File'}
+              </button>
+              {pdfStatus && (
+                <span className={`flex items-center gap-1.5 text-[10px] font-mono ${pdfStatus.type === 'success' ? 'text-secondary' : 'text-red-600'}`}>
+                  {pdfStatus.type === 'success'
+                    ? <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
+                    : <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />}
+                  {pdfStatus.message}
+                </span>
+              )}
             </div>
           </div>
           <div className="space-y-1.5">

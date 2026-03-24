@@ -20,6 +20,34 @@ export async function GET(req: NextRequest) {
       throw new Error(`Failed to fetch URL: ${response.statusText}`);
     }
 
+    const contentType = response.headers.get('content-type') || '';
+    if (contentType.includes('application/pdf')) {
+      try {
+        const buffer = Buffer.from(await response.arrayBuffer());
+        // pdf-parse v1 is a CJS default export; ESM interop resolves it on .default
+        const pdfMod = await import('pdf-parse');
+        const pdfParse = (pdfMod.default ?? pdfMod) as (buf: Buffer) => Promise<{ text: string }>;
+        const data = await pdfParse(buffer);
+        const text = data.text
+          .replace(/\f/g, '\n')
+          .replace(/\n{3,}/g, '\n\n')
+          .trim();
+        if (!text) {
+          return NextResponse.json(
+            { error: 'This PDF could not be read. It may be scanned or image-based. Try copying the text manually.' },
+            { status: 422 }
+          );
+        }
+        return NextResponse.json({ content: `SOURCE: ${url}\n\n${text.substring(0, 15000)}` });
+      } catch (pdfErr: unknown) {
+        const msg = pdfErr instanceof Error ? pdfErr.message.toLowerCase() : '';
+        const friendlyError = msg.includes('password') || msg.includes('encrypt')
+          ? 'This PDF is password-protected. Please remove the password and try again.'
+          : 'This PDF could not be read. Try copying the text manually.';
+        return NextResponse.json({ error: friendlyError }, { status: 422 });
+      }
+    }
+
     const html = await response.text();
     const $ = cheerio.load(html);
 
