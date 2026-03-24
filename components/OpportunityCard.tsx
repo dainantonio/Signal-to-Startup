@@ -18,11 +18,11 @@ export const OpportunityCard: React.FC<OpportunityCardProps> = ({
   opp, index, isBestIdea, generateDeepDive, isReadOnly = false
 }) => {
   const colors = {
-    High:   { bg: 'bg-primary/5',  text: 'text-primary',  border: 'border-primary/10',  accent: 'bg-primary',  light: 'bg-primary/10',  ring: 'ring-primary/20' },
-    Medium: { bg: 'bg-secondary/5', text: 'text-secondary', border: 'border-secondary/10', accent: 'bg-secondary', light: 'bg-secondary/10', ring: 'ring-secondary/20' },
-    Low:    { bg: 'bg-gray-50',   text: 'text-gray-600',   border: 'border-gray-200',   accent: 'bg-gray-400',   light: 'bg-gray-100',   ring: 'ring-gray-200'  },
+    High:   { bg: 'bg-emerald-50',  text: 'text-emerald-700',  border: 'border-emerald-200',  accent: 'bg-emerald-500',  light: 'bg-emerald-50',  ring: 'ring-emerald-200' },
+    Medium: { bg: 'bg-amber-50',    text: 'text-amber-700',    border: 'border-amber-200',    accent: 'bg-amber-500',    light: 'bg-amber-50',    ring: 'ring-amber-200'  },
+    Low:    { bg: 'bg-gray-50',     text: 'text-gray-500',     border: 'border-gray-200',     accent: 'bg-gray-400',     light: 'bg-gray-100',    ring: 'ring-gray-200'   },
   }[opp.priority as 'High' | 'Medium' | 'Low'] ?? {
-    bg: 'bg-gray-50', text: 'text-gray-600', border: 'border-gray-200', accent: 'bg-gray-400', light: 'bg-gray-100', ring: 'ring-gray-200'
+    bg: 'bg-gray-50', text: 'text-gray-500', border: 'border-gray-200', accent: 'bg-gray-400', light: 'bg-gray-100', ring: 'ring-gray-200'
   };
 
   return (
