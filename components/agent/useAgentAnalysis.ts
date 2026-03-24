@@ -17,6 +17,31 @@ import {
   FirebaseUser,
 } from '../../firebase';
 
+// ---------------------------------------------------------------------------
+// Session cache (max 10 entries, keyed by sanitized input)
+// ---------------------------------------------------------------------------
+const analysisCache = new Map<string, AnalysisResult>();
+const MAX_CACHE_SIZE = 10;
+
+function sanitizeInput(raw: string): string {
+  return raw
+    .replace(/https?:\/\/\S+/g, '')      // strip URLs
+    .replace(/\S+@\S+\.\S+/g, '')        // strip emails
+    .replace(/\s+/g, ' ')               // collapse whitespace
+    .trim()
+    .slice(0, 2000);                     // cap at 2000 chars
+}
+
+// ---------------------------------------------------------------------------
+// Loading stage labels
+// ---------------------------------------------------------------------------
+export const LOADING_STAGE_LABELS = [
+  'Reading signal...',
+  'Identifying opportunities...',
+  'Scoring and ranking...',
+  'Done',
+] as const;
+
 const responseSchema = {
   type: Type.OBJECT,
   properties: {
@@ -128,6 +153,8 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
   const [location, setLocation] = useState('');
   const [focus, setFocus] = useState('');
   const [loading, setLoading] = useState(false);
+  const [loadingStage, setLoadingStage] = useState(0);
+  const [loadingProgress, setLoadingProgress] = useState(0);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [filterType, setFilterType] = useState<'top' | 'hot' | 'fast'>('top');
@@ -204,10 +231,17 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
   };
 
   const analyzeSignal = async (overrideInput?: string) => {
-    const signalText = overrideInput ?? input;
-    if (!signalText.trim()) return;
-    // Sync the textarea so the user can see what's being analyzed
+    const rawText = overrideInput ?? input;
+    if (!rawText.trim()) return;
     if (overrideInput) setInput(overrideInput);
+
+    const signalText = sanitizeInput(rawText);
+
+    // Return cached result immediately if available
+    if (analysisCache.has(signalText)) {
+      setResult(analysisCache.get(signalText)!);
+      return;
+    }
 
     const controller = new AbortController();
     abortControllerRef.current = controller;
@@ -215,6 +249,8 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
 
     setLoading(true);
     setError(null);
+    setLoadingStage(0);
+    setLoadingProgress(5);
 
     try {
       const genAI = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
@@ -235,6 +271,7 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
         ${focus || 'General Business'}
 
         RULES:
+        - Return exactly 3 opportunities maximum, prioritized by money_score.
         - Be specific, not generic
         - Avoid vague startup ideas
         - ALL ideas MUST be low-cost startups.
@@ -251,72 +288,88 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
         MARKET CONTEXT:
         ${marketModeConfigs[selectedMode].promptContext}
 
-        STEP 10: MONEY SCORE & BENCHMARKING
-        For each opportunity:
-        - Rate (1-10):
-          - ROI Potential (30%)
-          - Speed to Launch (20%)
-          - Difficulty (15%) - Note: Easier (lower difficulty) = higher score in formula
-          - Urgency (15%)
-          - Local Fit (10%)
-          - Competition Gap (10%)
-        - Calculate Money Score (0-100) using:
-          Money Score = ((ROI * 0.30) + (Speed * 0.20) + ((10 - Difficulty) * 0.15) + (Urgency * 0.15) + (Local Fit * 0.10) + (Competition Gap * 0.10)) * 10
-        - Return the final score as 'money_score'.
-        - BENCHMARK: In the 'description', briefly mention how this score compares to real-world sector averages (e.g., "This 72 is significantly higher than the 45 average for local retail due to low overhead").
+        MONEY SCORE & BENCHMARKING
+        For each opportunity, rate 1-10 and calculate:
+        Money Score = ((ROI * 0.30) + (Speed * 0.20) + ((10 - Difficulty) * 0.15) + (Urgency * 0.15) + (Local Fit * 0.10) + (Competition Gap * 0.10)) * 10
+        Return as 'money_score'. In 'description', briefly compare to real-world sector averages.
 
-        TONE:
-        Clear, sharp, and execution-focused.
-        Think: "What can someone start THIS WEEK?"
+        TONE: Clear, sharp, execution-focused. Think: "What can someone start THIS WEEK?"
       `;
 
-      const response = await genAI.models.generateContent({
+      const responseStream = await genAI.models.generateContentStream({
         model,
         contents: prompt,
         config: {
           responseMimeType: 'application/json',
           responseSchema,
+          maxOutputTokens: 1500,
         },
       });
 
+      let accumulated = '';
+      let chunksReceived = 0;
+      let localStage = 0;
+
+      for await (const chunk of responseStream) {
+        if (signal.aborted) return;
+        accumulated += chunk.text ?? '';
+        chunksReceived++;
+
+        if (chunksReceived === 1 && localStage === 0) {
+          localStage = 1;
+          setLoadingStage(1);
+          setLoadingProgress(25);
+        } else if (accumulated.length > 400 && localStage === 1) {
+          localStage = 2;
+          setLoadingStage(2);
+          setLoadingProgress(65);
+        } else if (localStage === 2 && accumulated.length > 800) {
+          setLoadingProgress(p => Math.min(88, p + 1));
+        }
+      }
+
+      if (signal.aborted) return;
+      setLoadingProgress(95);
+
+      const parsedResult = JSON.parse(accumulated);
+
       if (signal.aborted) return;
 
-      if (response.text) {
-        const parsedResult = JSON.parse(response.text);
+      // Evict oldest entry if at capacity
+      if (analysisCache.size >= MAX_CACHE_SIZE) {
+        const firstKey = analysisCache.keys().next().value;
+        if (firstKey !== undefined) analysisCache.delete(firstKey);
+      }
+      analysisCache.set(signalText, parsedResult);
 
-        if (signal.aborted) return;
-
-        let savedId = '';
-        if (user) {
-          try {
-            const docRef = await addDoc(collection(db, 'analyses'), {
-              userId: user.uid,
-              signal: signalText,
-              trend: parsedResult.trend,
-              summary: parsedResult.summary,
-              affected_groups: parsedResult.affected_groups,
-              problems: parsedResult.problems,
-              opportunities: parsedResult.opportunities,
-              best_idea: parsedResult.best_idea,
-              createdAt: new Date().toISOString(),
-              marketMode: selectedMode,
-            });
-            savedId = docRef.id;
-            loadHistory(user.uid);
-          } catch (err) {
-            if (!signal.aborted) {
-              console.error('Failed to save analysis to Firestore:', err);
-            }
+      let savedId = '';
+      if (user) {
+        try {
+          const docRef = await addDoc(collection(db, 'analyses'), {
+            userId: user.uid,
+            signal: signalText,
+            trend: parsedResult.trend,
+            summary: parsedResult.summary,
+            affected_groups: parsedResult.affected_groups,
+            problems: parsedResult.problems,
+            opportunities: parsedResult.opportunities,
+            best_idea: parsedResult.best_idea,
+            createdAt: new Date().toISOString(),
+            marketMode: selectedMode,
+          });
+          savedId = docRef.id;
+          loadHistory(user.uid);
+        } catch (err) {
+          if (!signal.aborted) {
+            console.error('Failed to save analysis to Firestore:', err);
           }
         }
+      }
 
-        if (!signal.aborted) {
-          setResult({ ...parsedResult, id: savedId });
-        }
-      } else {
-        if (!signal.aborted) {
-          throw new Error('No response from AI');
-        }
+      if (!signal.aborted) {
+        setLoadingStage(3);
+        setLoadingProgress(100);
+        setResult({ ...parsedResult, id: savedId });
       }
     } catch (err) {
       if (!signal.aborted) {
@@ -426,6 +479,8 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
     location, setLocation,
     focus, setFocus,
     loading,
+    loadingStage,
+    loadingProgress,
     result, setResult,
     error,
     filterType, setFilterType,

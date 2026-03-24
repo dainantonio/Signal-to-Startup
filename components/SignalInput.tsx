@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Search, Lightbulb, MapPin, Zap, TrendingUp, Loader2, X, RefreshCw, Sparkles, FileUp, CheckCircle2, AlertCircle } from 'lucide-react';
 import { MarketMode, FeedSignal, SectorKey, RecencyFilter, FeedFilters, SECTOR_CONFIGS } from './types';
+import { LOADING_STAGE_LABELS } from './agent/useAgentAnalysis';
 import { MarketModeSelector } from './MarketModeSelector';
 
 const ALL_SECTORS: SectorKey[] = ['ai', 'policy', 'markets', 'funding', 'sustainability', 'realestate', 'health'];
@@ -19,6 +20,8 @@ interface SignalInputProps {
   focus: string;
   setFocus: (val: string) => void;
   loading: boolean;
+  loadingStage?: number;
+  loadingProgress?: number;
   analyzeSignal: (overrideInput?: string) => void;
   cancelAnalysis: () => void;
   exampleSignals: { label: string; text: string; location: string; focus: string }[];
@@ -28,7 +31,7 @@ interface SignalInputProps {
 
 export const SignalInput: React.FC<SignalInputProps> = ({
   input, setInput, urlInput, setUrlInput, fetchingUrl, fetchUrl,
-  location, setLocation, focus, setFocus, loading, analyzeSignal, cancelAnalysis,
+  location, setLocation, focus, setFocus, loading, loadingStage = 0, loadingProgress = 5, analyzeSignal, cancelAnalysis,
   exampleSignals, selectedMode, setSelectedMode,
 }) => {
   const [inputMode, setInputMode] = useState<'paste' | 'feed'>('paste');
@@ -351,19 +354,34 @@ export const SignalInput: React.FC<SignalInputProps> = ({
         </div>
         <MarketModeSelector selectedMode={selectedMode} onModeChange={setSelectedMode} />
         {loading ? (
-          <div className="flex gap-3">
-            <div className="flex-1 flex items-center justify-center gap-3 bg-primary/50 text-white py-5 rounded-2xl font-mono text-sm uppercase tracking-widest cursor-not-allowed select-none">
-              <Loader2 className="w-5 h-5 animate-spin" />
-              Analyzing Signal...
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-[11px] font-mono text-muted">
+                <Loader2 className="w-4 h-4 animate-spin text-primary flex-shrink-0" />
+                <span className="transition-all duration-300">{LOADING_STAGE_LABELS[loadingStage] ?? LOADING_STAGE_LABELS[0]}</span>
+              </div>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); cancelAnalysis(); }}
+                aria-label="Cancel analysis"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-border/10 rounded-xl text-muted hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition-all text-[10px] font-mono uppercase tracking-wider shadow-sm flex-shrink-0"
+              >
+                <X className="w-3 h-3" />
+                Cancel
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); cancelAnalysis(); }}
-              aria-label="Cancel analysis"
-              className="px-5 py-5 bg-white border border-border/10 rounded-2xl text-muted hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition-all shadow-sm"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
+              <div
+                className="h-full bg-primary rounded-full transition-all duration-500 ease-out"
+                style={{ width: `${loadingProgress}%` }}
+              />
+            </div>
+            <div className="flex justify-between text-[9px] font-mono text-muted/50 uppercase tracking-wider">
+              <span>Reading</span>
+              <span>Opportunities</span>
+              <span>Scoring</span>
+              <span>Done</span>
+            </div>
           </div>
         ) : (
           <button
