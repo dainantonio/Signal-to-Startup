@@ -103,6 +103,7 @@ export interface FeedSignal {
   color: string;
   snippet: string;
   strength: number;
+  signalScore?: number;
   market?: string;
   isLocalSource?: boolean;
   isGlobalMention?: boolean;

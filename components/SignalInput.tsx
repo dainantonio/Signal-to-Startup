@@ -236,9 +236,25 @@ export const SignalInput: React.FC<SignalInputProps> = ({
     });
   };
 
-  const StrengthDot = ({ strength }: { strength: number }) => {
-    const color = strength >= 8 ? 'bg-green-500' : strength >= 5 ? 'bg-amber-400' : 'bg-red-400';
-    return <span className={`w-2 h-2 rounded-full flex-shrink-0 ${color}`} title={`Signal strength: ${strength}/10`} />;
+  const SignalScoreBadge = ({ score, publishedAt }: { score?: number; publishedAt: string }) => {
+    const time = timeAgo(publishedAt);
+    if (!score || score < 40) {
+      return <span className="text-[9px] font-mono text-muted">{time}</span>;
+    }
+    const cls = score >= 80
+      ? 'bg-green-100 text-green-800 border border-green-200'
+      : score >= 60
+      ? 'bg-amber-100 text-amber-800 border border-amber-200'
+      : 'bg-gray-100 text-gray-600 border border-gray-200';
+    const icon = score >= 80 ? '🔥' : score >= 60 ? '⚡' : '';
+    return (
+      <span
+        className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[9px] font-mono font-bold tabular-nums ${cls}`}
+        title="Signal strength — how likely this article contains a strong business opportunity"
+      >
+        {icon}{score}
+      </span>
+    );
   };
 
   return (
@@ -485,8 +501,7 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                               <span className="px-2 py-0.5 text-[9px] font-mono uppercase font-bold rounded-md bg-blue-100 text-blue-700">Global mention</span>
                             )}
                             <div className="ml-auto flex items-center gap-1.5 flex-shrink-0">
-                              <StrengthDot strength={sig.strength} />
-                              <span className="text-[9px] font-mono text-muted">{timeAgo(sig.publishedAt)}</span>
+                              <SignalScoreBadge score={sig.signalScore} publishedAt={sig.publishedAt} />
                               {sig.url && sig.url !== '#' && (
                                 <a href={sig.url} target="_blank" rel="noopener noreferrer" aria-label={`Read full article: ${sig.title}`} className="text-[9px] font-mono text-primary hover:underline" onClick={e => e.stopPropagation()}>↗</a>
                               )}

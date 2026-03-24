@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   Globe,
   TrendingUp,
@@ -10,7 +10,8 @@ import {
   X,
   User as UserIcon,
   Trash2,
-  LayoutDashboard
+  LayoutDashboard,
+  ArrowLeft,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Link from 'next/link';
@@ -34,6 +35,10 @@ export default function TrendIntelligenceAgent() {
   const [showOnboarding, setShowOnboarding] = useState(() => {
     try { return !localStorage.getItem('s2s_onboarded'); } catch { return true; }
   });
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [hasLastResult, setHasLastResult] = useState(() => {
+    try { return !!sessionStorage.getItem('s2s_lastResult'); } catch { return false; }
+  });
   const [selectedMode, setSelectedMode] = useState<MarketMode>('global');
   const [countryTags, setCountryTags] = useState<string[]>(() => {
     try { const s = localStorage.getItem('s2s_country_tags'); return s ? JSON.parse(s) : []; } catch { return []; }
@@ -51,6 +56,42 @@ export default function TrendIntelligenceAgent() {
   };
 
   const analysis = useAgentAnalysis(user, selectedMode, countryTags);
+
+  // FIX 2: Back to feed
+  const handleBackToFeed = useCallback(() => {
+    setShowCancelConfirm(false);
+    analysis.cancelAnalysis();
+    analysis.setResult(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [analysis]);
+
+  const handleBackOrCancel = useCallback(() => {
+    if (analysis.loading && analysis.loadingProgress >= 80) {
+      setShowCancelConfirm(true);
+    } else {
+      handleBackToFeed();
+    }
+  }, [analysis, handleBackToFeed]);
+
+  // Escape key
+  React.useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (showCancelConfirm) { setShowCancelConfirm(false); return; }
+        if (analysis.result || analysis.loading) handleBackOrCancel();
+      }
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [analysis.result, analysis.loading, showCancelConfirm, handleBackOrCancel]);
+
+  // FIX 3: Save result to sessionStorage whenever it changes
+  React.useEffect(() => {
+    if (analysis.result) {
+      try { sessionStorage.setItem('s2s_lastResult', JSON.stringify(analysis.result)); } catch {}
+      setHasLastResult(false); // user is viewing it — hide banner
+    }
+  }, [analysis.result]);
 
   const pipelineSteps = [
     { id: 1, label: 'Ingestion', icon: Search },
@@ -359,6 +400,35 @@ export default function TrendIntelligenceAgent() {
           <PipelineProgress currentStep={currentStep} steps={pipelineSteps} />
         )}
 
+        {/* FIX 3: Resume banner */}
+        {hasLastResult && !analysis.result && !analysis.loading && (
+          <div className="flex items-center gap-3 px-5 py-3 mb-6 bg-blue-50 border border-blue-200 rounded-2xl text-sm">
+            <span className="text-blue-700 font-medium flex-1">↩ You have an unsaved analysis from this session</span>
+            <button
+              onClick={() => {
+                try {
+                  const saved = sessionStorage.getItem('s2s_lastResult');
+                  if (saved) analysis.setResult(JSON.parse(saved));
+                } catch {}
+                setHasLastResult(false);
+              }}
+              className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-mono uppercase tracking-wide hover:bg-blue-700 transition-colors"
+            >
+              View results
+            </button>
+            <button
+              onClick={() => {
+                try { sessionStorage.removeItem('s2s_lastResult'); } catch {}
+                setHasLastResult(false);
+              }}
+              className="p-1.5 text-blue-400 hover:text-blue-700 transition-colors"
+              aria-label="Dismiss"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
         <SignalInput
           input={analysis.input}
           setInput={analysis.setInput}
@@ -408,6 +478,21 @@ export default function TrendIntelligenceAgent() {
           )}
 
           {analysis.result && (
+            <>
+              {/* FIX 2: Sticky back button */}
+              <div className="sticky top-4 z-40 flex justify-start mb-6">
+                <button
+                  type="button"
+                  onClick={handleBackToFeed}
+                  className="flex items-center gap-2 min-h-10 px-4 py-2 bg-white border border-border/10 hover:border-border/30 hover:bg-gray-50 rounded-xl shadow-md text-[11px] font-mono uppercase tracking-widest text-muted hover:text-foreground transition-all"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  Back to Feed
+                </button>
+              </div>
+            </>
+          )}
+          {analysis.result && (
             <ResultsDashboard
               result={analysis.result}
               filteredOpportunities={analysis.filteredOpportunities}
@@ -437,6 +522,45 @@ export default function TrendIntelligenceAgent() {
               copied={copied}
               selectedMode={selectedMode}
             />
+          )}
+        </AnimatePresence>
+
+        {/* FIX 2: Cancel confirm modal */}
+        <AnimatePresence>
+          {showCancelConfirm && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setShowCancelConfirm(false)}
+                className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50"
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.15 }}
+                className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full mx-4 space-y-5"
+              >
+                <p className="font-serif italic text-xl font-bold">Analysis almost done</p>
+                <p className="text-sm text-muted leading-relaxed">Results are nearly ready. Are you sure you want to cancel?</p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowCancelConfirm(false)}
+                    className="flex-1 py-3 bg-foreground text-background rounded-xl font-mono text-[10px] uppercase tracking-widest hover:bg-foreground/90 transition-all"
+                  >
+                    Wait for results
+                  </button>
+                  <button
+                    onClick={handleBackToFeed}
+                    className="flex-1 py-3 bg-white border border-border/10 text-muted rounded-xl font-mono text-[10px] uppercase tracking-widest hover:text-red-500 hover:border-red-200 transition-all"
+                  >
+                    Cancel anyway
+                  </button>
+                </div>
+              </motion.div>
+            </>
           )}
         </AnimatePresence>
 

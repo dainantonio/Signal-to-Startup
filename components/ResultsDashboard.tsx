@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { Share2, Twitter, Linkedin, AlertTriangle, Users, ChevronRight, Link as LinkIcon, Check, TrendingUp, Zap, Sparkles, ArrowRight, Search } from 'lucide-react';
+import { Share2, Twitter, Linkedin, AlertTriangle, Users, ChevronRight, Link as LinkIcon, Check, TrendingUp, Zap, Sparkles, ArrowRight, Search, Download, Printer } from 'lucide-react';
 import { AnalysisResult, Opportunity } from './types';
 import { OpportunityCard } from './OpportunityCard';
 import { COUNTRY_CONTEXT } from '@/lib/rss-sources';
@@ -25,6 +25,83 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
   grantOnly, setGrantOnly, generateDeepDive, shareOnTwitter, shareOnLinkedIn, countryTags = []
 }) => {
   const [copied, setCopied] = useState(false);
+
+  const downloadReport = () => {
+    const sep = '─'.repeat(50);
+    const lines: string[] = [
+      'SIGNAL TO STARTUP — ANALYSIS REPORT',
+      `Generated: ${new Date().toLocaleDateString()}`,
+      sep,
+      '',
+      `TREND: ${result.trend}`,
+      '',
+      'SUMMARY',
+      result.summary,
+      '',
+      'AFFECTED GROUPS',
+      result.affected_groups.map(g => `• ${g}`).join('\n'),
+      '',
+      'PROBLEMS IDENTIFIED',
+      result.problems.map((p, i) => `${i + 1}. ${p}`).join('\n'),
+      '',
+      sep,
+      'OPPORTUNITIES',
+      sep,
+      ...result.opportunities.flatMap((opp, i) => [
+        '',
+        `${i + 1}. ${opp.name.toUpperCase()}`,
+        opp.description,
+        `Target: ${opp.target_customer}`,
+        `Why now: ${opp.why_now}`,
+        `Monetization: ${opp.monetization}`,
+        `Startup cost: $${opp.startup_cost.toLocaleString()}`,
+        `Money score: ${opp.money_score}/100`,
+        `Speed to launch: ${opp.speed_to_launch}/10`,
+      ]),
+      '',
+      sep,
+      'BEST IDEA',
+      sep,
+      '',
+      result.best_idea.name,
+      result.best_idea.reason,
+      `Who should build this: ${result.best_idea.who_should_build}`,
+      `Cost estimate: ${result.best_idea.cost_estimate}`,
+      `Speed: ${result.best_idea.speed_rating}`,
+      '',
+      'FIRST STEPS',
+      result.best_idea.first_steps.map((s, i) => `${i + 1}. ${s}`).join('\n'),
+      '',
+      sep,
+      'signal-to-startup.vercel.app',
+    ];
+    const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `signal-analysis-${Date.now()}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const printAnalysis = () => {
+    const style = document.createElement('style');
+    style.id = 'print-style';
+    style.innerHTML = `
+      @media print {
+        body > * { display: none !important; }
+        #export-content { display: block !important; position: static; font-family: Georgia, serif; padding: 2rem; }
+        #export-content h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+        #export-content h2 { font-size: 1.1rem; margin: 1.2rem 0 0.4rem; border-top: 1px solid #ccc; padding-top: 0.6rem; }
+        #export-content p, #export-content li { font-size: 0.9rem; line-height: 1.5; margin: 0.25rem 0; }
+        #export-content .opp-block { margin: 0.75rem 0; padding: 0.5rem 0; border-top: 1px dashed #eee; }
+        #export-content footer { margin-top: 2rem; font-size: 0.75rem; color: #999; border-top: 1px solid #eee; padding-top: 0.5rem; }
+      }
+    `;
+    document.head.appendChild(style);
+    window.print();
+    document.getElementById('print-style')?.remove();
+  };
 
   const copyLink = () => {
     const url = result.id ? `${window.location.origin}/analysis/${result.id}` : window.location.href;
@@ -249,10 +326,10 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
             </div>
           </div>
 
-          {/* Share bar */}
+          {/* Share + Export bar */}
           <div className="flex flex-wrap items-center gap-6 mt-12 pt-8 border-t border-white/10">
             <span className="text-[10px] font-mono uppercase opacity-30 flex items-center gap-2 tracking-widest"><Share2 className="w-4 h-4" /> Share Intelligence</span>
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <button onClick={copyLink} className="flex items-center gap-2 text-[10px] font-mono uppercase font-bold opacity-50 hover:opacity-100 transition-all hover:translate-y-[-1px]">
                 {copied ? <><Check className="w-4 h-4 text-secondary" />Copied</> : <><LinkIcon className="w-4 h-4" />Copy Link</>}
               </button>
@@ -262,10 +339,45 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
               <button onClick={shareOnLinkedIn} className="flex items-center gap-2 text-[10px] font-mono uppercase font-bold opacity-50 hover:opacity-100 transition-all hover:translate-y-[-1px]">
                 <Linkedin className="w-4 h-4" />LinkedIn
               </button>
+              <button onClick={downloadReport} className="flex items-center gap-2 text-[10px] font-mono uppercase font-bold opacity-50 hover:opacity-100 transition-all hover:translate-y-[-1px]">
+                <Download className="w-4 h-4" />Download
+              </button>
+              <button onClick={printAnalysis} className="flex items-center gap-2 text-[10px] font-mono uppercase font-bold opacity-50 hover:opacity-100 transition-all hover:translate-y-[-1px]">
+                <Printer className="w-4 h-4" />Print
+              </button>
             </div>
           </div>
         </div>
       </section>
+      {/* Hidden print-only export content */}
+      <div id="export-content" style={{ display: 'none' }}>
+        <h1>Signal to Startup — Analysis Report</h1>
+        <p style={{ color: '#999', fontSize: '0.8rem' }}>Generated: {new Date().toLocaleDateString()} · signal-to-startup.vercel.app</p>
+        <h2>Trend</h2>
+        <p><strong>{result.trend}</strong></p>
+        <h2>Summary</h2>
+        <p>{result.summary}</p>
+        <h2>Affected Groups</h2>
+        <ul>{result.affected_groups.map((g, i) => <li key={i}>{g}</li>)}</ul>
+        <h2>Problems Identified</h2>
+        <ul>{result.problems.map((p, i) => <li key={i}>{p}</li>)}</ul>
+        <h2>Opportunities</h2>
+        {result.opportunities.map((opp, i) => (
+          <div key={i} className="opp-block">
+            <p><strong>{i + 1}. {opp.name}</strong></p>
+            <p>{opp.description}</p>
+            <p>Target: {opp.target_customer} · Why now: {opp.why_now}</p>
+            <p>Monetization: {opp.monetization} · Cost: ${opp.startup_cost.toLocaleString()} · Score: {opp.money_score}/100</p>
+          </div>
+        ))}
+        <h2>Best Idea: {result.best_idea.name}</h2>
+        <p>{result.best_idea.reason}</p>
+        <p>Who should build: {result.best_idea.who_should_build}</p>
+        <p>Cost: {result.best_idea.cost_estimate} · Speed: {result.best_idea.speed_rating}</p>
+        <h2>First Steps</h2>
+        <ol>{result.best_idea.first_steps.map((s, i) => <li key={i}>{s}</li>)}</ol>
+        <footer>Generated by Signal to Startup — signal-to-startup.vercel.app</footer>
+      </div>
     </motion.div>
   );
 };

@@ -17,6 +17,7 @@ export interface RSSFeedItem {
   strength: number;
   category: string;
   color: string;
+  signalScore?: number;
   isLocalSource?: boolean;
   isGlobalMention?: boolean;
 }
@@ -78,6 +79,37 @@ function recencyBonus(publishedAt: string): number {
 
 function strengthScore(tier: 1 | 2 | 3, publishedAt: string): number {
   return Math.min(10, tierBaseScore(tier) + recencyBonus(publishedAt));
+}
+
+const OPPORTUNITY_KEYWORDS = [
+  'shortage', 'gap', 'lack of', 'demand for', 'surge in',
+  'crisis', 'disruption', 'new regulation', 'policy change',
+  'funding', 'grant', 'investment', 'billion', 'million',
+  'startup', 'opportunity', 'growth', 'emerging', 'launch',
+];
+
+const TIER1_SOURCES = ['Reuters', 'TechCrunch', 'CNBC', 'BBC', 'Guardian', 'Wired'];
+const TIER2_SOURCES = ['Fast Company', 'Inc Magazine', 'Entrepreneur', 'VentureBeat', 'The Verge'];
+
+function calculateSignalScore(item: RSSFeedItem): number {
+  let score = 50;
+
+  const hoursAgo = (Date.now() - new Date(item.publishedAt).getTime()) / 3_600_000;
+  if (hoursAgo < 2) score += 20;
+  else if (hoursAgo < 6) score += 15;
+  else if (hoursAgo < 24) score += 8;
+
+  if (TIER1_SOURCES.some(s => item.source.includes(s))) score += 15;
+  else if (TIER2_SOURCES.some(s => item.source.includes(s))) score += 8;
+
+  const text = `${item.title} ${item.snippet}`.toLowerCase();
+  const hits = OPPORTUNITY_KEYWORDS.filter(k => text.includes(k)).length;
+  score += Math.min(hits * 5, 15);
+
+  if (item.sector === 'funding') score += 10;
+  if (item.sector === 'policy') score += 8;
+
+  return Math.min(Math.max(score, 10), 99);
 }
 
 function titleTokens(title: string): Set<string> {
@@ -157,12 +189,14 @@ async function fetchOneFeed(source: typeof RSS_SOURCES[0]): Promise<RSSFeedItem[
     const publishedAt = safeIso(pubDate);
     const snippet = stripHtml(extractText(item.description) || extractText(item.summary || '')).substring(0, 200);
 
-    items.push({
+    const rssItem: RSSFeedItem = {
       title, url, source: source.name, publishedAt, snippet,
       sector: source.sector, market: source.market,
       strength: strengthScore(source.tier, publishedAt),
       category: source.sector, color: '',
-    });
+    };
+    rssItem.signalScore = calculateSignalScore(rssItem);
+    items.push(rssItem);
   }
 
   // Atom format
@@ -188,12 +222,14 @@ async function fetchOneFeed(source: typeof RSS_SOURCES[0]): Promise<RSSFeedItem[
     const publishedAt = safeIso(pubDate);
     const snippet = stripHtml(extractText(entry.summary) || extractText(entry.content || '')).substring(0, 200);
 
-    items.push({
+    const atomItem: RSSFeedItem = {
       title, url, source: source.name, publishedAt, snippet,
       sector: source.sector, market: source.market,
       strength: strengthScore(source.tier, publishedAt),
       category: source.sector, color: '',
-    });
+    };
+    atomItem.signalScore = calculateSignalScore(atomItem);
+    items.push(atomItem);
   }
 
   return items;
