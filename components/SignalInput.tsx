@@ -19,7 +19,7 @@ interface SignalInputProps {
   focus: string;
   setFocus: (val: string) => void;
   loading: boolean;
-  analyzeSignal: () => void;
+  analyzeSignal: (overrideInput?: string) => void;
   cancelAnalysis: () => void;
   exampleSignals: { label: string; text: string; location: string; focus: string }[];
   selectedMode: MarketMode;
@@ -60,39 +60,12 @@ export const SignalInput: React.FC<SignalInputProps> = ({
 
   const [signals, setSignals] = useState<FeedSignal[]>([]);
   const [fetchingFeed, setFetchingFeed] = useState(false);
+  const [fetchingArticle, setFetchingArticle] = useState<string | null>(null);
+  const [articleNotice, setArticleNotice] = useState<string | null>(null);
   const [lastFetchKey, setLastFetchKey] = useState('');
-  const [duplicatesRemoved, setDuplicatesRemoved] = useState(0);
   const [filters, setFilters] = useState<FeedFilters>({ sectors: ALL_SECTORS, recency: '3d' });
 
   const fetchKey = `${selectedMode}|${filters.sectors.join(',')}|${filters.recency}|${focus}`;
-
-  const deduplicateSignals = (raw: FeedSignal[]): { signals: FeedSignal[]; removed: number } => {
-    const seenUrls = new Set<string>();
-    const deduped: FeedSignal[] = [];
-
-    for (const sig of raw) {
-      // URL deduplication
-      if (sig.url && sig.url !== '#') {
-        if (seenUrls.has(sig.url)) continue;
-        seenUrls.add(sig.url);
-      }
-
-      // Title similarity deduplication (>70% word overlap)
-      const words = (t: string) => new Set(t.toLowerCase().split(/\s+/).filter(w => w.length > 2));
-      const titleWords = words(sig.title);
-      const isTitleDuplicate = deduped.some(existing => {
-        const existingWords = words(existing.title);
-        const shared = [...titleWords].filter(w => existingWords.has(w)).length;
-        return shared / Math.max(titleWords.size, existingWords.size) > 0.7;
-      });
-
-      if (!isTitleDuplicate) {
-        deduped.push(sig);
-      }
-    }
-
-    return { signals: deduped, removed: raw.length - deduped.length };
-  };
 
   const fetchFeed = useCallback(async (force = false) => {
     if (!force && fetchKey === lastFetchKey && signals.length > 0) return;
@@ -107,9 +80,7 @@ export const SignalInput: React.FC<SignalInputProps> = ({
       const res = await fetch(`/api/live-feed?${params.toString()}`);
       if (!res.ok) throw new Error('Feed fetch failed');
       const raw: FeedSignal[] = await res.json();
-      const { signals: deduped, removed } = deduplicateSignals(raw);
-      setSignals(deduped);
-      setDuplicatesRemoved(removed);
+      setSignals(raw);
       setLastFetchKey(fetchKey);
     } catch (err) {
       console.error('Feed error:', err);
@@ -127,10 +98,30 @@ export const SignalInput: React.FC<SignalInputProps> = ({
     return h < 1 ? 'Just now' : h < 24 ? `${h}h ago` : `${Math.floor(h / 24)}d ago`;
   };
 
-  const onAnalyzeSignal = (sig: FeedSignal) => {
-    setInput(`${sig.title}\n\n${sig.snippet}`);
-    setInputMode('paste');
-    setTimeout(() => document.getElementById('analyze-actions')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+  const onAnalyzeSignal = async (sig: FeedSignal) => {
+    setFetchingArticle(sig.url ?? sig.title);
+    setArticleNotice(null);
+    let text = '';
+    if (sig.url && sig.url !== '#') {
+      try {
+        const res = await fetch(`/api/fetch-url?url=${encodeURIComponent(sig.url)}`);
+        if (res.ok) {
+          const data = await res.json();
+          text = data.content ?? '';
+        }
+      } catch {
+        // fall through to snippet
+      }
+    }
+    if (!text.trim()) {
+      text = `${sig.title}\n\n${sig.snippet}`;
+      setArticleNotice('Full article unavailable — analyzing summary');
+    } else {
+      setArticleNotice(`Analyzing: ${sig.title.substring(0, 60)}${sig.title.length > 60 ? '...' : ''}`);
+    }
+    setFetchingArticle(null);
+    analyzeSignal(text);
+    setTimeout(() => setArticleNotice(null), 5000);
   };
 
   const toggleSector = (key: SectorKey) => {
@@ -141,13 +132,10 @@ export const SignalInput: React.FC<SignalInputProps> = ({
     });
   };
 
-  const StrengthDots = ({ strength }: { strength: number }) => (
-    <div className="flex gap-0.5 items-center" title={`Signal strength: ${strength}/5`}>
-      {[1,2,3,4,5].map(i => (
-        <div key={i} className={`w-1 h-2.5 rounded-full ${i <= strength ? 'bg-primary' : 'bg-gray-200'}`} />
-      ))}
-    </div>
-  );
+  const StrengthDot = ({ strength }: { strength: number }) => {
+    const color = strength >= 8 ? 'bg-green-500' : strength >= 5 ? 'bg-amber-400' : 'bg-red-400';
+    return <span className={`w-2 h-2 rounded-full flex-shrink-0 ${color}`} title={`Signal strength: ${strength}/10`} />;
+  };
 
   return (
     <section id="step-1" className="scroll-mt-24 mb-12">
@@ -271,11 +259,6 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                 <span className="w-2 h-2 bg-red-400 rounded-full animate-pulse" />
                 {selectedMode !== 'global' ? `${selectedMode} signals` : 'Global'}
               </span>
-              {duplicatesRemoved > 0 && (
-                <span className="text-[9px] font-mono uppercase tracking-wider text-muted bg-gray-100 border border-border/10 px-2 py-1 rounded-full">
-                  {duplicatesRemoved} duplicate{duplicatesRemoved > 1 ? 's' : ''} removed
-                </span>
-              )}
               <button onClick={() => fetchFeed(true)} disabled={fetchingFeed} aria-label="Refresh feed"
                 className="p-2 hover:bg-white border border-transparent hover:border-border/10 rounded-lg transition-all text-muted hover:text-foreground">
                 <RefreshCw className={`w-4 h-4 ${fetchingFeed ? 'animate-spin' : ''}`} />
@@ -283,45 +266,62 @@ export const SignalInput: React.FC<SignalInputProps> = ({
             </div>
           </div>
 
+          {/* Article notice */}
+          {articleNotice && (
+            <div className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-[10px] font-mono ${articleNotice.startsWith('Full article') ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-green-50 border-green-200 text-green-700'}`}>
+              <Loader2 className="w-3 h-3 animate-spin flex-shrink-0" />
+              {articleNotice}
+            </div>
+          )}
+
           {/* Feed cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {fetchingFeed
               ? Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="bg-white border border-border/10 rounded-2xl p-6 space-y-4 animate-pulse shadow-sm">
-                    <div className="h-4 bg-gray-100 w-20 rounded-lg" /><div className="h-14 bg-gray-100 rounded-xl" /><div className="h-4 bg-gray-100 w-32 rounded-lg" /><div className="h-10 bg-gray-100 rounded-xl" />
+                  <div key={i} className="bg-white border border-border/10 rounded-2xl p-5 space-y-3 animate-pulse shadow-sm">
+                    <div className="flex gap-2"><div className="h-4 bg-gray-100 w-16 rounded-md" /><div className="h-4 bg-gray-100 w-10 rounded-md" /></div>
+                    <div className="h-10 bg-gray-100 rounded-lg" />
+                    <div className="h-8 bg-gray-100 rounded-lg" />
+                    <div className="h-9 bg-gray-100 rounded-xl" />
                   </div>
                 ))
               : signals.length === 0
               ? <div className="col-span-2 text-center py-16 text-muted font-mono text-xs uppercase tracking-widest">No signals found. Try widening your filters.</div>
               : signals.map((sig, i) => {
                   const cfg = SECTOR_CONFIGS[sig.sector] ?? SECTOR_CONFIGS.markets;
+                  const isLoading = fetchingArticle === (sig.url ?? sig.title);
                   return (
-                    <div key={i} className={`group bg-white border border-border/10 rounded-2xl p-5 flex flex-col gap-4 shadow-sm hover:shadow-md transition-all duration-300 border-l-4 ${cfg.borderColor}`}>
-                      <div className="flex justify-between items-start gap-2">
-                        <span className={`px-2.5 py-1 text-[9px] font-mono uppercase font-bold rounded-md ${cfg.badgeBg} ${cfg.badgeText}`}>{cfg.label}</span>
-                        <div className="flex items-center gap-3 flex-shrink-0">
-                          <StrengthDots strength={sig.strength} />
+                    <div key={i} className={`bg-white border border-border/10 rounded-2xl p-5 flex flex-col gap-3 shadow-sm hover:shadow-md transition-all duration-300 border-l-4 ${cfg.borderColor}`}>
+                      {/* Header row: source + badge + strength dot + time */}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-[9px] font-mono font-bold text-muted uppercase tracking-wider truncate">{sig.source}</span>
+                        <span className={`px-2 py-0.5 text-[9px] font-mono uppercase font-bold rounded-md ${cfg.badgeBg} ${cfg.badgeText}`}>{cfg.label}</span>
+                        <div className="ml-auto flex items-center gap-1.5 flex-shrink-0">
+                          <StrengthDot strength={sig.strength} />
                           <span className="text-[9px] font-mono text-muted">{timeAgo(sig.publishedAt)}</span>
+                          {sig.url && sig.url !== '#' && (
+                            <a href={sig.url} target="_blank" rel="noopener noreferrer" aria-label={`Read full article: ${sig.title}`} className="text-[9px] font-mono text-primary hover:underline" onClick={e => e.stopPropagation()}>↗</a>
+                          )}
                         </div>
                       </div>
-                      <p className="text-base font-serif italic font-bold leading-snug">
-                        {sig.title.length > 90 ? `${sig.title.substring(0, 90)}...` : sig.title}
-                      </p>
-                      <p className="text-xs text-muted leading-relaxed line-clamp-2">{sig.snippet}</p>
-                      <div className="flex items-center justify-between gap-3 mt-auto">
-                        <span className="text-[9px] font-mono text-muted truncate">
-                          {sig.source}
-                          {sig.url && sig.url !== '#' && (
-                            <a href={sig.url} target="_blank" rel="noopener noreferrer" aria-label={`Read full article: ${sig.title}`} className="ml-2 text-primary hover:underline" onClick={e => e.stopPropagation()}>↗</a>
-                          )}
-                        </span>
-                        <button
-                          onClick={() => onAnalyzeSignal(sig)}
-                          aria-label={`Analyze: ${sig.title}`}
-                          className="flex-shrink-0 px-4 py-2 bg-foreground text-background rounded-xl font-mono text-[9px] uppercase tracking-widest hover:bg-foreground/90 transition-all shadow-sm">
-                          Analyze →
-                        </button>
-                      </div>
+                      {/* Title */}
+                      <p className="text-sm font-semibold leading-snug line-clamp-2">{sig.title}</p>
+                      {/* Snippet */}
+                      <p className="text-xs text-muted leading-relaxed line-clamp-2 flex-1">{sig.snippet}</p>
+                      {/* Analyze button */}
+                      <button
+                        type="button"
+                        onClick={() => onAnalyzeSignal(sig)}
+                        disabled={isLoading || !!fetchingArticle}
+                        aria-label={`Analyze: ${sig.title}`}
+                        className="w-full flex items-center justify-center gap-2 py-2.5 bg-foreground text-background rounded-xl font-mono text-[10px] uppercase tracking-widest hover:bg-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
+                      >
+                        {isLoading ? (
+                          <><Loader2 className="w-3.5 h-3.5 animate-spin" />Fetching article...</>
+                        ) : (
+                          <><Zap className="w-3.5 h-3.5" />Analyze</>
+                        )}
+                      </button>
                     </div>
                   );
                 })
@@ -368,7 +368,7 @@ export const SignalInput: React.FC<SignalInputProps> = ({
         ) : (
           <button
             type="button"
-            onClick={analyzeSignal}
+            onClick={() => analyzeSignal()}
             disabled={!input.trim()}
             className="w-full bg-primary text-white py-5 rounded-2xl font-mono text-sm uppercase tracking-widest hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-3 shadow-xl shadow-primary/20 active:scale-[0.98]"
           >

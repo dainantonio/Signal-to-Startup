@@ -203,8 +203,11 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
     setResult(null);
   };
 
-  const analyzeSignal = async () => {
-    if (!input.trim()) return;
+  const analyzeSignal = async (overrideInput?: string) => {
+    const signalText = overrideInput ?? input;
+    if (!signalText.trim()) return;
+    // Sync the textarea so the user can see what's being analyzed
+    if (overrideInput) setInput(overrideInput);
 
     const controller = new AbortController();
     abortControllerRef.current = controller;
@@ -223,7 +226,7 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
         You think like a startup founder, investor, and operator focused on execution.
 
         INPUT:
-        ${input}
+        ${signalText}
 
         LOCATION:
         ${location || 'United States'}
@@ -288,7 +291,7 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
           try {
             const docRef = await addDoc(collection(db, 'analyses'), {
               userId: user.uid,
-              signal: input,
+              signal: signalText,
               trend: parsedResult.trend,
               summary: parsedResult.summary,
               affected_groups: parsedResult.affected_groups,
