@@ -84,15 +84,15 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
               <div className="relative z-10">
                 <div className="flex items-center gap-3 text-primary mb-8">
                   <Sparkles className="w-5 h-5" />
-                  <span className="text-[10px] font-mono uppercase font-bold tracking-widest">Intelligence Protocol 02</span>
+                  <span className="text-xs font-mono uppercase font-bold tracking-wide">Intelligence Protocol 02</span>
                 </div>
-                
-                <h2 className="text-4xl md:text-6xl font-serif italic tracking-tight mb-10 leading-tight text-foreground border-b border-border/5 pb-8">
+
+                <h2 className="text-xl md:text-2xl font-sans font-semibold leading-snug mb-8 text-foreground max-w-3xl border-b border-border/5 pb-8">
                   {analysis.trend}
                 </h2>
-                
+
                 <div className="space-y-10">
-                  <p className="text-xl md:text-2xl font-sans leading-relaxed text-muted font-medium">
+                  <p className="text-base md:text-lg font-sans leading-relaxed text-muted font-medium max-w-2xl">
                     {analysis.summary}
                   </p>
                   
