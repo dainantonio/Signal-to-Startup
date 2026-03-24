@@ -190,10 +190,7 @@ export const SignalInput: React.FC<SignalInputProps> = ({
 
   const onAnalyzeSignal = async (sig: FeedSignal) => {
     const key = sig.url ?? sig.title;
-    // Only one card at a time — cancel any previous
-    if (analyzingUrl && analyzingUrl !== key) {
-      cancelAnalysis();
-    }
+    if (analyzingUrl && analyzingUrl !== key) cancelAnalysis();
     setAnalyzingUrl(key);
     setAnalyzeProgress(0);
     setAnalyzeStage('Fetching article...');
@@ -205,7 +202,13 @@ export const SignalInput: React.FC<SignalInputProps> = ({
         const res = await fetch(`/api/fetch-url?url=${encodeURIComponent(sig.url)}`);
         if (res.ok) {
           const data = await res.json();
-          text = data.content ?? '';
+          if (data.paywalled) {
+            setArticleNotice('Paywalled — analyzing available summary');
+          } else if (data.timedOut) {
+            setArticleNotice('Slow load — using article summary');
+          } else {
+            text = data.content ?? '';
+          }
         }
       } catch {
         // fall through to snippet

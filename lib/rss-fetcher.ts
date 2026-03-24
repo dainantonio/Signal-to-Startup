@@ -1,5 +1,5 @@
 import { XMLParser } from 'fast-xml-parser';
-import { RSS_SOURCES } from './rss-sources';
+import { RSS_SOURCES, PAYWALL_DOMAINS } from './rss-sources';
 import type { SectorKey } from '@/components/types';
 
 // ---------------------------------------------------------------------------
@@ -231,8 +231,22 @@ export async function fetchRSSFeeds(options: FetchRSSOptions): Promise<RSSFeedIt
     // Rejected feeds are silently skipped
   }
 
+  // Filter out paywalled articles by domain
+  const beforePaywallFilter = allItems.length;
+  const noPaywall = allItems.filter(item => {
+    if (!item.url) return true;
+    try {
+      const hostname = new URL(item.url).hostname.replace(/^www\./, '');
+      return !PAYWALL_DOMAINS.some(d => hostname === d || hostname.endsWith(`.${d}`));
+    } catch {
+      return true;
+    }
+  });
+  const removed = beforePaywallFilter - noPaywall.length;
+  if (removed > 0) console.log(`[PAYWALL FILTER] removed ${removed} paywalled articles`);
+
   // Filter by recency window
-  const recent = allItems.filter(item => {
+  const recent = noPaywall.filter(item => {
     try { return new Date(item.publishedAt) >= cutoff; } catch { return false; }
   });
 
