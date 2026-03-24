@@ -361,7 +361,7 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
         config: {
           responseMimeType: 'application/json',
           responseSchema,
-          maxOutputTokens: 4096,
+          maxOutputTokens: 8192,
         },
       });
 
@@ -390,7 +390,13 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
       if (signal.aborted) return;
       setLoadingProgress(95);
 
-      const parsedResult = JSON.parse(accumulated);
+      let parsedResult: AnalysisResult;
+      try {
+        parsedResult = JSON.parse(accumulated);
+      } catch {
+        console.error('JSON parse failed. Raw response:', accumulated.slice(0, 500));
+        throw new Error('The AI returned an incomplete response. Please try again.');
+      }
 
       if (signal.aborted) return;
 
