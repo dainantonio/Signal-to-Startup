@@ -489,6 +489,7 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
       setLoadingProgress(100);
       setResult({ ...parsedResult, id: savedId });
       console.log('[10] result set — analysis complete');
+      console.log('[10b] opportunities count:', parsedResult?.opportunities?.length, '| trend:', parsedResult?.trend?.slice(0, 60));
 
     } catch (err: unknown) {
       // Always log — never silently swallow errors

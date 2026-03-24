@@ -108,6 +108,27 @@ export default function TrendIntelligenceAgent() {
     window.history.replaceState({}, '', url);
   }, [analysis.selectedOpportunity]);
 
+  // Auto-scroll to results when they first appear
+  const prevResultRef = React.useRef<typeof analysis.result>(null);
+  React.useEffect(() => {
+    if (!prevResultRef.current && analysis.result) {
+      console.log('[11] result became non-null — scrolling to results');
+      setTimeout(() => {
+        const el = document.getElementById('step-2');
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          console.log('[12] scrolled to #step-2');
+        } else {
+          console.warn('[12] #step-2 not found in DOM');
+        }
+      }, 150);
+    }
+    if (prevResultRef.current && !analysis.result) {
+      console.log('[DEBUG] result was cleared — something set it to null');
+    }
+    prevResultRef.current = analysis.result;
+  }, [analysis.result]);
+
   // Scroll listener for pipeline progress
   React.useEffect(() => {
     const handleScroll = () => {
