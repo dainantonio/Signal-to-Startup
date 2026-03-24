@@ -15,8 +15,6 @@ import {
   deleteDoc,
   doc,
   FirebaseUser,
-  handleFirestoreError,
-  OperationType,
 } from '../../firebase';
 
 const responseSchema = {
@@ -164,7 +162,7 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
       })) as (AnalysisResult & { id: string })[];
       setHistory(docs);
     } catch (err) {
-      handleFirestoreError(err, OperationType.LIST, 'analyses');
+      console.error('Failed to load analysis history:', err);
     }
   };
 
@@ -176,7 +174,7 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
         setResult(null);
       }
     } catch (err) {
-      handleFirestoreError(err, OperationType.DELETE, `analyses/${id}`);
+      console.error('Failed to delete analysis:', err);
     }
   };
 

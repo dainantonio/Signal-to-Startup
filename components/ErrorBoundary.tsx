@@ -40,7 +40,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
                 The AI or database ran into a problem. Your data is safe — refresh to try again.
               </p>
               {this.state.message && (
-                <p className="text-[10px] font-mono text-red-400 bg-red-50 px-3 py-2 rounded-lg mt-2 text-left break-words">
+                <p className="text-[10px] font-mono text-red-700 bg-red-50 px-3 py-2 rounded-lg mt-2 text-left break-words">
                   {this.state.message}
                 </p>
               )}

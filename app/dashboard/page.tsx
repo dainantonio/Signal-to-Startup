@@ -33,8 +33,6 @@ import {
   FirebaseUser,
   signInWithPopup,
   googleProvider,
-  handleFirestoreError,
-  OperationType
 } from '@/firebase';
 import { SavedOpportunity, OpportunityStatus } from '@/components/types';
 
@@ -71,7 +69,7 @@ export default function DashboardPage() {
       })) as (SavedOpportunity & { id: string })[];
       setSavedOpportunities(docs);
     } catch (err) {
-      handleFirestoreError(err, OperationType.LIST, 'saved_opportunities');
+      console.error('Failed to load pipeline:', err);
     } finally {
       setLoading(false);
     }
@@ -87,7 +85,7 @@ export default function DashboardPage() {
         prev.map(opp => opp.id === id ? { ...opp, status: newStatus } : opp)
       );
     } catch (err) {
-      handleFirestoreError(err, OperationType.UPDATE, `saved_opportunities/${id}`);
+      console.error('Failed to update status:', err);
     } finally {
       setUpdating(null);
     }

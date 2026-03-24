@@ -28,8 +28,6 @@ import {
   doc,
   getDoc,
   FirebaseUser,
-  handleFirestoreError,
-  OperationType
 } from '@/firebase';
 import { SavedOpportunity } from '@/components/types';
 import { CostEstimator } from '@/components/CostEstimator';
@@ -81,7 +79,7 @@ export default function SavedOpportunityPage() {
 
       setSavedOpp({ id: docSnap.id, ...data });
     } catch (err) {
-      handleFirestoreError(err, OperationType.GET, `saved_opportunities/${savedId}`);
+      console.error('Failed to load opportunity:', err);
       setError('Failed to load opportunity');
     } finally {
       setLoading(false);
@@ -269,7 +267,7 @@ export default function SavedOpportunityPage() {
                   )}
                   {activeTab === 'grants' && (
                     <motion.div key="grants" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-                      <GrantFinder deepDiveResult={deepDive} selectedMode="global" />
+                      <GrantFinder deepDiveResult={deepDive} selectedMode={savedOpp.marketMode ?? 'global'} />
                     </motion.div>
                   )}
                   {activeTab === 'checklist' && (

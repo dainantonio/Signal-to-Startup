@@ -107,7 +107,8 @@ export const DeepDiveModal: React.FC<DeepDiveModalProps> = ({
         deepDive: deepDiveResult,
         status: 'Saved',
         checklist: deepDiveResult.checklist.map(item => ({ text: item, completed: false })),
-        savedAt: new Date().toISOString()
+        savedAt: new Date().toISOString(),
+        marketMode: selectedMode,
       });
       setIsSaved(true);
       setSavedDocId(docRef.id);

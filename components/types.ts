@@ -66,6 +66,7 @@ export interface SavedOpportunity {
   status: OpportunityStatus;
   checklist: { text: string; completed: boolean }[];
   savedAt: string;
+  marketMode?: MarketMode;
 }
 
 export type SectorKey = 'ai' | 'policy' | 'markets' | 'funding' | 'sustainability' | 'realestate' | 'health';
