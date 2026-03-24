@@ -7,12 +7,7 @@ import { LOADING_STAGE_LABELS } from './agent/useAgentAnalysis';
 import { MarketModeSelector } from './MarketModeSelector';
 import { COUNTRY_CONTEXT } from '@/lib/rss-sources';
 
-const TAG_SUGGESTIONS = [
-  { region: 'Caribbean', tags: ['Jamaica', 'Trinidad', 'Barbados', 'Guyana', 'Haiti', 'Bahamas'] },
-  { region: 'Africa',    tags: ['Nigeria', 'Ghana', 'Kenya', 'South Africa', 'Rwanda'] },
-  { region: 'UK',        tags: ['London', 'Manchester', 'Scotland'] },
-  { region: 'US',        tags: ['New York', 'Atlanta', 'Miami', 'Houston'] },
-];
+const capitalize = (s: string) => s.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 
 const ALL_SECTORS: SectorKey[] = ['ai', 'policy', 'markets', 'funding', 'sustainability', 'realestate', 'health'];
 
@@ -77,36 +72,24 @@ export const SignalInput: React.FC<SignalInputProps> = ({
   const [fetchingArticle, setFetchingArticle] = useState<string | null>(null);
   const [articleNotice, setArticleNotice] = useState<string | null>(null);
   const [countryInput, setCountryInput] = useState('');
-  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showCountry, setShowCountry] = useState(false);
   const [lastFetchKey, setLastFetchKey] = useState('');
   const [filters, setFilters] = useState<FeedFilters>({ sectors: ALL_SECTORS, recency: '3d' });
 
   const fetchKey = `${selectedMode}|${filters.sectors.join(',')}|${filters.recency}|${focus}|${countryTags.join(',')}`;
 
-  const addCountryTag = (tag: string) => {
-    const normalized = tag.trim();
-    if (!normalized) return;
-    if (countryTags.length >= 2) return;
-    if (countryTags.some(t => t.toLowerCase() === normalized.toLowerCase())) return;
-    setCountryTags([...countryTags, normalized]);
+  const selectCountry = (raw: string) => {
+    const tag = capitalize(raw.trim());
+    if (!tag) return;
+    setCountryTags([tag]);
     setCountryInput('');
-    setShowSuggestions(false);
+    setShowCountry(false);
   };
 
-  const removeCountryTag = (tag: string) => {
-    setCountryTags(countryTags.filter(t => t !== tag));
-  };
-
-  const getTagMeta = (tag: string) => {
-    const ctx = COUNTRY_CONTEXT[tag.toLowerCase()];
-    return { flag: ctx?.flag ?? '🌍', currency: ctx?.currency ?? 'USD' };
-  };
-
-  const filteredSuggestions = countryInput.trim().length > 0
-    ? TAG_SUGGESTIONS.flatMap(g => g.tags).filter(
-        t => t.toLowerCase().includes(countryInput.toLowerCase()) &&
-             !countryTags.some(ct => ct.toLowerCase() === t.toLowerCase())
-      )
+  const countrySuggestions = countryInput.trim().length > 0
+    ? Object.keys(COUNTRY_CONTEXT)
+        .filter(k => k.includes(countryInput.toLowerCase()))
+        .slice(0, 5)
     : [];
 
   const fetchFeed = useCallback(async (force = false) => {
@@ -312,7 +295,7 @@ export const SignalInput: React.FC<SignalInputProps> = ({
           {/* Country tag feed banner */}
           {countryTags.length > 0 && (
             <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 text-[10px] font-mono">
-              <span className="flex-shrink-0">{countryTags.map(t => getTagMeta(t).flag).join(' ')}</span>
+              <span className="flex-shrink-0">{countryTags.map(t => COUNTRY_CONTEXT[t.toLowerCase()]?.flag ?? '🌍').join(' ')}</span>
               Showing {countryTags.join(' & ')}-relevant signals from all sources
             </div>
           )}
@@ -408,86 +391,51 @@ export const SignalInput: React.FC<SignalInputProps> = ({
         </div>
         <MarketModeSelector selectedMode={selectedMode} onModeChange={setSelectedMode} />
 
-        {/* Country / Region Tag */}
-        <div className="space-y-2">
-          <label className="text-[10px] font-mono uppercase tracking-widest text-muted font-bold">
-            Narrow by country or region <span className="font-normal opacity-60">(optional, max 2)</span>
-          </label>
-
-          {/* Selected tags */}
-          {countryTags.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {countryTags.map(tag => {
-                const { flag } = getTagMeta(tag);
-                return (
-                  <span key={tag} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 border border-primary/20 text-primary rounded-full text-[10px] font-mono font-bold">
-                    {flag} {tag}
-                    <button type="button" onClick={() => removeCountryTag(tag)} aria-label={`Remove ${tag}`} className="hover:text-red-500 transition-colors ml-0.5">
-                      <X className="w-3 h-3" />
-                    </button>
-                  </span>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Input + dropdown */}
-          {countryTags.length < 2 && (
-            <div className="relative">
-              <input
-                type="text"
-                value={countryInput}
-                onChange={e => { setCountryInput(e.target.value); setShowSuggestions(true); }}
-                onFocus={() => setShowSuggestions(true)}
-                onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (countryInput.trim()) addCountryTag(countryInput); } }}
-                placeholder="e.g. Jamaica, Trinidad, Lagos, London..."
-                className="w-full bg-white border border-border/10 rounded-xl p-3.5 pl-10 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none font-sans text-sm transition-all shadow-sm"
-              />
-              <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted" />
-
-              {/* Autocomplete dropdown */}
-              {showSuggestions && filteredSuggestions.length > 0 && (
-                <div className="absolute z-30 top-full left-0 right-0 mt-1 bg-white border border-border/10 rounded-xl shadow-xl overflow-hidden">
-                  {filteredSuggestions.slice(0, 6).map(suggestion => {
-                    const { flag } = getTagMeta(suggestion);
-                    return (
-                      <button key={suggestion} type="button" onMouseDown={() => addCountryTag(suggestion)}
-                        className="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-gray-50 text-left transition-colors">
-                        <span className="text-base">{flag}</span>
-                        <span className="font-medium">{suggestion}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Pre-built suggestion chips */}
-          <div className="space-y-2">
-            {TAG_SUGGESTIONS.map(group => (
-              <div key={group.region} className="flex flex-wrap items-center gap-1.5">
-                <span className="text-[9px] font-mono uppercase tracking-wider text-muted/60 w-14 flex-shrink-0">{group.region}</span>
-                {group.tags.map(tag => {
-                  const isSelected = countryTags.some(t => t.toLowerCase() === tag.toLowerCase());
-                  const { flag } = getTagMeta(tag);
+        {/* Country search — single line */}
+        <div className="relative flex items-center gap-2">
+          <div className="relative flex-1">
+            <input
+              type="text"
+              value={countryInput}
+              onChange={e => { setCountryInput(e.target.value); setShowCountry(true); }}
+              onFocus={() => setShowCountry(true)}
+              onBlur={() => setTimeout(() => setShowCountry(false), 150)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') { e.preventDefault(); selectCountry(countrySuggestions[0] ?? countryInput); }
+                if (e.key === 'Escape') { setShowCountry(false); setCountryInput(''); }
+              }}
+              placeholder="Search by country or city... (e.g. Jamaica, Lagos, London)"
+              className="w-full bg-white border border-border/10 rounded-xl py-3 px-4 pl-10 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none font-sans text-sm transition-all shadow-sm"
+            />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted pointer-events-none" />
+            {showCountry && countrySuggestions.length > 0 && (
+              <div className="absolute z-30 top-full left-0 right-0 mt-1 bg-white border border-border/10 rounded-xl shadow-xl overflow-hidden">
+                {countrySuggestions.map(key => {
+                  const ctx = COUNTRY_CONTEXT[key];
                   return (
-                    <button key={tag} type="button"
-                      onClick={() => isSelected ? removeCountryTag(countryTags.find(t => t.toLowerCase() === tag.toLowerCase())!) : addCountryTag(tag)}
-                      disabled={!isSelected && countryTags.length >= 2}
-                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full font-mono text-[9px] uppercase tracking-wider transition-all border ${
-                        isSelected
-                          ? 'bg-primary/10 border-primary/20 text-primary'
-                          : 'bg-white border-border/10 text-muted hover:border-primary/20 hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed'
-                      }`}>
-                      {flag} {tag}
+                    <button key={key} type="button" onMouseDown={() => selectCountry(key)}
+                      className="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-gray-50 text-left transition-colors">
+                      <span>{ctx.flag}</span>
+                      <span className="font-medium">{capitalize(key)}</span>
+                      <span className="text-[10px] font-mono text-muted ml-auto">{ctx.currency}</span>
                     </button>
                   );
                 })}
               </div>
-            ))}
+            )}
           </div>
+          {countryTags[0] && (() => {
+            const tag = countryTags[0];
+            const ctx = COUNTRY_CONTEXT[tag.toLowerCase()];
+            return (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-primary/10 border border-primary/20 text-primary rounded-full text-[10px] font-mono font-bold flex-shrink-0 whitespace-nowrap">
+                {ctx?.flag ?? '🌍'} {tag}
+                <button type="button" onClick={() => setCountryTags([])} aria-label={`Remove ${tag}`} className="ml-0.5 hover:text-red-500 transition-colors">
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            );
+          })()}
         </div>
 
         {loading ? (
