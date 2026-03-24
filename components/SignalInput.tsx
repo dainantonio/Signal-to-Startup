@@ -222,8 +222,8 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                   {duplicatesRemoved} duplicate{duplicatesRemoved > 1 ? 's' : ''} removed
                 </span>
               )}
-              <button onClick={() => fetchFeed(true)} disabled={fetchingFeed}
-                className="p-2 hover:bg-white border border-transparent hover:border-border/10 rounded-lg transition-all text-muted hover:text-foreground" title="Refresh">
+              <button onClick={() => fetchFeed(true)} disabled={fetchingFeed} aria-label="Refresh feed"
+                className="p-2 hover:bg-white border border-transparent hover:border-border/10 rounded-lg transition-all text-muted hover:text-foreground">
                 <RefreshCw className={`w-4 h-4 ${fetchingFeed ? 'animate-spin' : ''}`} />
               </button>
             </div>
@@ -276,15 +276,21 @@ export const SignalInput: React.FC<SignalInputProps> = ({
 
       <div id="analyze-actions" className="mt-8 space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="relative group">
-            <input type="text" value={location} onChange={e => setLocation(e.target.value)} placeholder="Location (e.g. Kingston, New York)"
-              className="w-full bg-white border border-border/10 rounded-xl p-4 pl-11 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none font-sans text-sm transition-all shadow-sm" />
-            <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted group-focus-within:text-primary transition-colors" />
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-mono uppercase tracking-widest text-muted font-bold">Location</label>
+            <div className="relative group">
+              <input type="text" value={location} onChange={e => setLocation(e.target.value)} placeholder="e.g. Kingston, New York"
+                className="w-full bg-white border border-border/10 rounded-xl p-4 pl-11 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none font-sans text-sm transition-all shadow-sm" />
+              <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted group-focus-within:text-primary transition-colors" />
+            </div>
           </div>
-          <div className="relative group">
-            <input type="text" value={focus} onChange={e => setFocus(e.target.value)} placeholder="Niche (e.g. Vending, SaaS, Courier)"
-              className="w-full bg-white border border-border/10 rounded-xl p-4 pl-11 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none font-sans text-sm transition-all shadow-sm" />
-            <Zap className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted group-focus-within:text-primary transition-colors" />
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-mono uppercase tracking-widest text-muted font-bold">Niche / Focus</label>
+            <div className="relative group">
+              <input type="text" value={focus} onChange={e => setFocus(e.target.value)} placeholder="e.g. Vending, SaaS, Courier"
+                className="w-full bg-white border border-border/10 rounded-xl p-4 pl-11 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none font-sans text-sm transition-all shadow-sm" />
+              <Zap className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted group-focus-within:text-primary transition-colors" />
+            </div>
           </div>
         </div>
         <MarketModeSelector selectedMode={selectedMode} onModeChange={setSelectedMode} />

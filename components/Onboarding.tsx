@@ -122,10 +122,12 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onDismiss }) => {
           {/* Navigation */}
           <div className="flex items-center justify-between mt-10 pt-6 border-t border-border/5">
             <div className="flex gap-2">
-              {steps.map((_, i) => (
+              {steps.map((s, i) => (
                 <button
                   key={i}
                   onClick={() => setActiveStep(i)}
+                  aria-label={`Go to step ${i + 1}: ${s.title}`}
+                  aria-current={activeStep === i ? 'step' : undefined}
                   className={`h-1.5 rounded-full transition-all duration-300 ${
                     activeStep === i ? 'bg-primary w-8' : 'bg-gray-200 w-2'
                   }`}

@@ -280,8 +280,8 @@ function KanbanCard({ opportunity, onStatusChange, isUpdating }: KanbanCardProps
   const progressPercent = (checklistProgress / checklistTotal) * 100;
 
   const priorityColor = {
-    'High': 'bg-primary',
-    'Medium': 'bg-secondary',
+    'High': 'bg-emerald-500',
+    'Medium': 'bg-amber-500',
     'Low': 'bg-gray-400'
   }[opp.priority] || 'bg-gray-400';
 

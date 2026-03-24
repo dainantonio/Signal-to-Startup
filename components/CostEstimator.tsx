@@ -43,8 +43,8 @@ export const CostEstimator: React.FC<CostEstimatorProps> = ({ deepDiveResult }) 
                     <div className="flex flex-col items-end gap-1 pl-4">
                       <div className="text-[10px] font-mono font-bold">{Math.round(percentage)}%</div>
                       <div className="w-full max-w-[80px] h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-[#141414]" 
+                        <div
+                          className="h-full bg-foreground"
                           style={{ width: `${percentage}%` }}
                         />
                       </div>
