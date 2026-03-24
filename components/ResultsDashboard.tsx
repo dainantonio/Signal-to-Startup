@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { Share2, Twitter, Linkedin, AlertTriangle, Users, ChevronRight, Link as LinkIcon, Check, TrendingUp, Zap, Sparkles, ArrowRight } from 'lucide-react';
+import { Share2, Twitter, Linkedin, AlertTriangle, Users, ChevronRight, Link as LinkIcon, Check, TrendingUp, Zap, Sparkles, ArrowRight, Search } from 'lucide-react';
 import { AnalysisResult, Opportunity } from './types';
 import { OpportunityCard } from './OpportunityCard';
 
