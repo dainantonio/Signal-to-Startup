@@ -311,7 +311,7 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
 
     try {
       const genAI = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
-      const model = 'gemini-1.5-flash';
+      const model = 'gemini-2.0-flash-lite';
 
       const prompt = `
         You are an AI Trend Intelligence Agent.
@@ -462,7 +462,7 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
 
     try {
       const genAI = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
-      const model = 'gemini-1.5-flash';
+      const model = 'gemini-2.0-flash-lite';
 
       const prompt = `
         You are an AI Business Advisor.
