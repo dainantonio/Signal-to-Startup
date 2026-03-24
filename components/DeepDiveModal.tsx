@@ -38,8 +38,6 @@ import {
   where, 
   updateDoc, 
   doc, 
-  handleFirestoreError, 
-  OperationType 
 } from '../firebase';
 
 interface DeepDiveModalProps {
@@ -114,7 +112,7 @@ export const DeepDiveModal: React.FC<DeepDiveModalProps> = ({
       setIsSaved(true);
       setSavedDocId(docRef.id);
     } catch (err) {
-      handleFirestoreError(err, OperationType.CREATE, 'saved_opportunities');
+      console.error('Failed to save opportunity:', err);
     } finally {
       setSaving(false);
     }

@@ -98,19 +98,27 @@ export const OpportunityCard: React.FC<OpportunityCardProps> = ({
             </div>
             <p className="text-sm font-bold font-mono">${opp.startup_cost.toLocaleString()}</p>
           </div>
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <div className="flex items-center gap-1 text-muted">
               <Zap className="w-3 h-3" />
               <p className="text-[8px] font-mono uppercase tracking-widest">Speed</p>
             </div>
-            <p className="text-sm font-bold font-mono">{opp.speed_to_launch}/10</p>
+            <div className="flex gap-0.5">
+              {[...Array(10)].map((_, i) => (
+                <div key={i} className={`h-2 flex-1 rounded-sm ${i < opp.speed_to_launch ? colors.accent : 'bg-gray-200'}`} />
+              ))}
+            </div>
           </div>
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <div className="flex items-center gap-1 text-muted">
               <Target className="w-3 h-3" />
               <p className="text-[8px] font-mono uppercase tracking-widest">Ease</p>
             </div>
-            <p className="text-sm font-bold font-mono">{10 - opp.difficulty}/10</p>
+            <div className="flex gap-0.5">
+              {[...Array(10)].map((_, i) => (
+                <div key={i} className={`h-2 flex-1 rounded-sm ${i < (10 - opp.difficulty) ? colors.accent : 'bg-gray-200'}`} />
+              ))}
+            </div>
           </div>
         </div>
 

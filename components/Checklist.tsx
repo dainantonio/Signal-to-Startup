@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { CheckCircle2, Loader2, Check, CheckSquare } from 'lucide-react';
 import { DeepDiveResult } from './types';
-import { db, doc, getDoc, updateDoc, handleFirestoreError, OperationType } from '../firebase';
+import { db, doc, getDoc, updateDoc } from '../firebase';
 
 interface ChecklistProps {
   deepDiveResult: DeepDiveResult;
@@ -55,7 +55,7 @@ export const Checklist: React.FC<ChecklistProps> = ({ deepDiveResult, savedDocId
           checklist: newItems
         });
       } catch (err) {
-        handleFirestoreError(err, OperationType.UPDATE, `saved_opportunities/${savedDocId}`);
+        console.error('Failed to sync checklist:', err);
       }
     }
   };
