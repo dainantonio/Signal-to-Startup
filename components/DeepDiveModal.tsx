@@ -432,7 +432,7 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
                         <Calculator className="w-4 h-4" />
                         <span className="text-[10px] font-mono uppercase font-bold tracking-widest">Startup Cost Breakdown</span>
                       </div>
-                      <CostEstimator costs={deepDiveResult.cost_breakdown} />
+                      <CostEstimator deepDiveResult={deepDiveResult} />
                     </div>
                   )}
 
