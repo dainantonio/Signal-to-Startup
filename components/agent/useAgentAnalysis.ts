@@ -224,6 +224,7 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
   const [deepDiveResult, setDeepDiveResult] = useState<DeepDiveResult | null>(null);
   const [deepDiveLoading, setDeepDiveLoading] = useState(false);
   const [activeDeepDiveTab, setActiveDeepDiveTab] = useState<'plan' | 'costs' | 'grants' | 'checklist' | 'investors'>('plan');
+  const deepDiveCache = useRef<Map<string, DeepDiveResult>>(new Map());
 
   useEffect(() => {
     if (user) {
@@ -305,6 +306,9 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
     const signalText = sanitizeInput(rawText);
     console.log('[2b] sanitized text length:', signalText.length);
 
+    // Trim to first 1500 chars — the signal is always at the opening of an article
+    const trimmedForGemini = signalText.trim().substring(0, 1500).replace(/\s+/g, ' ');
+
     // [CHECK] API key
     const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
     if (!apiKey) {
@@ -334,6 +338,11 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
     setLoadingStage(0);
     setLoadingProgress(5);
 
+    // Smooth progress bar — advances every 400ms regardless of actual API progress
+    const progressInterval = setInterval(() => {
+      setLoadingProgress(p => Math.min(p + 2, 90));
+    }, 400);
+
     try {
       const genAI = new GoogleGenAI({ apiKey });
       const model = 'gemini-2.5-flash';
@@ -346,7 +355,7 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
         You think like a startup founder, investor, and operator focused on execution.
 
         INPUT:
-        ${signalText}
+        ${trimmedForGemini}
 
         LOCATION:
         ${location || 'United States'}
@@ -397,8 +406,16 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
       let chunksReceived = 0;
       let localStage = 0;
 
+      // Stage label timing (0-2s, 2-5s, 5-8s, 8s+)
+      const stageTimers = [
+        setTimeout(() => { setLoadingStage(0); }, 0),
+        setTimeout(() => { setLoadingStage(1); }, 2000),
+        setTimeout(() => { setLoadingStage(2); }, 5000),
+      ];
+
       for await (const chunk of responseStream) {
         if (signal.aborted) {
+          stageTimers.forEach(clearTimeout);
           console.log('[ABORT] signal aborted mid-stream, exiting');
           return;
         }
@@ -409,16 +426,11 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
         if (chunksReceived === 1 && localStage === 0) {
           console.log('[4a] first chunk received, text length:', text.length);
           localStage = 1;
-          setLoadingStage(1);
-          setLoadingProgress(25);
         } else if (accumulated.length > 400 && localStage === 1) {
           localStage = 2;
-          setLoadingStage(2);
-          setLoadingProgress(65);
-        } else if (localStage === 2 && accumulated.length > 800) {
-          setLoadingProgress(p => Math.min(88, p + 1));
         }
       }
+      stageTimers.forEach(clearTimeout);
 
       console.log('[4b] stream complete. chunks:', chunksReceived, 'accumulated length:', accumulated.length);
 
@@ -433,6 +445,7 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
         throw new Error('Gemini returned an empty response. This can happen with structured output — please try again.');
       }
 
+      clearInterval(progressInterval);
       setLoadingProgress(95);
       console.log('[5] parsing response, first 200 chars:', accumulated.slice(0, 200));
 
@@ -486,6 +499,7 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
 
       console.log('[9] setting result state...');
       setLoadingStage(3);
+      clearInterval(progressInterval);
       setLoadingProgress(100);
       setResult({ ...parsedResult, id: savedId });
       console.log('[10] result set — analysis complete');
@@ -508,6 +522,7 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
       }
     } finally {
       // ALWAYS clear loading state — never leave the UI stuck
+      clearInterval(progressInterval);
       console.log('[FINALLY] clearing loading. aborted:', signal.aborted);
       setLoading(false);
     }
@@ -515,9 +530,18 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
 
   const generateDeepDive = useCallback(async (opp: Opportunity) => {
     setSelectedOpportunity(opp);
+    setActiveDeepDiveTab('plan');
+
+    // Return cached result instantly
+    const cacheKey = opp.name;
+    if (deepDiveCache.current.has(cacheKey)) {
+      setDeepDiveResult(deepDiveCache.current.get(cacheKey)!);
+      setDeepDiveLoading(false);
+      return;
+    }
+
     setDeepDiveLoading(true);
     setDeepDiveResult(null);
-    setActiveDeepDiveTab('plan');
 
     try {
       const genAI = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
@@ -542,6 +566,7 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
         5. Identify 3-5 specific venture capital firms, angel networks, or investor groups that specialize in this niche or stage.
 
         TONE: Professional, encouraging, and highly practical.
+        Be concise — each field should be 1-2 sentences. Do not over-explain.
       `;
 
       const response = await genAI.models.generateContent({
@@ -550,11 +575,19 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
         config: {
           responseMimeType: 'application/json',
           responseSchema: deepDiveSchema,
+          maxOutputTokens: 2000,
         },
       });
 
       if (response.text) {
-        setDeepDiveResult(JSON.parse(response.text));
+        const parsed: DeepDiveResult = JSON.parse(response.text);
+        // Cache so re-opens are instant
+        if (deepDiveCache.current.size >= 5) {
+          const firstKey = deepDiveCache.current.keys().next().value;
+          if (firstKey !== undefined) deepDiveCache.current.delete(firstKey);
+        }
+        deepDiveCache.current.set(cacheKey, parsed);
+        setDeepDiveResult(parsed);
       }
     } catch (err: unknown) {
       console.error(err);

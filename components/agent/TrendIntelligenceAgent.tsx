@@ -127,7 +127,12 @@ export default function TrendIntelligenceAgent() {
     setTimeout(() => setCopied(null), 2000);
   };
 
-  // Sync selected opportunity with URL for shareability
+  // Sync selected opportunity with URL for shareability.
+  // NOTE: intentionally only depends on analysis.result — do NOT add
+  // analysis.selectedOpportunity here.  If we did, closing the modal
+  // (selectedOpportunity → null) would re-fire this effect while ?opp
+  // is still in the URL (the clear effect runs after), causing an
+  // instant re-open of the execution suite.
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const oppName = params.get('opp');
@@ -137,7 +142,8 @@ export default function TrendIntelligenceAgent() {
         analysis.generateDeepDive(opp);
       }
     }
-  }, [analysis.result, analysis.generateDeepDive, analysis.selectedOpportunity]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [analysis.result]);
 
   React.useEffect(() => {
     const url = new URL(window.location.href);

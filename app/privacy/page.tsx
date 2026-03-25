@@ -14,8 +14,8 @@ export default function PrivacyPage() {
         {/* Header */}
         <div className="space-y-3 border-b border-border/10 pb-8">
           <p className="text-[10px] font-mono uppercase tracking-widest text-muted">Legal</p>
-          <h1 className="text-4xl font-serif italic font-bold">Privacy Policy</h1>
-          <p className="text-sm text-muted">Last updated: January 1, 2026</p>
+          <h1 className="text-2xl font-semibold">Privacy Policy</h1>
+          <p className="text-sm text-muted">Last updated: March 2026</p>
         </div>
 
         {/* Sections */}
@@ -139,8 +139,8 @@ export default function PrivacyPage() {
             </ul>
             <p className="text-muted">
               To request full account deletion, email us at{' '}
-              <a href="mailto:support@entrepaineur.com" className="text-primary hover:underline">
-                support@entrepaineur.com
+              <a href="mailto:hello@entrepaIneur.com" className="text-primary hover:underline">
+                hello@entrepaIneur.com
               </a>
               . We will process your request within 30 days.
             </p>
@@ -172,8 +172,8 @@ export default function PrivacyPage() {
             </p>
             <p className="text-muted pl-2">
               <strong className="text-foreground">EntrepAIneur</strong><br />
-              <a href="mailto:support@entrepaineur.com" className="text-primary hover:underline">
-                support@entrepaineur.com
+              <a href="mailto:hello@entrepaIneur.com" className="text-primary hover:underline">
+                hello@entrepaIneur.com
               </a>
             </p>
           </section>

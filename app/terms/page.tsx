@@ -14,8 +14,8 @@ export default function TermsPage() {
         {/* Header */}
         <div className="space-y-3 border-b border-border/10 pb-8">
           <p className="text-[10px] font-mono uppercase tracking-widest text-muted">Legal</p>
-          <h1 className="text-4xl font-serif italic font-bold">Terms of Service</h1>
-          <p className="text-sm text-muted">Last updated: January 1, 2026</p>
+          <h1 className="text-2xl font-semibold">Terms of Service</h1>
+          <p className="text-sm text-muted">Last updated: March 2026</p>
         </div>
 
         {/* Sections */}
@@ -74,8 +74,8 @@ export default function TermsPage() {
               You may delete individual analyses at any time from the History panel within the
               app. To request full deletion of your account and all associated data, contact us
               at{' '}
-              <a href="mailto:support@entrepaineur.com" className="text-primary hover:underline">
-                support@entrepaineur.com
+              <a href="mailto:hello@entrepaIneur.com" className="text-primary hover:underline">
+                hello@entrepaIneur.com
               </a>
               . We will process your request within 30 days.
             </p>
@@ -114,8 +114,8 @@ export default function TermsPage() {
             <h2 className="text-lg font-semibold">8. Contact</h2>
             <p className="text-muted">
               For questions about these Terms, contact us at{' '}
-              <a href="mailto:support@entrepaineur.com" className="text-primary hover:underline">
-                support@entrepaineur.com
+              <a href="mailto:hello@entrepaIneur.com" className="text-primary hover:underline">
+                hello@entrepaIneur.com
               </a>
               .
             </p>

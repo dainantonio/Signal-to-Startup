@@ -66,6 +66,19 @@ export const DeepDiveModal: React.FC<DeepDiveModalProps> = ({
   selectedMode
 }) => {
   const [isSaved, setIsSaved] = React.useState(false);
+
+  const handleClose = React.useCallback(() => {
+    setSelectedOpportunity(null);
+  }, [setSelectedOpportunity]);
+
+  // Escape key to close
+  React.useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') handleClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [handleClose]);
   const [savedDocId, setSavedDocId] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
   const [showActions, setShowActions] = React.useState(false);
@@ -176,6 +189,7 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 bg-foreground/40 backdrop-blur-md z-50 flex items-end md:items-center justify-center p-0 md:p-8 no-print"
+      onClick={handleClose}
     >
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
@@ -213,6 +227,7 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
         exit={{ y: '100%' }}
         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
         className="bg-background w-full max-w-6xl h-[92dvh] md:h-[85dvh] overflow-hidden rounded-t-3xl md:rounded-3xl border border-border/10 flex flex-col modal-container shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
         <div className="border-b border-border/10 p-4 md:p-6 flex items-center gap-3 bg-white/80 backdrop-blur-md sticky top-0 z-20 no-print">
@@ -362,7 +377,8 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
             </div>
 
             <button
-              onClick={() => setSelectedOpportunity(null)}
+              type="button"
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleClose(); }}
               aria-label="Close execution suite"
               className="p-2.5 hover:bg-gray-100 rounded-xl transition-colors"
             >

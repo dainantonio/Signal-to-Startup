@@ -204,24 +204,39 @@ export const SignalInput: React.FC<SignalInputProps> = ({
     let text = '';
     if (sig.url && sig.url !== '#') {
       try {
-        const res = await fetch(`/api/fetch-url?url=${encodeURIComponent(sig.url)}`);
+        const res = await fetch(
+          `/api/fetch-url?url=${encodeURIComponent(sig.url)}`,
+          { signal: AbortSignal.timeout(9000) }
+        );
         if (res.ok) {
           const data = await res.json();
           if (data.paywalled) {
             setArticleNotice('Paywalled — analyzing available summary');
           } else if (data.timedOut) {
             setArticleNotice('Slow load — using article summary');
+          } else if (data.content && data.content.trim().length > 100) {
+            text = data.content;
           } else {
-            text = data.content ?? '';
+            // Server responded but content too short — use snippet
+            setArticleNotice('Analyzing available summary');
           }
         }
       } catch {
-        // fall through to snippet
+        // Network error or timeout — fall through to snippet
       }
     }
+
+    // Final safety: always have something to analyze
     if (!text.trim()) {
-      text = `${sig.title}\n\n${sig.snippet}`;
+      text = [sig.title, sig.snippet].filter(Boolean).join('\n\n');
+      if (!articleNotice) setArticleNotice('Analyzing available summary');
     }
+
+    // Last resort — should never happen given title always exists
+    if (text.trim().length < 50) {
+      text = sig.title;
+    }
+
     analyzeSignal(text);
   };
 

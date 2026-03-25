@@ -65,45 +65,38 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
       </head>
       <body suppressHydrationWarning className="font-sans flex flex-col min-h-screen">
         <div className="flex-1">{children}</div>
-        <footer className="border-t border-border/10 bg-white/60 backdrop-blur-sm">
-          <div className="max-w-6xl mx-auto px-4 md:px-8 py-10">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-4">
+        <footer className="bg-gray-950 border-t border-gray-800 mt-auto py-8 px-4 md:px-8">
+          <div className="max-w-5xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
 
               {/* Left — brand */}
               <div className="space-y-2">
-                <p className="text-sm font-serif italic font-bold tracking-tight">Signal to Startup</p>
-                <p className="text-xs text-muted leading-relaxed max-w-xs">
-                  Turn market signals into startup opportunities.
-                </p>
-                <p className="text-[10px] font-mono text-muted/60">
-                  Powered by{' '}
-                  <a
-                    href="#"
-                    className="text-primary hover:underline"
-                  >
-                    EntrepAIneur
-                  </a>
-                </p>
+                <p className="text-sm font-semibold text-white">Signal to Startup</p>
+                <p className="text-xs text-gray-400">Powered by EntrepAIneur</p>
+                <p className="text-xs text-gray-500 mt-2">&copy; 2026 EntrepAIneur. All rights reserved.</p>
               </div>
 
               {/* Center — nav */}
-              <div className="flex flex-row md:flex-col md:items-center gap-4 md:gap-2">
-                <Link href="/" className="text-xs font-mono text-muted hover:text-foreground transition-colors">Home</Link>
-                <Link href="/dashboard" className="text-xs font-mono text-muted hover:text-foreground transition-colors">Dashboard</Link>
-                <Link href="/#step-1" className="text-xs font-mono text-muted hover:text-foreground transition-colors">How it works</Link>
+              <div className="flex flex-row md:flex-col gap-4 md:gap-2 md:items-center">
+                <Link href="/" className="text-xs text-gray-400 hover:text-white transition-colors">Home</Link>
+                <Link href="/dashboard" className="text-xs text-gray-400 hover:text-white transition-colors">Dashboard</Link>
+                <Link href="/#step-1" className="text-xs text-gray-400 hover:text-white transition-colors">How It Works</Link>
               </div>
 
               {/* Right — legal */}
-              <div className="md:text-right space-y-2">
+              <div className="space-y-2 md:text-right">
                 <div className="flex flex-row md:flex-col md:items-end gap-4 md:gap-2">
-                  <Link href="/terms" className="text-xs font-mono text-muted hover:text-foreground transition-colors">Terms of Service</Link>
-                  <Link href="/privacy" className="text-xs font-mono text-muted hover:text-foreground transition-colors">Privacy Policy</Link>
+                  <Link href="/terms" className="text-xs text-gray-400 hover:text-white transition-colors">Terms of Service</Link>
+                  <Link href="/privacy" className="text-xs text-gray-400 hover:text-white transition-colors">Privacy Policy</Link>
                 </div>
-                <p className="text-[10px] font-mono text-muted/50 mt-4">
-                  &copy; 2026 EntrepAIneur. All rights reserved.
-                </p>
+                <p className="text-xs text-gray-500 mt-2">hello@entrepaIneur.com</p>
               </div>
 
+            </div>
+            <div className="border-t border-gray-800 mt-8 pt-4 text-center">
+              <p className="text-xs text-gray-600">
+                AI-generated content is for informational purposes only and does not constitute financial or legal advice.
+              </p>
             </div>
           </div>
         </footer>

@@ -256,14 +256,19 @@ export async function GET(req: NextRequest) {
   } catch (error: unknown) {
     clearTimeout(timeout);
 
-    if (error instanceof Error && error.name === 'AbortError') {
+    if (error instanceof Error && (error.name === 'AbortError' || error.name === 'TimeoutError')) {
       return NextResponse.json({
+        success: false,
         timedOut: true,
         message: 'Article took too long to load — using summary instead',
       });
     }
 
     console.error('[fetch-url] error:', error);
-    return NextResponse.json({ error: 'Failed to fetch content from URL' }, { status: 500 });
+    // Always return 200 so client can read the JSON and fall back gracefully
+    return NextResponse.json({
+      success: false,
+      error: 'Failed to fetch content from URL',
+    });
   }
 }
