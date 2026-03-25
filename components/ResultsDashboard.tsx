@@ -150,16 +150,13 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
       {/* Analysis Summary */}
       <section id="step-2" className="scroll-mt-24">
         {/* Trend headline */}
-        <div className="bg-white border border-border/10 p-4 md:p-8 rounded-3xl shadow-sm mb-4 md:mb-6 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.05] transition-opacity">
-            <TrendingUp className="w-48 h-48 -mr-12 -mt-12" />
-          </div>
-          <div className="relative z-10">
+        <div className="bg-white border border-border/10 p-4 md:p-8 rounded-3xl shadow-sm mb-4 md:mb-6">
+          <div>
             <div className="flex items-center gap-2 text-primary mb-4">
               <Sparkles className="w-4 h-4" />
               <span className="text-xs font-mono uppercase font-bold tracking-wide">Emerging Trend Identified</span>
             </div>
-            <h3 className="text-lg md:text-2xl font-sans font-semibold leading-snug mb-3 text-foreground max-w-3xl">
+            <h3 className="text-base md:text-xl font-sans font-semibold leading-snug mb-3 text-foreground max-w-2xl">
               {result.trend}
             </h3>
             <p className="text-sm md:text-base text-muted leading-relaxed max-w-2xl">{result.summary}</p>
@@ -199,19 +196,10 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
 
       {/* Opportunity Matrix */}
       <section id="step-3" className="scroll-mt-24">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-8">
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-foreground text-background flex items-center justify-center font-mono text-sm font-bold flex-shrink-0 shadow-lg shadow-foreground/10">03</div>
-            <div className="flex-grow">
-              <h2 className="text-xl font-sans font-semibold">
-                Opportunity Matrix <span className="text-sm font-normal opacity-40 ml-1">({filteredOpportunities.length})</span>
-              </h2>
-              <p className="text-[10px] font-mono uppercase tracking-widest text-muted">Actionable business models</p>
-            </div>
-          </div>
-
+        <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
+          <span className="text-xs font-mono text-muted uppercase tracking-widest">{filteredOpportunities.length} opportunities</span>
           {/* Filters */}
-          <div className="flex items-center gap-3 overflow-x-auto pb-2 sm:pb-0 flex-shrink-0 no-scrollbar">
+          <div className="flex items-center gap-3 overflow-x-auto pb-1 sm:pb-0 flex-shrink-0 no-scrollbar">
             <div className="flex bg-white border border-border/10 p-1 rounded-xl shadow-sm flex-shrink-0">
               {[
                 { id: 'top', label: 'ROI' },
@@ -261,15 +249,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
         </div>
         
         <div className="relative z-10">
-          <div className="flex items-center gap-4 mb-10">
-            <div className="w-10 h-10 rounded-xl bg-background text-foreground flex items-center justify-center font-mono text-sm font-bold flex-shrink-0">04</div>
-            <div className="flex-grow">
-              <h2 className="text-xl md:text-2xl font-sans font-semibold">Strategic Execution</h2>
-              <p className="text-[10px] font-mono uppercase tracking-widest opacity-40">Recommended path to launch</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start mt-2">
             <div className="space-y-6">
               <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/20 text-primary-foreground rounded-full text-[10px] font-mono uppercase font-bold tracking-widest">
                 <Sparkles className="w-3 h-3" /> Best Path Forward
