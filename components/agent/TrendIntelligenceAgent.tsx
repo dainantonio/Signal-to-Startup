@@ -16,6 +16,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import Link from 'next/link';
 import { MarketMode } from '../types';
+import { COUNTRY_CONTEXT } from '@/lib/rss-sources';
 import { SignalInput } from '../SignalInput';
 import { marketModeConfigs } from '../MarketModeSelector';
 import { ResultsDashboard } from '../ResultsDashboard';
@@ -54,6 +55,17 @@ export default function TrendIntelligenceAgent() {
     setSelectedMode(mode);
     setCountryTags([]);
   };
+
+  // Auto-switch market mode when a country is selected
+  const handleSetCountryTags = useCallback((tags: string[]) => {
+    setCountryTags(tags);
+    if (tags.length > 0) {
+      const ctx = COUNTRY_CONTEXT[tags[0].toLowerCase()];
+      if (ctx && ctx.region !== 'global') {
+        setSelectedMode(ctx.region as MarketMode);
+      }
+    }
+  }, []);
 
   const analysis = useAgentAnalysis(user, selectedMode, countryTags);
 
@@ -459,7 +471,7 @@ export default function TrendIntelligenceAgent() {
           selectedMode={selectedMode}
           setSelectedMode={handleSetSelectedMode}
           countryTags={countryTags}
-          setCountryTags={setCountryTags}
+          setCountryTags={handleSetCountryTags}
         />
 
         {/* Results Section */}
