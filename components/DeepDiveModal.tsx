@@ -410,30 +410,35 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
           <p className="text-sm opacity-60 mt-4">Generated on {new Date().toLocaleDateString()}</p>
         </div>
 
-        <div className="flex-grow overflow-hidden flex flex-col lg:flex-row">
-          {/* Sidebar Tabs */}
-          <div className="lg:w-72 border-r border-border/10 bg-gray-50/50 overflow-x-auto lg:overflow-y-auto no-print sidebar-tabs">
-            <div className="flex lg:flex-col p-3 lg:p-4 gap-2 min-w-max lg:min-w-0">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveDeepDiveTab(tab.id)}
-                  className={`flex items-center gap-3 px-4 py-3.5 rounded-xl text-xs font-bold transition-all ${
-                    activeDeepDiveTab === tab.id 
-                      ? 'bg-white text-primary shadow-md shadow-primary/5 border border-primary/10' 
-                      : 'text-muted hover:text-foreground hover:bg-white/50'
-                  }`}
-                >
-                  <tab.icon className={`w-4 h-4 ${activeDeepDiveTab === tab.id ? 'text-primary' : 'text-muted'}`} />
-                  <span className="whitespace-nowrap">{tab.label}</span>
-                  {activeDeepDiveTab === tab.id && <ChevronRight className="hidden lg:block w-4 h-4 ml-auto opacity-40" />}
-                </button>
-              ))}
+        <div className="flex-1 overflow-hidden flex flex-col lg:flex-row min-h-0">
+          {/* Tab bar — mobile: sticky horizontal scroll row; desktop: fixed sidebar */}
+          <div className="flex-shrink-0 lg:flex-shrink-0 lg:w-72 border-b lg:border-b-0 lg:border-r border-border/10 bg-gray-50/50 no-print sidebar-tabs sticky top-0 z-10 lg:static lg:z-auto lg:overflow-y-auto">
+            <div className="relative">
+              <div className="flex lg:flex-col overflow-x-auto scrollbar-hide p-2 lg:p-4 gap-1 lg:gap-2">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setActiveDeepDiveTab(tab.id)}
+                    className={`flex-shrink-0 flex items-center gap-2 lg:gap-3 px-3 lg:px-4 py-2.5 lg:py-3.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                      activeDeepDiveTab === tab.id
+                        ? 'bg-white text-primary shadow-md shadow-primary/5 border border-primary/10'
+                        : 'text-muted hover:text-foreground hover:bg-white/50'
+                    }`}
+                  >
+                    <tab.icon className={`w-4 h-4 flex-shrink-0 ${activeDeepDiveTab === tab.id ? 'text-primary' : 'text-muted'}`} />
+                    <span>{tab.label}</span>
+                    {activeDeepDiveTab === tab.id && <ChevronRight className="hidden lg:block w-4 h-4 ml-auto opacity-40" />}
+                  </button>
+                ))}
+              </div>
+              {/* Fade hint on mobile to indicate horizontal scroll */}
+              <div className="absolute right-0 top-0 h-full w-8 bg-gradient-to-l from-gray-50 to-transparent pointer-events-none lg:hidden" />
             </div>
           </div>
 
           {/* Main Content Area */}
-          <div className="flex-grow overflow-y-auto p-6 md:p-10 bg-white main-content">
+          <div className="flex-1 overflow-y-auto p-4 md:p-10 bg-white main-content min-h-0">
             <AnimatePresence mode="wait">
               {deepDiveLoading ? (
                 <motion.div 
