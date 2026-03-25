@@ -1,5 +1,6 @@
 import { XMLParser } from 'fast-xml-parser';
 import { RSS_SOURCES, PAYWALL_DOMAINS } from './rss-sources';
+import { cleanText } from './text-cleaner';
 import type { SectorKey } from '@/components/types';
 
 // ---------------------------------------------------------------------------
@@ -28,15 +29,14 @@ export interface FetchRSSOptions {
   recency: string;
 }
 
+export interface FetchRSSResult {
+  items: RSSFeedItem[];
+  duplicatesRemoved: number;
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-const STOP_WORDS = new Set([
-  'the','a','an','in','of','to','is','and','or','for','with','on','at',
-  'by','from','as','are','was','were','be','been','being','it','its',
-  'this','that','these','those','will','has','have','had','but','not',
-]);
 
 function stripHtml(raw: string): string {
   return raw
@@ -112,18 +112,50 @@ function calculateSignalScore(item: RSSFeedItem): number {
   return Math.min(Math.max(score, 10), 99);
 }
 
-function titleTokens(title: string): Set<string> {
-  return new Set(
-    title.toLowerCase().split(/\W+/).filter(w => w.length > 2 && !STOP_WORDS.has(w))
-  );
+function normalizeUrl(url: string): string {
+  try {
+    return url.split('?')[0].split('#')[0].replace(/\/$/, '').toLowerCase();
+  } catch {
+    return url.toLowerCase();
+  }
 }
 
-function isTitleDuplicate(a: string, b: string): boolean {
-  const ta = titleTokens(a);
-  const tb = titleTokens(b);
-  if (ta.size === 0 || tb.size === 0) return false;
-  const shared = [...ta].filter(w => tb.has(w)).length;
-  return shared / Math.max(ta.size, tb.size) > 0.6;
+function normalizeTitle(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .substring(0, 60);
+}
+
+function hasTitleOverlap(a: string, b: string): boolean {
+  const wordsA = new Set(a.split(' ').filter(w => w.length > 4));
+  const wordsB = new Set(b.split(' ').filter(w => w.length > 4));
+  if (wordsA.size === 0) return false;
+  const overlap = [...wordsA].filter(w => wordsB.has(w)).length;
+  return overlap / wordsA.size > 0.7;
+}
+
+function deduplicateArticles(items: RSSFeedItem[]): { deduped: RSSFeedItem[]; removed: number } {
+  const seenUrls = new Set<string>();
+  const seenTitles: string[] = [];
+  const deduped: RSSFeedItem[] = [];
+
+  for (const item of items) {
+    const normUrl = item.url ? normalizeUrl(item.url) : '';
+    const normTitle = normalizeTitle(item.title);
+
+    if (normUrl && seenUrls.has(normUrl)) continue;
+    if (seenTitles.includes(normTitle)) continue;
+    if (seenTitles.some(t => hasTitleOverlap(normTitle, t))) continue;
+
+    if (normUrl) seenUrls.add(normUrl);
+    seenTitles.push(normTitle);
+    deduped.push(item);
+  }
+
+  return { deduped, removed: items.length - deduped.length };
 }
 
 function recencyCutoff(recency: string): Date {
@@ -175,7 +207,7 @@ async function fetchOneFeed(source: typeof RSS_SOURCES[0]): Promise<RSSFeedItem[
   const rssItems: unknown[] = parsed?.rss?.channel?.item ?? [];
   for (const raw of rssItems) {
     const item = raw as Record<string, unknown>;
-    const title = stripHtml(extractText(item.title));
+    const title = cleanText(stripHtml(extractText(item.title)));
     if (!title) continue;
 
     // link can be a string or an object
@@ -187,7 +219,7 @@ async function fetchOneFeed(source: typeof RSS_SOURCES[0]): Promise<RSSFeedItem[
 
     const pubDate = extractText(item.pubDate) || extractText(item['dc:date']) || '';
     const publishedAt = safeIso(pubDate);
-    const snippet = stripHtml(extractText(item.description) || extractText(item.summary || '')).substring(0, 200);
+    const snippet = cleanText(stripHtml(extractText(item.description) || extractText(item.summary || ''))).substring(0, 220);
 
     const rssItem: RSSFeedItem = {
       title, url, source: source.name, publishedAt, snippet,
@@ -203,7 +235,7 @@ async function fetchOneFeed(source: typeof RSS_SOURCES[0]): Promise<RSSFeedItem[
   const atomEntries: unknown[] = parsed?.feed?.entry ?? [];
   for (const raw of atomEntries) {
     const entry = raw as Record<string, unknown>;
-    const title = stripHtml(extractText(entry.title));
+    const title = cleanText(stripHtml(extractText(entry.title)));
     if (!title) continue;
 
     let url = '';
@@ -220,7 +252,7 @@ async function fetchOneFeed(source: typeof RSS_SOURCES[0]): Promise<RSSFeedItem[
 
     const pubDate = extractText(entry.published) || extractText(entry.updated) || '';
     const publishedAt = safeIso(pubDate);
-    const snippet = stripHtml(extractText(entry.summary) || extractText(entry.content || '')).substring(0, 200);
+    const snippet = cleanText(stripHtml(extractText(entry.summary) || extractText(entry.content || ''))).substring(0, 220);
 
     const atomItem: RSSFeedItem = {
       title, url, source: source.name, publishedAt, snippet,
@@ -239,7 +271,7 @@ async function fetchOneFeed(source: typeof RSS_SOURCES[0]): Promise<RSSFeedItem[
 // Public API
 // ---------------------------------------------------------------------------
 
-export async function fetchRSSFeeds(options: FetchRSSOptions): Promise<RSSFeedItem[]> {
+export async function fetchRSSFeeds(options: FetchRSSOptions): Promise<FetchRSSResult> {
   const { markets, sectors, recency } = options;
 
   // Match sources that belong to any of the requested markets AND sectors.
@@ -286,19 +318,14 @@ export async function fetchRSSFeeds(options: FetchRSSOptions): Promise<RSSFeedIt
     try { return new Date(item.publishedAt) >= cutoff; } catch { return false; }
   });
 
-  // Deduplicate: URL → then title similarity
-  const seenUrls = new Set<string>();
-  const deduped: RSSFeedItem[] = [];
-
-  for (const item of recent) {
-    if (item.url && seenUrls.has(item.url)) continue;
-    if (deduped.some(existing => isTitleDuplicate(item.title, existing.title))) continue;
-    if (item.url) seenUrls.add(item.url);
-    deduped.push(item);
-  }
+  // Deduplicate: normalized URL + 70% title-word overlap
+  const { deduped, removed: dedupRemoved } = deduplicateArticles(recent);
+  if (dedupRemoved > 0) console.log(`[DEDUP] removed ${dedupRemoved} duplicate articles`);
 
   // Sort newest first
-  return deduped.sort(
+  const sorted = deduped.sort(
     (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
   );
+
+  return { items: sorted, duplicatesRemoved: dedupRemoved };
 }

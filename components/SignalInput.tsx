@@ -86,6 +86,7 @@ export const SignalInput: React.FC<SignalInputProps> = ({
   };
 
   const [signals, setSignals] = useState<FeedSignal[]>([]);
+  const [feedMeta, setFeedMeta] = useState<{ total: number; duplicatesRemoved: number } | null>(null);
   const [fetchingFeed, setFetchingFeed] = useState(false);
   const [articleNotice, setArticleNotice] = useState<string | null>(null);
   const [countryInput, setCountryInput] = useState('');
@@ -122,8 +123,12 @@ export const SignalInput: React.FC<SignalInputProps> = ({
       });
       const res = await fetch(`/api/live-feed?${params.toString()}`);
       if (!res.ok) throw new Error('Feed fetch failed');
-      const raw: FeedSignal[] = await res.json();
+      const data = await res.json();
+      // Support both old array format and new { items, meta } format
+      const raw: FeedSignal[] = Array.isArray(data) ? data : (data.items ?? []);
+      const meta = Array.isArray(data) ? null : (data.meta ?? null);
       setSignals(raw);
+      setFeedMeta(meta);
       setLastFetchKey(fetchKey);
     } catch (err) {
       console.error('Feed error:', err);
@@ -385,6 +390,17 @@ export const SignalInput: React.FC<SignalInputProps> = ({
               </button>
             </div>
           </div>
+
+          {/* Dedup count banner */}
+          {feedMeta && !fetchingFeed && (
+            <div className="flex items-center gap-2 text-[10px] font-mono text-muted">
+              <span className="w-1.5 h-1.5 bg-secondary rounded-full flex-shrink-0" />
+              Showing {feedMeta.total} articles
+              {feedMeta.duplicatesRemoved > 0 && (
+                <span className="text-muted/60">· {feedMeta.duplicatesRemoved} duplicates removed</span>
+              )}
+            </div>
+          )}
 
           {/* Country tag feed banner */}
           {countryTags.length > 0 && (

@@ -15,7 +15,9 @@ export async function GET(req: NextRequest) {
   const markets     = region && region !== 'global' ? [region] : ['global'];
 
   try {
-    let items = await fetchRSSFeeds({ markets, sectors, recency });
+    const feedResult = await fetchRSSFeeds({ markets, sectors, recency });
+    let items = feedResult.items;
+    const duplicatesRemoved = feedResult.duplicatesRemoved;
 
     // Niche keyword filter — only apply if it would keep at least 3 results
     if (niche.trim()) {
@@ -60,7 +62,13 @@ export async function GET(req: NextRequest) {
       items = filtered.length >= 3 ? filtered : classified;
     }
 
-    const payload = items.slice(0, 30);
+    const payload = {
+      items: items.slice(0, 30),
+      meta: {
+        total: Math.min(items.length, 30),
+        duplicatesRemoved,
+      },
+    };
 
     const res = NextResponse.json(payload);
     // Shorter cache when country-filtered (more specific, changes more often)
@@ -69,7 +77,7 @@ export async function GET(req: NextRequest) {
     return res;
   } catch (err) {
     console.error('Live feed RSS error:', err);
-    const res = NextResponse.json([]);
+    const res = NextResponse.json({ items: [], meta: { total: 0, duplicatesRemoved: 0 } });
     res.headers.set('X-Feed-Warning', 'All RSS feeds failed');
     return res;
   }

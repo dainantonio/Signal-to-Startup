@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as cheerio from 'cheerio';
 import { PAYWALL_DOMAINS } from '@/lib/rss-sources';
+import { cleanText, cleanArticleBody } from '@/lib/text-cleaner';
 
 // ---------------------------------------------------------------------------
 // Paywall signals in page HTML
@@ -239,8 +240,8 @@ export async function GET(req: NextRequest) {
     }
 
     // ── STEP D: deep clean ─────────────────────────────────────────────────
-    const cleanedBody = cleanArticleText(bodyText);
-    const cleanedTitle = decodeEntities(title.replace(/\s+/g, ' ').trim());
+    const cleanedBody = cleanArticleBody(bodyText);
+    const cleanedTitle = cleanText(title);
     const hostname = new URL(url).hostname.replace(/^www\./, '');
 
     const content = `TITLE: ${cleanedTitle}\nSOURCE: ${hostname}\n\n${cleanedBody}`;

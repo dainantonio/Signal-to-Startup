@@ -58,6 +58,7 @@ export const PAYWALL_DOMAINS = [
   'theinformation.com',
   'barrons.com',
   'washingtonpost.com',
+  'newyorker.com',
 ];
 
 export const RSS_SOURCES: RSSSource[] = [
