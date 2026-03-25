@@ -215,22 +215,20 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
         className="bg-background w-full max-w-6xl h-[92dvh] md:h-[85dvh] overflow-hidden rounded-t-3xl md:rounded-3xl border border-border/10 flex flex-col modal-container shadow-2xl"
       >
         {/* Modal Header */}
-        <div className="border-b border-border/10 p-4 md:p-6 flex items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-20 no-print">
-          <div className="flex items-center gap-3 md:gap-4">
-            <button
-              onClick={() => setSelectedOpportunity(null)}
-              className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
-              aria-label="Back to opportunities list"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <div>
-              <h2 className="text-lg md:text-2xl font-serif italic font-bold tracking-tight line-clamp-1">{selectedOpportunity.name}</h2>
-              <p className="text-[10px] font-mono uppercase text-muted tracking-widest">Execution Suite</p>
-            </div>
+        <div className="border-b border-border/10 p-4 md:p-6 flex items-center gap-3 bg-white/80 backdrop-blur-md sticky top-0 z-20 no-print">
+          <button
+            onClick={() => setSelectedOpportunity(null)}
+            className="p-2 hover:bg-gray-100 rounded-xl transition-colors flex-shrink-0"
+            aria-label="Back to opportunities list"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div className="flex-1 min-w-0">
+            <h2 className="font-sans font-semibold text-base leading-snug truncate">{selectedOpportunity.name}</h2>
+            <p className="text-[10px] font-mono uppercase text-muted tracking-widest">Execution Suite</p>
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             {/* Desktop Actions */}
             <div className="hidden lg:flex items-center gap-2">
               {auth.currentUser && deepDiveResult && (
@@ -420,7 +418,7 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <h3 className="text-xl font-serif italic font-bold">Building your execution suite...</h3>
+                    <h3 className="text-base font-sans font-semibold">Building your execution suite...</h3>
                     <p className="text-sm text-muted max-w-xs mx-auto">Gemini is analyzing market data, estimating costs, and finding funding sources.</p>
                   </div>
                 </motion.div>
@@ -437,7 +435,7 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
                         <FileText className="w-4 h-4" />
                         <span className="text-[10px] font-mono uppercase font-bold tracking-widest">Strategic Business Plan</span>
                       </div>
-                      <div className="prose prose-slate prose-headings:font-serif prose-headings:italic prose-headings:tracking-tight prose-p:leading-relaxed prose-p:text-gray-600 max-w-none">
+                      <div className="prose prose-slate prose-headings:font-sans prose-headings:font-semibold prose-headings:not-italic prose-sm prose-p:leading-relaxed prose-p:text-gray-600 max-w-none">
                         <Markdown>{deepDiveResult.business_plan}</Markdown>
                       </div>
                     </div>
@@ -489,7 +487,7 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
                     <FileText className="w-10 h-10" />
                   </div>
                   <div className="space-y-4">
-                    <h3 className="text-xl font-serif italic font-bold">Ready to deep dive?</h3>
+                    <h3 className="text-base font-sans font-semibold">Ready to deep dive?</h3>
                     <p className="text-sm text-muted max-w-xs mx-auto">Generate a complete execution suite for this opportunity including a business plan, costs, and funding.</p>
                     <button
                       type="button"

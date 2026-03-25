@@ -19,11 +19,11 @@ export const OpportunityCard: React.FC<OpportunityCardProps> = ({
   opp, index, isBestIdea, generateDeepDive, isReadOnly = false, countryTags = []
 }) => {
   const colors = {
-    High:   { bg: 'bg-emerald-50',  text: 'text-emerald-700',  border: 'border-emerald-200',  accent: 'bg-emerald-500',  light: 'bg-emerald-50',  ring: 'ring-emerald-200' },
-    Medium: { bg: 'bg-amber-50',    text: 'text-amber-700',    border: 'border-amber-200',    accent: 'bg-amber-500',    light: 'bg-amber-50',    ring: 'ring-amber-200'  },
-    Low:    { bg: 'bg-gray-50',     text: 'text-gray-500',     border: 'border-gray-200',     accent: 'bg-gray-400',     light: 'bg-gray-100',    ring: 'ring-gray-200'   },
+    High:   { badge: 'bg-emerald-100 text-emerald-800', accent: 'bg-emerald-500' },
+    Medium: { badge: 'bg-amber-100 text-amber-800',     accent: 'bg-amber-500'   },
+    Low:    { badge: 'bg-gray-100 text-gray-700',       accent: 'bg-gray-400'    },
   }[opp.priority as 'High' | 'Medium' | 'Low'] ?? {
-    bg: 'bg-gray-50', text: 'text-gray-500', border: 'border-gray-200', accent: 'bg-gray-400', light: 'bg-gray-100', ring: 'ring-gray-200'
+    badge: 'bg-gray-100 text-gray-700', accent: 'bg-gray-400',
   };
 
   return (
@@ -32,7 +32,7 @@ export const OpportunityCard: React.FC<OpportunityCardProps> = ({
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: index * 0.05 }}
-      className={`group bg-white border border-border/10 flex flex-col relative overflow-hidden rounded-3xl shadow-sm hover:shadow-xl hover:border-primary/20 transition-all duration-300 ${isBestIdea ? `ring-2 ${colors.ring} ring-offset-4` : ''}`}
+      className={`group bg-white border flex flex-col relative overflow-hidden rounded-3xl shadow-sm hover:shadow-lg transition-all duration-300 ${isBestIdea ? 'border-emerald-200 ring-1 ring-emerald-300 ring-offset-2' : 'border-border/10 hover:border-primary/20'}`}
     >
       {/* Best Idea Badge */}
       {isBestIdea && (
@@ -48,27 +48,27 @@ export const OpportunityCard: React.FC<OpportunityCardProps> = ({
         {/* Header row */}
         <div className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
-            <span className={`text-[9px] font-mono px-2 py-0.5 uppercase font-bold rounded-md border ${colors.light} ${colors.text} ${colors.border}`}>
+            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${colors.badge}`}>
               {opp.priority} Priority
             </span>
             {opp.grant_eligible && (
-              <span className="text-[9px] font-mono px-2 py-0.5 uppercase font-bold rounded-md border border-secondary/20 bg-secondary/5 text-secondary flex items-center gap-1">
+              <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-blue-100 text-blue-800 flex items-center gap-1">
                 <Coins className="w-3 h-3" />
                 Grant Eligible
               </span>
             )}
             {countryTags.length > 0 && (
-              <span className={`text-[9px] font-mono px-2 py-0.5 uppercase font-bold rounded-md border flex items-center gap-1 ${
-                opp.local_fit >= 8 ? 'bg-green-50 text-green-700 border-green-200' :
-                opp.local_fit >= 5 ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                                     'bg-gray-50 text-gray-500 border-gray-200'
+              <span className={`text-[9px] font-mono px-2 py-0.5 uppercase font-bold rounded-full flex items-center gap-1 ${
+                opp.local_fit >= 8 ? 'bg-green-100 text-green-800' :
+                opp.local_fit >= 5 ? 'bg-amber-100 text-amber-800' :
+                                     'bg-gray-100 text-gray-600'
               }`}>
                 <Target className="w-3 h-3" />
                 Local fit {opp.local_fit}/10
               </span>
             )}
           </div>
-          <h4 className="font-serif italic text-2xl md:text-3xl tracking-tight leading-tight group-hover:text-primary transition-colors">{opp.name}</h4>
+          <h4 className="font-sans font-semibold text-base leading-snug group-hover:text-primary transition-colors">{opp.name}</h4>
         </div>
 
         {/* Description */}
@@ -79,7 +79,7 @@ export const OpportunityCard: React.FC<OpportunityCardProps> = ({
           <div className="flex justify-between items-end">
             <div className="space-y-1">
               <p className="text-[9px] font-mono uppercase text-muted tracking-widest">Money Score</p>
-              <p className="text-2xl font-serif italic font-bold leading-none">{Math.round(opp.money_score)}<span className="text-xs font-sans font-normal opacity-30 ml-1">/100</span></p>
+              <p className="text-2xl font-mono font-bold leading-none">{Math.round(opp.money_score)}<span className="text-xs font-normal opacity-30 ml-1">/100</span></p>
             </div>
             <div className="text-right">
               <p className="text-[9px] font-mono uppercase text-muted tracking-widest mb-1">ROI Potential</p>
@@ -151,7 +151,7 @@ export const OpportunityCard: React.FC<OpportunityCardProps> = ({
           <button
             type="button"
             onClick={() => generateDeepDive(opp)}
-            className={`mt-auto w-full ${colors.accent} text-white py-4 rounded-2xl text-[10px] font-mono uppercase tracking-widest font-bold transition-all flex items-center justify-center gap-2 shadow-xl ${colors.ring.replace('ring-', 'shadow-')} hover:scale-[1.02] active:scale-[0.98] group`}
+            className={`mt-auto w-full ${colors.accent} text-white py-3.5 rounded-xl text-sm font-semibold tracking-wide transition-all flex items-center justify-center gap-2 shadow-md hover:brightness-110 active:scale-[0.98] group`}
           >
             Generate Execution Suite
             <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />

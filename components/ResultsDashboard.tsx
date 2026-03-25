@@ -149,16 +149,8 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
 
       {/* Analysis Summary */}
       <section id="step-2" className="scroll-mt-24">
-        <div className="flex items-center gap-4 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-foreground text-background flex items-center justify-center font-mono text-sm font-bold flex-shrink-0 shadow-lg shadow-foreground/10">02</div>
-          <div className="flex-grow">
-            <h2 className="text-2xl font-serif italic font-bold">Market Intelligence</h2>
-            <p className="text-[10px] font-mono uppercase tracking-widest text-muted">Deep analysis of the signal</p>
-          </div>
-        </div>
-
         {/* Trend headline */}
-        <div className="bg-white border border-border/10 p-6 md:p-10 rounded-3xl shadow-sm mb-6 relative overflow-hidden group">
+        <div className="bg-white border border-border/10 p-4 md:p-8 rounded-3xl shadow-sm mb-4 md:mb-6 relative overflow-hidden group">
           <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.05] transition-opacity">
             <TrendingUp className="w-48 h-48 -mr-12 -mt-12" />
           </div>
@@ -167,29 +159,29 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
               <Sparkles className="w-4 h-4" />
               <span className="text-xs font-mono uppercase font-bold tracking-wide">Emerging Trend Identified</span>
             </div>
-            <h3 className="text-xl md:text-2xl font-sans font-semibold leading-snug mb-4 text-foreground max-w-3xl">
+            <h3 className="text-lg md:text-2xl font-sans font-semibold leading-snug mb-3 text-foreground max-w-3xl">
               {result.trend}
             </h3>
-            <p className="text-base text-muted leading-relaxed max-w-2xl font-medium">{result.summary}</p>
+            <p className="text-sm md:text-base text-muted leading-relaxed max-w-2xl">{result.summary}</p>
           </div>
         </div>
 
         {/* Affected groups + Problems */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white border border-border/10 p-6 md:p-8 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300">
-            <h4 className="text-[10px] font-mono uppercase font-bold tracking-widest flex items-center gap-2 text-primary mb-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6">
+          <div className="bg-white border border-border/10 p-4 md:p-8 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300">
+            <h4 className="text-[10px] font-mono uppercase font-bold tracking-widest flex items-center gap-2 text-primary mb-4">
               <Users className="w-4 h-4" /> Impacted Groups
             </h4>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5">
               {result.affected_groups.map((g, i) => (
-                <span key={i} className="px-3 py-1.5 bg-primary/5 border border-primary/10 text-primary text-[10px] font-mono uppercase font-bold rounded-lg">
+                <span key={i} className="px-2 py-1 bg-primary/5 border border-primary/10 text-primary text-[10px] font-mono uppercase font-bold rounded-lg">
                   {g}
                 </span>
               ))}
             </div>
           </div>
 
-          <div className="bg-white border border-border/10 p-6 md:p-8 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300">
+          <div className="bg-white border border-border/10 p-4 md:p-8 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300">
             <h4 className="text-[10px] font-mono uppercase font-bold tracking-widest flex items-center gap-2 text-accent mb-5">
               <AlertTriangle className="w-4 h-4" /> Market Friction & Problems
             </h4>
@@ -211,8 +203,8 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 rounded-xl bg-foreground text-background flex items-center justify-center font-mono text-sm font-bold flex-shrink-0 shadow-lg shadow-foreground/10">03</div>
             <div className="flex-grow">
-              <h2 className="text-2xl font-serif italic font-bold">
-                Opportunity Matrix <span className="text-base opacity-40 font-sans font-normal not-italic ml-2">({filteredOpportunities.length})</span>
+              <h2 className="text-xl font-sans font-semibold">
+                Opportunity Matrix <span className="text-sm font-normal opacity-40 ml-1">({filteredOpportunities.length})</span>
               </h2>
               <p className="text-[10px] font-mono uppercase tracking-widest text-muted">Actionable business models</p>
             </div>
@@ -272,7 +264,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
           <div className="flex items-center gap-4 mb-10">
             <div className="w-10 h-10 rounded-xl bg-background text-foreground flex items-center justify-center font-mono text-sm font-bold flex-shrink-0">04</div>
             <div className="flex-grow">
-              <h2 className="text-2xl md:text-4xl font-serif italic font-bold tracking-tight">Strategic Execution</h2>
+              <h2 className="text-xl md:text-2xl font-sans font-semibold">Strategic Execution</h2>
               <p className="text-[10px] font-mono uppercase tracking-widest opacity-40">Recommended path to launch</p>
             </div>
           </div>
@@ -282,17 +274,17 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
               <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/20 text-primary-foreground rounded-full text-[10px] font-mono uppercase font-bold tracking-widest">
                 <Sparkles className="w-3 h-3" /> Best Path Forward
               </div>
-              <h3 className="text-3xl md:text-4xl font-serif italic font-bold leading-tight">{result.best_idea.name}</h3>
-              <p className="text-lg opacity-70 leading-relaxed font-medium">{result.best_idea.reason}</p>
+              <h3 className="text-xl md:text-2xl font-sans font-semibold leading-snug">{result.best_idea.name}</h3>
+              <p className="text-sm md:text-base opacity-70 leading-relaxed">{result.best_idea.reason}</p>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 pt-4">
                 <div className="space-y-1">
                   <p className="text-[9px] font-mono uppercase opacity-40 tracking-widest">Est. Cost</p>
-                  <p className="text-xl font-serif italic text-secondary">{result.best_idea.cost_estimate}</p>
+                  <p className="text-base font-sans font-semibold text-secondary">{result.best_idea.cost_estimate}</p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-[9px] font-mono uppercase opacity-40 tracking-widest">Launch Speed</p>
-                  <p className="text-xl font-serif italic">{result.best_idea.speed_rating}</p>
+                  <p className="text-base font-sans font-semibold">{result.best_idea.speed_rating}</p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-[9px] font-mono uppercase opacity-40 tracking-widest">Avg. Cost</p>
@@ -310,9 +302,9 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                 <p className="text-[10px] font-mono uppercase opacity-40 tracking-widest">Immediate First Steps</p>
                 <ol className="space-y-5">
                   {result.best_idea.first_steps.map((step, i) => (
-                    <li key={i} className="flex gap-4 text-base">
-                      <span className="font-serif italic text-2xl opacity-30 leading-none flex-shrink-0">0{i + 1}</span>
-                      <span className="leading-snug opacity-90 font-medium">{step}</span>
+                    <li key={i} className="flex gap-3 text-sm">
+                      <span className="font-mono text-xs opacity-30 leading-none flex-shrink-0 pt-0.5">0{i + 1}</span>
+                      <span className="leading-relaxed opacity-90">{step}</span>
                     </li>
                   ))}
                 </ol>
