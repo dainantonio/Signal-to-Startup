@@ -192,9 +192,10 @@ const deepDiveSchema = {
         properties: {
           name: { type: Type.STRING, description: "Name of the VC firm, angel network, or investor group." },
           focus: { type: Type.STRING, description: "Why they are a match (e.g., 'Focuses on early-stage ag-tech')." },
-          stage: { type: Type.STRING, description: "Typical investment stage (e.g., 'Seed', 'Pre-seed', 'Angel')." }
+          stage: { type: Type.STRING, description: "Typical investment stage (e.g., 'Seed', 'Pre-seed', 'Angel')." },
+          website: { type: Type.STRING, description: "The investor's actual homepage URL (e.g., 'https://www.sequoiacap.com'). If unknown, leave empty string." }
         },
-        required: ["name", "focus", "stage"]
+        required: ["name", "focus", "stage", "website"]
       },
       description: "List of 3-5 potential investors or VC firms that align with this niche."
     }
@@ -225,6 +226,8 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
   const [deepDiveLoading, setDeepDiveLoading] = useState(false);
   const [activeDeepDiveTab, setActiveDeepDiveTab] = useState<'plan' | 'costs' | 'grants' | 'checklist' | 'investors'>('plan');
   const deepDiveCache = useRef<Map<string, DeepDiveResult>>(new Map());
+  // Ref-based cancellation flag — avoids async state race after modal close
+  const deepDiveCancelledRef = useRef(false);
 
   useEffect(() => {
     if (user) {
@@ -528,15 +531,26 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
     }
   };
 
+  const cancelDeepDive = useCallback(() => {
+    deepDiveCancelledRef.current = true;
+    setDeepDiveLoading(false);
+    setDeepDiveResult(null);
+  }, []);
+
   const generateDeepDive = useCallback(async (opp: Opportunity) => {
+    // Reset cancellation flag — this is a fresh generation
+    deepDiveCancelledRef.current = false;
+
     setSelectedOpportunity(opp);
     setActiveDeepDiveTab('plan');
 
     // Return cached result instantly
     const cacheKey = opp.name;
     if (deepDiveCache.current.has(cacheKey)) {
-      setDeepDiveResult(deepDiveCache.current.get(cacheKey)!);
-      setDeepDiveLoading(false);
+      if (!deepDiveCancelledRef.current) {
+        setDeepDiveResult(deepDiveCache.current.get(cacheKey)!);
+        setDeepDiveLoading(false);
+      }
       return;
     }
 
@@ -564,6 +578,8 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
         3. Identify 3-5 specific grant types or funding sources this business could qualify for.
         4. Create a 30-day execution checklist.
         5. Identify 3-5 specific venture capital firms, angel networks, or investor groups that specialize in this niche or stage.
+           For each investor, include their actual homepage URL in the 'website' field if you know it with confidence (e.g., Sequoia = https://www.sequoiacap.com, a16z = https://a16z.com).
+           If you are not certain of their URL, leave website as an empty string — do not guess.
 
         TONE: Professional, encouraging, and highly practical.
         Be concise — each field should be 1-2 sentences. Do not over-explain.
@@ -579,17 +595,21 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
         },
       });
 
-      if (response.text) {
+      if (response.text && !deepDiveCancelledRef.current) {
         const parsed: DeepDiveResult = JSON.parse(response.text);
-        // Cache so re-opens are instant
+        // Cache so re-opens are instant (even if this call was for a closed modal)
         if (deepDiveCache.current.size >= 5) {
           const firstKey = deepDiveCache.current.keys().next().value;
           if (firstKey !== undefined) deepDiveCache.current.delete(firstKey);
         }
         deepDiveCache.current.set(cacheKey, parsed);
-        setDeepDiveResult(parsed);
+        // Only update UI state if modal is still open
+        if (!deepDiveCancelledRef.current) {
+          setDeepDiveResult(parsed);
+        }
       }
     } catch (err: unknown) {
+      if (deepDiveCancelledRef.current) return; // Swallow errors from cancelled calls
       console.error(err);
       const msg = err instanceof Error ? err.message : String(err);
       if (msg.includes('429') || msg.toLowerCase().includes('quota') || msg.toLowerCase().includes('resource_exhausted')) {
@@ -598,7 +618,9 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
         setError('Failed to generate execution plan.');
       }
     } finally {
-      setDeepDiveLoading(false);
+      if (!deepDiveCancelledRef.current) {
+        setDeepDiveLoading(false);
+      }
     }
   }, [location]);
 
@@ -662,6 +684,7 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
     analyzeSignal,
     cancelAnalysis,
     generateDeepDive,
+    cancelDeepDive,
     deleteAnalysis,
     filteredOpportunities,
     shareOnTwitter,

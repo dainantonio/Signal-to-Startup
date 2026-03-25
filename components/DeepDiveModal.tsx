@@ -43,6 +43,7 @@ import {
 interface DeepDiveModalProps {
   selectedOpportunity: Opportunity | null;
   setSelectedOpportunity: (opp: Opportunity | null) => void;
+  cancelDeepDive: () => void;
   deepDiveLoading: boolean;
   deepDiveResult: DeepDiveResult | null;
   activeDeepDiveTab: 'plan' | 'costs' | 'grants' | 'checklist' | 'investors';
@@ -56,6 +57,7 @@ interface DeepDiveModalProps {
 export const DeepDiveModal: React.FC<DeepDiveModalProps> = ({
   selectedOpportunity,
   setSelectedOpportunity,
+  cancelDeepDive,
   deepDiveLoading,
   deepDiveResult,
   activeDeepDiveTab,
@@ -68,8 +70,22 @@ export const DeepDiveModal: React.FC<DeepDiveModalProps> = ({
   const [isSaved, setIsSaved] = React.useState(false);
 
   const handleClose = React.useCallback(() => {
+    // 1. Synchronously clear the URL param so the URL-sync effect
+    //    cannot read a stale ?opp= value before the selectedOpportunity
+    //    state update propagates.
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('opp');
+      window.history.replaceState({}, '', url);
+    } catch { /* ignore SSR */ }
+
+    // 2. Abort any in-progress Gemini generation so it cannot
+    //    set state after the modal is gone.
+    cancelDeepDive();
+
+    // 3. Close the modal.
     setSelectedOpportunity(null);
-  }, [setSelectedOpportunity]);
+  }, [setSelectedOpportunity, cancelDeepDive]);
 
   // Escape key to close
   React.useEffect(() => {

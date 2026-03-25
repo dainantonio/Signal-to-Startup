@@ -73,17 +73,20 @@ export default function TrendIntelligenceAgent() {
     }
   }, [analysis, handleBackToFeed]);
 
-  // Escape key
+  // Escape key — only affects page-level state (not the deep dive modal,
+  // which manages its own Escape handler internally).
   React.useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        // If deep dive modal is open, let its own handler deal with it
+        if (analysis.selectedOpportunity) return;
         if (showCancelConfirm) { setShowCancelConfirm(false); return; }
         if (analysis.result || analysis.loading) handleBackOrCancel();
       }
     };
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
-  }, [analysis.result, analysis.loading, showCancelConfirm, handleBackOrCancel]);
+  }, [analysis.selectedOpportunity, analysis.result, analysis.loading, showCancelConfirm, handleBackOrCancel]);
 
   // FIX 3: Save result to sessionStorage whenever it changes
   React.useEffect(() => {
@@ -519,6 +522,7 @@ export default function TrendIntelligenceAgent() {
             <DeepDiveModal
               selectedOpportunity={analysis.selectedOpportunity}
               setSelectedOpportunity={analysis.setSelectedOpportunity}
+              cancelDeepDive={analysis.cancelDeepDive}
               deepDiveLoading={analysis.deepDiveLoading}
               deepDiveResult={analysis.deepDiveResult}
               activeDeepDiveTab={analysis.activeDeepDiveTab}

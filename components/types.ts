@@ -54,7 +54,7 @@ export interface DeepDiveResult {
   cost_breakdown: { item: string; cost: number }[];
   grants: string[];
   checklist: string[];
-  investors: { name: string; focus: string; stage: string }[];
+  investors: { name: string; focus: string; stage: string; website?: string }[];
 }
 
 export type OpportunityStatus = 'Saved' | 'In Progress' | 'Launched';
