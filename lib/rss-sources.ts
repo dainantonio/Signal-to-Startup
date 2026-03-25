@@ -11,6 +11,15 @@ export interface CountryContext {
   region: MarketMode | 'global';
 }
 
+export function getCountryConfig(tag: string): (CountryContext & { name: string }) | null {
+  if (!tag) return null;
+  const key = tag.toLowerCase();
+  const ctx = COUNTRY_CONTEXT[key];
+  if (!ctx) return null;
+  const name = key.charAt(0).toUpperCase() + key.slice(1);
+  return { ...ctx, name };
+}
+
 export const COUNTRY_CONTEXT: Record<string, CountryContext> = {
   jamaica:      { keywords: ['Jamaica', 'Jamaican', 'Kingston', 'JA', 'Montego Bay'],          flag: '🇯🇲', currency: 'JMD', region: 'caribbean' },
   trinidad:     { keywords: ['Trinidad', 'Tobago', 'Port of Spain', 'TT'],                      flag: '🇹🇹', currency: 'TTD', region: 'caribbean' },

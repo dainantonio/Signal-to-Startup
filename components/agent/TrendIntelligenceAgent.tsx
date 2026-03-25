@@ -26,10 +26,14 @@ import { PipelineProgress } from '../PipelineProgress';
 import { Search, BarChart3, Target, Rocket } from 'lucide-react';
 import { useAgentAuth } from './useAgentAuth';
 import { useAgentAnalysis } from './useAgentAnalysis';
+import { ValidateMode } from '../ValidateMode';
+
+type AppMode = 'discover' | 'validate';
 
 export default function TrendIntelligenceAgent() {
   const { user, login, logout, loginError } = useAgentAuth();
 
+  const [appMode, setAppMode] = useState<AppMode>('discover');
   const [showHistory, setShowHistory] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
@@ -417,9 +421,36 @@ export default function TrendIntelligenceAgent() {
           )}
         </AnimatePresence>
 
-        {analysis.result && (
+        {/* App mode toggle */}
+        <div className="flex rounded-xl border border-gray-200 p-1 bg-gray-50 w-fit mx-auto mb-6">
+          {(['discover', 'validate'] as AppMode[]).map(mode => (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => setAppMode(mode)}
+              className={`px-5 py-2 rounded-lg text-sm font-medium transition-all capitalize ${
+                appMode === mode
+                  ? 'bg-white text-black shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {mode === 'discover' ? '🔍 Discover' : '💡 Validate'}
+            </button>
+          ))}
+        </div>
+
+        {appMode === 'validate' && (
+          <ValidateMode
+            selectedMode={selectedMode}
+            countryTag={countryTags[0] ?? ''}
+          />
+        )}
+
+        {appMode === 'discover' && analysis.result && (
           <PipelineProgress currentStep={currentStep} steps={pipelineSteps} />
         )}
+
+        {appMode === 'discover' && <>
 
         {/* FIX 3: Resume banner */}
         {hasLastResult && !analysis.result && !analysis.loading && (
@@ -603,6 +634,8 @@ export default function TrendIntelligenceAgent() {
             </div>
           </footer>
         )}
+
+        </> /* end appMode === 'discover' */}
       </div>
     </div>
   );

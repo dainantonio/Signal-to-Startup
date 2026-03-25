@@ -35,12 +35,25 @@ import {
   googleProvider,
 } from '@/firebase';
 import { SavedOpportunity, OpportunityStatus } from '@/components/types';
+import { COUNTRY_CONTEXT } from '@/lib/rss-sources';
+
+interface IdeaValidation {
+  id: string;
+  idea: string;
+  validationScore: number;
+  verdict: string;
+  marketMode: string;
+  countryTag: string | null;
+  createdAt: string;
+}
 
 export default function DashboardPage() {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [savedOpportunities, setSavedOpportunities] = useState<(SavedOpportunity & { id: string })[]>([]);
+  const [validations, setValidations] = useState<IdeaValidation[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
+  const [dashboardTab, setDashboardTab] = useState<'opportunities' | 'validations'>('opportunities');
 
   // Auth listener
   useEffect(() => {
@@ -57,17 +70,16 @@ export default function DashboardPage() {
 
   const loadSavedOpportunities = async (uid: string) => {
     try {
-      const q = query(
-        collection(db, 'saved_opportunities'),
-        where('userId', '==', uid),
-        orderBy('savedAt', 'desc')
+      const [oppSnap, valSnap] = await Promise.all([
+        getDocs(query(collection(db, 'saved_opportunities'), where('userId', '==', uid), orderBy('savedAt', 'desc'))),
+        getDocs(query(collection(db, 'idea_validations'), where('userId', '==', uid), orderBy('createdAt', 'desc'))),
+      ]);
+      setSavedOpportunities(
+        oppSnap.docs.map(d => ({ id: d.id, ...d.data() })) as (SavedOpportunity & { id: string })[]
       );
-      const querySnapshot = await getDocs(q);
-      const docs = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as (SavedOpportunity & { id: string })[];
-      setSavedOpportunities(docs);
+      setValidations(
+        valSnap.docs.map(d => ({ id: d.id, ...d.data() })) as IdeaValidation[]
+      );
     } catch (err) {
       console.error('Failed to load pipeline:', err);
     } finally {
@@ -161,6 +173,26 @@ export default function DashboardPage() {
           <h1 className="text-4xl md:text-6xl font-serif italic font-bold tracking-tight">Strategic Dashboard</h1>
           <p className="text-base text-muted font-medium max-w-2xl">Manage and track your saved opportunities from signal to launch.</p>
         </div>
+
+        {/* Tab switcher */}
+        <div className="flex rounded-xl border border-gray-200 p-1 bg-gray-50 w-fit mb-10">
+          {([['opportunities', '💼 Saved Opportunities'], ['validations', '💡 My Validations']] as const).map(([tab, label]) => (
+            <button
+              key={tab}
+              type="button"
+              onClick={() => setDashboardTab(tab)}
+              className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${
+                dashboardTab === tab ? 'bg-white text-black shadow-sm' : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {dashboardTab === 'validations' ? (
+          <ValidationsList validations={validations} loading={loading} />
+        ) : (<>
 
         {/* Metrics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
@@ -261,7 +293,81 @@ export default function DashboardPage() {
             ))}
           </div>
         )}
+        </>)}
       </main>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Validations list
+// ---------------------------------------------------------------------------
+
+function ValidationsList({ validations, loading }: { validations: IdeaValidation[]; loading: boolean }) {
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-32 gap-4">
+        <div className="w-10 h-10 border-4 border-primary/10 border-t-primary rounded-full animate-spin" />
+        <p className="text-[10px] font-mono uppercase font-bold tracking-widest text-muted">Loading...</p>
+      </div>
+    );
+  }
+  if (validations.length === 0) {
+    return (
+      <div className="text-center py-32 bg-white border border-dashed border-border/20 rounded-[3rem]">
+        <div className="text-6xl mb-6">💡</div>
+        <p className="text-lg font-serif italic font-bold mb-2">No validations yet</p>
+        <p className="text-sm text-muted font-medium mb-8">
+          Head to the Validate tab to test your business ideas against live market signals.
+        </p>
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 bg-foreground text-background px-8 py-4 rounded-2xl text-[11px] font-mono uppercase tracking-widest font-bold hover:bg-foreground/90 transition-all shadow-xl shadow-foreground/10"
+        >
+          Validate an Idea <ArrowRight className="w-4 h-4" />
+        </Link>
+      </div>
+    );
+  }
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      {validations.map(v => {
+        const scoreColor =
+          v.validationScore >= 80 ? 'text-green-600 bg-green-50 border-green-200' :
+          v.validationScore >= 60 ? 'text-amber-600 bg-amber-50 border-amber-200' :
+          v.validationScore >= 40 ? 'text-gray-600 bg-gray-50 border-gray-200' :
+          'text-red-600 bg-red-50 border-red-200';
+        const countryCtx = v.countryTag ? COUNTRY_CONTEXT[v.countryTag.toLowerCase()] : null;
+        return (
+          <motion.div
+            key={v.id}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white border border-border/10 p-6 rounded-2xl shadow-sm hover:shadow-md transition-all"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className={`text-2xl font-bold border rounded-xl px-3 py-1 ${scoreColor}`}>
+                {v.validationScore}
+              </div>
+              <span className="text-[10px] font-mono uppercase font-bold text-muted">
+                {v.createdAt ? new Date(v.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}
+              </span>
+            </div>
+            <p className="text-xs font-semibold text-primary mb-1">{v.verdict}</p>
+            <p className="text-sm text-gray-700 leading-relaxed line-clamp-3 mb-4">
+              {v.idea}
+            </p>
+            <div className="flex flex-wrap gap-2 text-[10px]">
+              <span className="px-2 py-0.5 bg-gray-100 rounded-full font-mono font-medium">{v.marketMode}</span>
+              {countryCtx && (
+                <span className="px-2 py-0.5 bg-gray-100 rounded-full font-mono font-medium">
+                  {countryCtx.flag} {v.countryTag}
+                </span>
+              )}
+            </div>
+          </motion.div>
+        );
+      })}
     </div>
   );
 }
