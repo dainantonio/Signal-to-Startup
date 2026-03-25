@@ -591,7 +591,7 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
         config: {
           responseMimeType: 'application/json',
           responseSchema: deepDiveSchema,
-          maxOutputTokens: 2000,
+          maxOutputTokens: 8192,
         },
       });
 
