@@ -732,6 +732,7 @@ Business idea: "${ideaText}"`,
         extractedKeywords = kwText.replace(/["\[\]]/g, '').split(',').map(s => s.trim()).filter(Boolean);
       }
       setKeywords(extractedKeywords);
+      console.log('[VALIDATE] extracted keywords:', extractedKeywords);
 
       // Step B: Fetch feed articles
       const params = new URLSearchParams({
@@ -747,6 +748,8 @@ Business idea: "${ideaText}"`,
 
       const feedData = await feedRes.json();
       const articles: ScoredSignal[] = feedData.items || feedData || [];
+      console.log('[VALIDATE] feed raw count:', articles.length);
+      console.log('[VALIDATE] feed sample:', articles.slice(0, 3).map(a => a.title));
 
       // Step C: Score articles for relevance
       const scored: ScoredSignal[] = articles
@@ -760,6 +763,13 @@ Business idea: "${ideaText}"`,
         .filter((a: ScoredSignal) => a.relevanceScore > 15)
         .sort((a: ScoredSignal, b: ScoredSignal) => b.relevanceScore - a.relevanceScore)
         .slice(0, 12);
+
+      console.log('[VALIDATE] scored articles:', scored.length);
+      console.log('[VALIDATE] relevance scores:', scored.map(a => ({
+        title: a.title.substring(0, 50),
+        score: a.relevanceScore,
+        hits: a.matchedKeywords,
+      })));
 
       if (cancelledRef.current) return;
 
