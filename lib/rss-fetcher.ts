@@ -158,6 +158,26 @@ function deduplicateArticles(items: RSSFeedItem[]): { deduped: RSSFeedItem[]; re
   return { deduped, removed: items.length - deduped.length };
 }
 
+const NOISE_TOPICS = [
+  'dating', 'love life', 'relationship', 'celebrity', 'celebrities',
+  'fashion', 'beauty tips', 'gossip', 'entertainment news',
+  'sports scores', 'music review', 'movie review', 'film review',
+  'recipe', 'horoscope', 'zodiac', 'viral', 'meme',
+  'influencer', 'reality tv', 'red carpet', 'award show',
+];
+
+const BUSINESS_OVERRIDE_SIGNALS = [
+  'raises', 'funding', 'revenue', 'startup', 'billion', 'million',
+  'acquisition', 'ipo', 'launches', 'growth', 'market', 'investment',
+];
+
+function isBusinessRelevant(item: RSSFeedItem): boolean {
+  const text = `${item.title} ${item.snippet}`.toLowerCase();
+  const isNoise = NOISE_TOPICS.some(t => text.includes(t));
+  if (!isNoise) return true;
+  return BUSINESS_OVERRIDE_SIGNALS.some(s => text.includes(s));
+}
+
 function recencyCutoff(recency: string): Date {
   const now = Date.now();
   if (recency === '24h') return new Date(now - 24 * 3_600_000);
@@ -313,8 +333,11 @@ export async function fetchRSSFeeds(options: FetchRSSOptions): Promise<FetchRSSR
   const removed = beforePaywallFilter - noPaywall.length;
   if (removed > 0) console.log(`[PAYWALL FILTER] removed ${removed} paywalled articles`);
 
+  // Filter out non-business lifestyle/entertainment articles
+  const businessOnly = noPaywall.filter(isBusinessRelevant);
+
   // Filter by recency window
-  const recent = noPaywall.filter(item => {
+  const recent = businessOnly.filter(item => {
     try { return new Date(item.publishedAt) >= cutoff; } catch { return false; }
   });
 

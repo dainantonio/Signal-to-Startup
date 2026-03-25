@@ -264,14 +264,6 @@ export const SignalInput: React.FC<SignalInputProps> = ({
 
   return (
     <section id="step-1" className="scroll-mt-24 mb-12">
-      <div className="flex items-center gap-4 mb-6">
-        <div className="w-10 h-10 rounded-xl bg-foreground text-background flex items-center justify-center font-mono text-sm font-bold flex-shrink-0 shadow-lg shadow-foreground/10">01</div>
-        <div className="flex-grow">
-          <h2 className="text-2xl font-serif italic font-bold">Signal Ingestion</h2>
-          <p className="text-[10px] font-mono uppercase tracking-widest text-muted">Identify the market shift</p>
-        </div>
-      </div>
-
       <div className="flex w-full bg-white border border-border/10 p-1 rounded-2xl shadow-sm mb-6">
         <button onClick={() => setInputMode('paste')} className={`flex-1 py-3 rounded-xl font-mono text-[11px] uppercase tracking-wider transition-all duration-200 ${inputMode === 'paste' ? 'bg-foreground text-background shadow-lg shadow-foreground/10' : 'text-muted hover:text-foreground hover:bg-gray-50'}`}>
           Paste Signal
