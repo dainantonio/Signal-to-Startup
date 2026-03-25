@@ -701,6 +701,7 @@ export const ValidateMode: React.FC<ValidateModeProps> = ({ selectedMode, countr
 
     try {
       // Step A: Extract keywords using Gemini
+      // Ask for single-word or short (2-word max) terms so they match news headlines
       const kwResponse = await genAI().models.generateContent({
         model: 'gemini-2.5-flash',
         contents: [
@@ -708,39 +709,67 @@ export const ValidateMode: React.FC<ValidateModeProps> = ({ selectedMode, countr
             role: 'user',
             parts: [
               {
-                text: `Extract 8-12 search keywords from this business idea that would help find relevant news articles and market signals.
+                text: `Extract exactly 10 search keywords from this business idea to find relevant news articles.
 
-Return ONLY a JSON array of strings. No other text. No markdown.
-Focus on: industry terms, target customer descriptors, problem being solved, geographic terms, technology terms.
+Rules:
+- Return ONLY a JSON array of strings. No other text. No markdown.
+- Each keyword must be 1-2 words maximum (e.g. "solar", "energy", "startup")
+- Prefer generic industry terms over specific phrases
+- Include: industry category, technology type, target market, problem domain, geography (country/region name only)
+- DO NOT include full sentences or phrases longer than 2 words
 
-Business idea: "${ideaText}"`,
+Business idea: "${ideaText}"
+
+Example output format: ["solar","energy","installation","homeowners","Jamaica","power","electricity","renewable","financing","startup"]`,
               },
             ],
           },
         ],
-        config: { maxOutputTokens: 300 },
+        config: { maxOutputTokens: 400 },
       });
 
       if (cancelledRef.current) return;
 
       const kwText = kwResponse.text ?? '';
+      console.log('[VALIDATE] raw keyword response:', kwText);
       let extractedKeywords: string[] = [];
       try {
-        extractedKeywords = JSON.parse(kwText.replace(/```json|```/g, '').trim());
+        const parsed = JSON.parse(kwText.replace(/```json|```/g, '').trim());
+        // Flatten in case Gemini returned nested arrays
+        extractedKeywords = (Array.isArray(parsed) ? parsed.flat() : [])
+          .map((k: unknown) => String(k).trim())
+          .filter((k: string) => k.length > 1 && k.split(' ').length <= 3);
       } catch {
-        // Fallback: split by comma if JSON parse fails
-        extractedKeywords = kwText.replace(/["\[\]]/g, '').split(',').map(s => s.trim()).filter(Boolean);
+        // Fallback: extract quoted strings or comma-split
+        const quoted = kwText.match(/"([^"]+)"/g);
+        if (quoted && quoted.length >= 3) {
+          extractedKeywords = quoted.map(s => s.replace(/"/g, '').trim());
+        } else {
+          extractedKeywords = kwText.replace(/["\[\]]/g, '').split(',').map(s => s.trim()).filter(Boolean);
+        }
+      }
+      // Ensure we always have at least a few keywords derived from the idea itself
+      if (extractedKeywords.length < 3) {
+        const fallback = ideaText.toLowerCase()
+          .replace(/[^a-z\s]/g, ' ')
+          .split(/\s+/)
+          .filter(w => w.length > 4)
+          .slice(0, 8);
+        extractedKeywords = [...new Set([...extractedKeywords, ...fallback])];
       }
       setKeywords(extractedKeywords);
       console.log('[VALIDATE] extracted keywords:', extractedKeywords);
 
-      // Step B: Fetch feed articles
+      // Step B: Fetch ALL feed articles without keyword pre-filter
+      // We score relevance ourselves in Step C — don't let the niche param
+      // pre-filter articles before we can score them
       const params = new URLSearchParams({
         sectors: 'ai,policy,markets,funding,sustainability,realestate,health',
         region: selectedMode,
         recency: '7d',
         countryTags: countryTag || '',
-        niche: extractedKeywords.slice(0, 5).join(' '),
+        // Use only the top 3 broadest keywords as a loose pre-filter
+        niche: extractedKeywords.slice(0, 3).join(' '),
       });
 
       const feedRes = await fetch(`/api/live-feed?${params.toString()}`);
@@ -751,16 +780,18 @@ Business idea: "${ideaText}"`,
       console.log('[VALIDATE] feed raw count:', articles.length);
       console.log('[VALIDATE] feed sample:', articles.slice(0, 3).map(a => a.title));
 
-      // Step C: Score articles for relevance
+      // Step C: Score by absolute keyword hits (any 1 match = relevant)
+      // Using percentage was broken: with 2 keywords an article needs 50% hit rate.
+      // Now: score = hits * 20 (capped at 100), threshold = 1 hit minimum.
       const scored: ScoredSignal[] = articles
         .map((article: ScoredSignal) => {
           const text = `${article.title} ${article.snippet}`.toLowerCase();
           const matchedKeywords = extractedKeywords.filter(k => text.includes(k.toLowerCase()));
-          const relevanceScore = Math.round((matchedKeywords.length / extractedKeywords.length) * 100);
+          const relevanceScore = Math.min(matchedKeywords.length * 20, 100);
           const signalType = classifySignal(text);
           return { ...article, relevanceScore, signalType, matchedKeywords };
         })
-        .filter((a: ScoredSignal) => a.relevanceScore > 15)
+        .filter((a: ScoredSignal) => a.matchedKeywords.length >= 1)
         .sort((a: ScoredSignal, b: ScoredSignal) => b.relevanceScore - a.relevanceScore)
         .slice(0, 12);
 
