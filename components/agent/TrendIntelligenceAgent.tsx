@@ -45,6 +45,9 @@ export default function TrendIntelligenceAgent() {
     try { return !!sessionStorage.getItem('s2s_lastResult'); } catch { return false; }
   });
   const [selectedMode, setSelectedMode] = useState<MarketMode>('global');
+  const [hasSeenShareHint, setHasSeenShareHint] = useState(() => {
+    try { return localStorage.getItem('seenShareHint') === 'true'; } catch { return false; }
+  });
   const [countryTags, setCountryTags] = useState<string[]>(() => {
     try { const s = localStorage.getItem('s2s_country_tags'); return s ? JSON.parse(s) : []; } catch { return []; }
   });
@@ -111,6 +114,24 @@ export default function TrendIntelligenceAgent() {
       setHasLastResult(false); // user is viewing it — hide banner
     }
   }, [analysis.result]);
+
+  // Pick up shared article from /share page and auto-analyze
+  React.useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem('sharedArticle');
+      if (!raw) return;
+      sessionStorage.removeItem('sharedArticle');
+      const article = JSON.parse(raw) as { url: string; title: string; text: string };
+      const textToAnalyze = (article.text && article.text.trim().length > 50)
+        ? article.text
+        : article.url;
+      // Small delay so the page is mounted before analysis starts
+      setTimeout(() => {
+        analysis.analyzeSignal(textToAnalyze);
+      }, 300);
+    } catch {}
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const pipelineSteps = [
     { id: 1, label: 'Ingestion', icon: Search },
@@ -477,6 +498,32 @@ export default function TrendIntelligenceAgent() {
               aria-label="Dismiss"
             >
               <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        {/* Share hint — shown once to teach Web Share Target */}
+        {!hasSeenShareHint && (
+          <div className="mb-4 p-3 bg-blue-50 rounded-xl border border-blue-200 flex items-start gap-3">
+            <span className="text-lg flex-shrink-0">💡</span>
+            <div className="flex-1">
+              <p className="text-xs font-medium text-blue-800 mb-0.5">
+                Share any article directly to this app
+              </p>
+              <p className="text-xs text-blue-600 leading-relaxed">
+                On Android, tap Share → Signal to Startup to analyze it instantly.
+                On iOS, copy the URL and paste it in the Paste Signal tab.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setHasSeenShareHint(true);
+                try { localStorage.setItem('seenShareHint', 'true'); } catch {}
+              }}
+              className="text-blue-400 hover:text-blue-600 flex-shrink-0 text-lg leading-none"
+            >
+              ×
             </button>
           </div>
         )}

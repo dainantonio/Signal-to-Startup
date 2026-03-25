@@ -19,16 +19,18 @@ import {
   Coins
 } from 'lucide-react';
 import Link from 'next/link';
-import { 
-  auth, 
-  db, 
-  onAuthStateChanged, 
-  collection, 
-  getDocs, 
-  query, 
-  where, 
-  orderBy, 
+import { useRouter } from 'next/navigation';
+import {
+  auth,
+  db,
+  onAuthStateChanged,
+  collection,
+  getDocs,
+  query,
+  where,
+  orderBy,
   updateDoc,
+  deleteDoc,
   doc,
   FirebaseUser,
   signInWithPopup,
@@ -47,13 +49,26 @@ interface IdeaValidation {
   createdAt: string;
 }
 
+interface SavedArticle {
+  id: string;
+  userId: string;
+  url: string;
+  title: string;
+  text: string;
+  savedAt: string;
+  analyzed: boolean;
+  analyzedAt?: string;
+}
+
 export default function DashboardPage() {
+  const router = useRouter();
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [savedOpportunities, setSavedOpportunities] = useState<(SavedOpportunity & { id: string })[]>([]);
   const [validations, setValidations] = useState<IdeaValidation[]>([]);
+  const [savedArticles, setSavedArticles] = useState<SavedArticle[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
-  const [dashboardTab, setDashboardTab] = useState<'opportunities' | 'validations'>('opportunities');
+  const [dashboardTab, setDashboardTab] = useState<'opportunities' | 'validations' | 'articles'>('opportunities');
 
   // Auth listener
   useEffect(() => {
@@ -70,15 +85,19 @@ export default function DashboardPage() {
 
   const loadSavedOpportunities = async (uid: string) => {
     try {
-      const [oppSnap, valSnap] = await Promise.all([
+      const [oppSnap, valSnap, artSnap] = await Promise.all([
         getDocs(query(collection(db, 'saved_opportunities'), where('userId', '==', uid), orderBy('savedAt', 'desc'))),
         getDocs(query(collection(db, 'idea_validations'), where('userId', '==', uid), orderBy('createdAt', 'desc'))),
+        getDocs(query(collection(db, 'saved_articles'), where('userId', '==', uid), orderBy('savedAt', 'desc'))),
       ]);
       setSavedOpportunities(
         oppSnap.docs.map(d => ({ id: d.id, ...d.data() })) as (SavedOpportunity & { id: string })[]
       );
       setValidations(
         valSnap.docs.map(d => ({ id: d.id, ...d.data() })) as IdeaValidation[]
+      );
+      setSavedArticles(
+        artSnap.docs.map(d => ({ id: d.id, ...d.data() })) as SavedArticle[]
       );
     } catch (err) {
       console.error('Failed to load pipeline:', err);
@@ -175,13 +194,17 @@ export default function DashboardPage() {
         </div>
 
         {/* Tab switcher */}
-        <div className="flex rounded-xl border border-gray-200 p-1 bg-gray-50 w-fit mb-10">
-          {([['opportunities', '💼 Saved Opportunities'], ['validations', '💡 My Validations']] as const).map(([tab, label]) => (
+        <div className="flex flex-wrap gap-1 rounded-xl border border-gray-200 p-1 bg-gray-50 w-fit mb-10">
+          {([
+            ['opportunities', '💼 Opportunities'],
+            ['validations', '💡 Validations'],
+            ['articles', '🔖 Saved Articles'],
+          ] as const).map(([tab, label]) => (
             <button
               key={tab}
               type="button"
               onClick={() => setDashboardTab(tab)}
-              className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                 dashboardTab === tab ? 'bg-white text-black shadow-sm' : 'text-gray-500 hover:text-gray-700'
               }`}
             >
@@ -192,6 +215,30 @@ export default function DashboardPage() {
 
         {dashboardTab === 'validations' ? (
           <ValidationsList validations={validations} loading={loading} />
+        ) : dashboardTab === 'articles' ? (
+          <SavedArticlesList
+            articles={savedArticles}
+            loading={loading}
+            onAnalyze={(article) => {
+              try {
+                sessionStorage.setItem('sharedArticle', JSON.stringify({
+                  url: article.url,
+                  title: article.title,
+                  text: article.text,
+                  source: 'saved',
+                }));
+              } catch {}
+              router.push('/');
+            }}
+            onRemove={async (id) => {
+              try {
+                await deleteDoc(doc(db, 'saved_articles', id));
+                setSavedArticles(prev => prev.filter(a => a.id !== id));
+              } catch (err) {
+                console.error('Failed to delete article:', err);
+              }
+            }}
+          />
         ) : (<>
 
         {/* Metrics Cards */}
@@ -516,5 +563,110 @@ function KanbanCard({ opportunity, onStatusChange, isUpdating }: KanbanCardProps
         </div>
       </div>
     </motion.div>
+  );
+}
+
+
+// ---------------------------------------------------------------------------
+// Saved Articles list
+// ---------------------------------------------------------------------------
+
+function SavedArticlesList({
+  articles,
+  loading,
+  onAnalyze,
+  onRemove,
+}: {
+  articles: SavedArticle[];
+  loading: boolean;
+  onAnalyze: (article: SavedArticle) => void;
+  onRemove: (id: string) => void;
+}) {
+  const [removing, setRemoving] = React.useState<string | null>(null);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-32 gap-4">
+        <div className="w-10 h-10 border-4 border-primary/10 border-t-primary rounded-full animate-spin" />
+        <p className="text-[10px] font-mono uppercase font-bold tracking-widest text-muted">Loading...</p>
+      </div>
+    );
+  }
+
+  if (articles.length === 0) {
+    return (
+      <div className="text-center py-32 bg-white border border-dashed border-border/20 rounded-[3rem]">
+        <div className="text-6xl mb-6">🔖</div>
+        <p className="text-lg font-serif italic font-bold mb-2">No saved articles yet</p>
+        <p className="text-sm text-muted font-medium mb-8">
+          On Android, tap Share → Signal to Startup from any article to save it here.
+        </p>
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 bg-foreground text-background px-8 py-4 rounded-2xl text-[11px] font-mono uppercase tracking-widest font-bold hover:bg-foreground/90 transition-all shadow-xl shadow-foreground/10"
+        >
+          Go to Feed <ArrowRight className="w-4 h-4" />
+        </Link>
+      </div>
+    );
+  }
+
+  const timeAgo = (iso: string) => {
+    const h = Math.floor((Date.now() - new Date(iso).getTime()) / 3600000);
+    if (h < 1) return 'Just now';
+    if (h < 24) return `${h}h ago`;
+    const d = Math.floor(h / 24);
+    return `${d}d ago`;
+  };
+
+  return (
+    <div className="space-y-4">
+      {articles.map(article => (
+        <motion.div
+          key={article.id}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white border border-border/10 p-5 rounded-2xl shadow-sm hover:shadow-md transition-all"
+        >
+          <div className="flex items-start justify-between gap-3 mb-3">
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-sm leading-snug line-clamp-2 mb-1">
+                {article.title || article.url}
+              </h3>
+              <p className="text-[10px] font-mono text-muted truncate">{article.url}</p>
+            </div>
+            <div className="flex flex-col items-end gap-1 flex-shrink-0">
+              <span className="text-[10px] font-mono text-muted">{timeAgo(article.savedAt)}</span>
+              {article.analyzed && (
+                <span className="text-[9px] font-mono uppercase font-bold bg-secondary/10 text-secondary px-2 py-0.5 rounded-full">
+                  Analyzed
+                </span>
+              )}
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => onAnalyze(article)}
+              className="flex-1 py-2 bg-foreground text-background rounded-xl text-[10px] font-mono uppercase tracking-widest font-bold hover:bg-foreground/90 transition-all"
+            >
+              ⚡ Analyze
+            </button>
+            <button
+              type="button"
+              disabled={removing === article.id}
+              onClick={async () => {
+                setRemoving(article.id);
+                await onRemove(article.id);
+                setRemoving(null);
+              }}
+              className="px-4 py-2 border border-border/10 rounded-xl text-[10px] font-mono uppercase text-muted hover:text-red-500 hover:border-red-200 transition-all disabled:opacity-40"
+            >
+              {removing === article.id ? '...' : '🗑'}
+            </button>
+          </div>
+        </motion.div>
+      ))}
+    </div>
   );
 }
