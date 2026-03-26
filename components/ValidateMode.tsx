@@ -1,42 +1,40 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GoogleGenAI } from '@google/genai';
 import { MarketMode } from './types';
-import { COUNTRY_CONTEXT, getCountryConfig } from '@/lib/rss-sources';
+import { getCountryConfig } from '@/lib/rss-sources';
 import { auth, db, addDoc, collection } from '@/firebase';
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-type ValidateStep = 'input' | 'extracting' | 'signals' | 'analyzing' | 'results';
+type ValidateStep = 'input' | 'analyzing' | 'results';
 
 interface ValidationResult {
   validation_score: number;
   verdict: 'Strong Signal' | 'Moderate Signal' | 'Weak Signal' | 'Counter Signal';
   verdict_reason: string;
+  market_overview: string;
+  local_policy: string;
   supporting_evidence: string[];
   risk_factors: string[];
   market_timing: 'Perfect timing' | 'Good timing' | 'Early' | 'Late to market';
   timing_reason: string;
-  recommended_pivot: string | null;
+  funding_sources: { name: string; description: string; url: string }[];
   ideal_customer: string;
-  competitive_gap: string;
+  competitive_landscape: string;
+  recommended_pivot: string;
   first_move: string[];
-  signal_sources: string[];
-}
-
-interface ScoredSignal {
-  title: string;
-  snippet: string;
-  url: string;
-  source: string;
-  sector: string;
-  relevanceScore: number;
-  signalType: 'SUPPORTING' | 'RISK' | 'NEUTRAL';
-  matchedKeywords: string[];
+  estimated_startup_cost: {
+    low: number;
+    high: number;
+    local_low: string;
+    local_high: string;
+    notes: string;
+  };
 }
 
 interface ValidateModeProps {
@@ -48,73 +46,34 @@ interface ValidateModeProps {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function buildCountryBlock(countryTag: string): string {
-  if (!countryTag) return '';
-  const ctx = COUNTRY_CONTEXT[countryTag.toLowerCase()];
-  if (!ctx) return '';
-  return `Local currency: ${ctx.currency}. Consider local infrastructure, banking access, and market realities specific to ${countryTag}.`;
+function sanitize(str: string): string {
+  if (!str || typeof str !== 'string') return '';
+  return str.replace(/[*#`_~]/g, '').replace(/\s+/g, ' ').trim();
 }
 
-const SUPPORTING_WORDS = [
-  'growth', 'demand', 'surge', 'opportunity', 'funding', 'investment',
-  'shortage', 'expanding', 'launches', 'new market', 'billion', 'million',
-  'raises', 'backed', 'record', 'booming', 'accelerating',
-];
-const RISK_WORDS = [
-  'competition', 'saturated', 'declining', 'threat', 'challenge',
-  'incumbent', 'dominant', 'barriers', 'struggles', 'fails', 'shutdown', 'bankrupt',
-];
-
-function classifySignal(text: string): 'SUPPORTING' | 'RISK' | 'NEUTRAL' {
-  const lower = text.toLowerCase();
-  if (RISK_WORDS.some(w => lower.includes(w))) return 'RISK';
-  if (SUPPORTING_WORDS.some(w => lower.includes(w))) return 'SUPPORTING';
-  return 'NEUTRAL';
-}
-
-function EXAMPLE_IDEAS(mode: MarketMode, countryTag: string): string[] {
-  const tag = countryTag?.toLowerCase();
-  if (tag === 'jamaica' || tag === 'trinidad' || tag === 'barbados' || mode === 'caribbean') {
-    return [
-      'I want to start a solar panel installation service targeting rural homeowners in Jamaica who are dealing with frequent JPS power outages and high electricity bills. I would offer affordable payment plans and handle everything from permits to installation.',
-      'I want to launch a WhatsApp-based ordering system for food vendors and higglers in Kingston markets to accept digital payments and manage orders from customers more efficiently.',
-      'I want to create a tourism experience booking platform connecting small tour operators in Montego Bay with international visitors looking for authentic local experiences beyond the typical resort packages.',
-    ];
-  }
-  if (mode === 'africa' || tag === 'nigeria' || tag === 'ghana' || tag === 'kenya') {
-    return [
-      'I want to start a mobile money agent training business helping informal traders in Lagos accept digital payments and manage their finances using existing fintech infrastructure.',
-      'I want to launch a last-mile delivery service for e-commerce businesses in Accra using motorcycle couriers with real-time tracking via WhatsApp updates.',
-    ];
-  }
-  if (mode === 'uk') {
-    return [
-      'I want to start an AI automation consulting service for small UK businesses that want to reduce administrative costs but don\'t know where to start with tools like Make, Zapier, or custom GPTs.',
-      'I want to launch a hyperlocal delivery cooperative for independent retailers in London competing with Amazon same-day delivery.',
-    ];
-  }
-  return [
-    'I want to start an AI automation consulting service for small businesses that want to reduce administrative costs but don\'t know where to start with tools like Make, Zapier, or custom workflows.',
-    'I want to launch a subscription box service for Caribbean food products targeting the diaspora market in the United States and Canada.',
-  ];
+function sanitizeArray(arr: unknown): string[] {
+  if (!Array.isArray(arr)) return [];
+  return arr
+    .filter((s): s is string => typeof s === 'string' && s.length > 0)
+    .map(sanitize)
+    .filter(s => s.length > 0);
 }
 
 function exportValidation(
   result: ValidationResult,
   ideaText: string,
-  signals: ScoredSignal[],
   countryTag: string,
 ) {
-  const sep = '─'.repeat(50);
+  const sep = '='.repeat(50);
   const lines = [
-    'SIGNAL TO STARTUP — IDEA VALIDATION REPORT',
+    'SIGNAL TO STARTUP',
+    'BUSINESS IDEA VALIDATION REPORT',
     `Generated: ${new Date().toLocaleDateString()}`,
+    `Country: ${countryTag}`,
     sep,
     '',
-    'YOUR IDEA:',
+    'YOUR IDEA',
     ideaText,
-    '',
-    countryTag ? `Market: ${countryTag}` : '',
     '',
     sep,
     `VALIDATION SCORE: ${result.validation_score}/100`,
@@ -123,64 +82,101 @@ function exportValidation(
     result.verdict_reason,
     '',
     sep,
-    'SUPPORTING EVIDENCE:',
-    ...result.supporting_evidence.map(e => `✓ ${e}`),
+    'MARKET OVERVIEW',
+    result.market_overview,
     '',
-    'RISK FACTORS:',
-    ...result.risk_factors.map(r => `⚠ ${r}`),
+    sep,
+    'LOCAL POLICY AND REGULATIONS',
+    result.local_policy,
+    '',
+    sep,
+    'SUPPORTING FACTORS',
+    ...result.supporting_evidence.map((e, i) => `${i + 1}. ${e}`),
+    '',
+    'RISK FACTORS',
+    ...result.risk_factors.map((r, i) => `${i + 1}. ${r}`),
     '',
     sep,
     `MARKET TIMING: ${result.market_timing}`,
     result.timing_reason,
     '',
-    `IDEAL CUSTOMER: ${result.ideal_customer}`,
-    '',
-    `COMPETITIVE GAP: ${result.competitive_gap}`,
-    '',
-    result.recommended_pivot ? `RECOMMENDED PIVOT: ${result.recommended_pivot}` : '',
+    sep,
+    'FUNDING SOURCES',
+    ...result.funding_sources.map(
+      f => `${f.name}\n   ${f.description}${f.url ? '\n   ' + f.url : ''}`,
+    ),
     '',
     sep,
-    'YOUR FIRST MOVES:',
+    'STARTUP COST ESTIMATE',
+    `USD: $${result.estimated_startup_cost.low.toLocaleString()} - $${result.estimated_startup_cost.high.toLocaleString()}`,
+    result.estimated_startup_cost.local_low
+      ? `Local: ${result.estimated_startup_cost.local_low} - ${result.estimated_startup_cost.local_high}`
+      : '',
+    result.estimated_startup_cost.notes,
+    '',
+    sep,
+    'IDEAL CUSTOMER',
+    result.ideal_customer,
+    '',
+    'COMPETITIVE LANDSCAPE',
+    result.competitive_landscape,
+    '',
+    result.recommended_pivot ? `RECOMMENDED PIVOT\n${result.recommended_pivot}` : '',
+    '',
+    sep,
+    'YOUR FIRST 3 MOVES',
     ...result.first_move.map((m, i) => `${i + 1}. ${m}`),
-    '',
-    sep,
-    'SIGNALS USED:',
-    ...signals.map(s => `[${s.signalType}] ${s.title}`),
     '',
     sep,
     'signal-to-startup.vercel.app',
     'Powered by EntrepAIneur',
-  ].filter(l => l !== undefined);
+  ].filter(l => l !== undefined && l !== null);
 
   const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `validation-${Date.now()}.txt`;
+  a.download = `validation-${countryTag.replace(/\s/g, '-').toLowerCase()}-${Date.now()}.txt`;
   a.click();
   URL.revokeObjectURL(url);
 }
 
 // ---------------------------------------------------------------------------
-// Sub-components
+// Country list for selector
+// ---------------------------------------------------------------------------
+
+const PRESET_COUNTRIES = [
+  'Jamaica', 'Trinidad', 'Barbados', 'Guyana',
+  'Nigeria', 'Ghana', 'Kenya',
+  'United States', 'United Kingdom',
+];
+
+const BUSINESS_TYPES = [
+  'Service business', 'Product / retail', 'Tech / app',
+  'Food & beverage', 'Consulting', 'E-commerce',
+  'Agriculture', 'Tourism', 'Healthcare', 'Education',
+];
+
+// ---------------------------------------------------------------------------
+// IdeaInputScreen
 // ---------------------------------------------------------------------------
 
 function IdeaInputScreen({
   ideaText,
   setIdeaText,
-  selectedMode,
-  countryTag,
+  localCountry,
+  setLocalCountry,
   onSubmit,
 }: {
   ideaText: string;
   setIdeaText: (v: string) => void;
-  selectedMode: MarketMode;
-  countryTag: string;
+  localCountry: string;
+  setLocalCountry: (v: string) => void;
   onSubmit: () => void;
 }) {
-  const isReady = ideaText.trim().length > 50;
-  const countryConfig = getCountryConfig(countryTag);
-  const examples = EXAMPLE_IDEAS(selectedMode, countryTag);
+  const isReady = ideaText.trim().length > 30;
+  const countryConfig = localCountry ? getCountryConfig(localCountry) : null;
+  const isPreset = PRESET_COUNTRIES.map(c => c.toLowerCase()).includes(localCountry.toLowerCase());
 
   return (
     <motion.div
@@ -188,369 +184,218 @@ function IdeaInputScreen({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="space-y-6 py-4"
+      className="space-y-5 py-4 max-w-xl mx-auto"
     >
       <div>
-        <h2 className="text-xl font-semibold">Describe your business idea</h2>
-        <p className="text-sm text-gray-500 mt-1">
-          Be specific — include what you sell, who you serve, and where. The more
-          detail you give, the better the market signals we can find.
+        <h2 className="text-lg font-semibold">Validate your business idea</h2>
+        <p className="text-sm text-gray-500 mt-1 leading-relaxed">
+          Describe your idea in detail. Include what you sell, who you serve, and where.
+          Select your country for local policy, market conditions, and funding sources.
         </p>
       </div>
 
-      <div className="relative">
-        <textarea
-          value={ideaText}
-          onChange={e => setIdeaText(e.target.value)}
-          placeholder="e.g. I want to start a solar panel installation service targeting rural homeowners in Jamaica who are dealing with frequent JPS outages. I would offer affordable payment plans and handle everything from permits to installation..."
-          maxLength={1000}
-          rows={8}
-          className="w-full p-4 rounded-xl border border-gray-200 text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-black resize-none"
-        />
-        <span className="absolute bottom-3 right-3 text-xs text-gray-400">
-          {ideaText.length}/1000
-        </span>
-      </div>
-
+      {/* Country selector */}
       <div className="space-y-2">
-        <p className="text-xs text-gray-400 font-medium uppercase tracking-wide">
-          Need inspiration? Try one of these:
-        </p>
-        <div className="flex flex-col gap-2">
-          {examples.map((example, i) => (
+        <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+          Your target country <span className="text-red-400">*</span>
+        </label>
+        <div className="flex flex-wrap gap-2">
+          {PRESET_COUNTRIES.map(country => {
+            const cfg = getCountryConfig(country);
+            const isSelected = localCountry.toLowerCase() === country.toLowerCase();
+            return (
+              <button
+                key={country}
+                type="button"
+                onClick={() => setLocalCountry(isSelected ? '' : country)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-all ${
+                  isSelected
+                    ? 'bg-black text-white border-black'
+                    : 'bg-white text-gray-600 border-gray-300 hover:border-gray-500'
+                }`}
+              >
+                <span>{cfg?.flag ?? '🌍'}</span>
+                <span>{country}</span>
+              </button>
+            );
+          })}
+        </div>
+        <input
+          type="text"
+          placeholder="Or type any country..."
+          value={isPreset ? '' : localCountry}
+          onChange={e => setLocalCountry(e.target.value)}
+          className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-black"
+        />
+      </div>
+
+      {/* Business type chips */}
+      <div className="space-y-2">
+        <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+          Business type
+        </label>
+        <div className="flex flex-wrap gap-2">
+          {BUSINESS_TYPES.map(type => (
             <button
-              key={i}
+              key={type}
               type="button"
-              onClick={() => setIdeaText(example)}
-              className="text-left text-xs text-gray-600 px-3 py-2 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors border border-gray-200"
+              onClick={() => {
+                if (!ideaText.toLowerCase().includes(type.toLowerCase())) {
+                  setIdeaText(ideaText ? `${ideaText} (${type})` : type);
+                }
+              }}
+              className="px-3 py-1.5 rounded-full border border-gray-200 text-xs text-gray-600 hover:border-gray-400 hover:bg-gray-50 transition-all"
             >
-              {example.substring(0, 100)}...
+              {type}
             </button>
           ))}
         </div>
       </div>
 
-      <div className="flex items-center gap-2 text-xs text-gray-500">
-        <span>Validating for:</span>
-        <span className="px-2 py-0.5 bg-gray-100 rounded-full font-medium">{selectedMode}</span>
-        {countryConfig && (
-          <span className="px-2 py-0.5 bg-gray-100 rounded-full font-medium">
-            {countryConfig.flag} {countryConfig.name}
+      {/* Idea textarea */}
+      <div className="space-y-2">
+        <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+          Describe your idea <span className="text-red-400">*</span>
+        </label>
+        <div className="relative">
+          <textarea
+            value={ideaText}
+            onChange={e => setIdeaText(e.target.value)}
+            placeholder={
+              localCountry
+                ? `e.g. I want to open a financial consulting business in ${localCountry} targeting small business owners who need help with taxes, bookkeeping, and accessing government grants...`
+                : 'Describe your business idea in detail. What do you sell? Who are your customers? What problem does it solve?'
+            }
+            maxLength={1000}
+            rows={6}
+            className="w-full p-4 rounded-xl border border-gray-200 text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-black resize-none"
+          />
+          <span className="absolute bottom-3 right-3 text-xs text-gray-400">
+            {ideaText.length}/1000
           </span>
-        )}
+        </div>
       </div>
 
+      {/* What you will get */}
+      <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-2">
+        <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+          Your validation report will include
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          {[
+            'Validation score 0-100',
+            'Market timing assessment',
+            'Local policy and regulations',
+            'Available grants and funding',
+            'Target customer profile',
+            'Competitive landscape',
+            'Risk factors',
+            'First 3 action steps',
+          ].map(item => (
+            <div key={item} className="flex items-center gap-1.5 text-xs text-gray-600">
+              <span className="text-green-500 flex-shrink-0">✓</span>
+              {item}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Country context preview */}
+      {countryConfig && (
+        <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
+          <span className="text-xl">{countryConfig.flag}</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-medium text-blue-800">
+              Validating for {countryConfig.name}
+            </p>
+            <p className="text-xs text-blue-600">
+              Currency: {countryConfig.currency} · Region: {countryConfig.region}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Submit */}
       <button
         type="button"
         onClick={onSubmit}
-        disabled={!isReady}
-        className="w-full py-3 bg-black text-white rounded-xl text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-900 transition-colors"
+        disabled={!isReady || !localCountry}
+        className="w-full py-3.5 bg-black text-white rounded-xl text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-900 transition-colors"
       >
-        🔍 Find Market Signals
+        {!localCountry
+          ? 'Select a country to continue'
+          : !isReady
+          ? 'Describe your idea to continue'
+          : `Validate for ${localCountry} →`}
       </button>
     </motion.div>
   );
 }
 
-function ExtractingScreen() {
-  return (
-    <motion.div
-      key="extracting"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="flex flex-col items-center justify-center py-20 space-y-4"
-    >
-      <div className="w-12 h-12 border-2 border-black border-t-transparent rounded-full animate-spin" />
-      <p className="text-sm font-medium">Extracting keywords from your idea...</p>
-      <p className="text-xs text-gray-400">Searching for relevant market signals</p>
-    </motion.div>
-  );
-}
+// ---------------------------------------------------------------------------
+// AnalyzingScreen
+// ---------------------------------------------------------------------------
 
-function AnalyzingScreen() {
+function AnalyzingScreen({ countryTag }: { countryTag: string }) {
+  const [stage, setStage] = useState(0);
+  const stages = [
+    `Researching ${countryTag || 'local'} market conditions...`,
+    'Checking local policies and regulations...',
+    'Identifying funding sources...',
+    'Assessing competitive landscape...',
+    'Calculating validation score...',
+    'Preparing your report...',
+  ];
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setStage(s => Math.min(s + 1, stages.length - 1));
+    }, 3000);
+    return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <motion.div
       key="analyzing"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="flex flex-col items-center justify-center py-20 space-y-4"
+      className="flex flex-col items-center justify-center py-20 space-y-6 max-w-xs mx-auto text-center"
     >
       <div className="w-12 h-12 border-2 border-black border-t-transparent rounded-full animate-spin" />
-      <p className="text-sm font-medium">Validating your idea...</p>
-      <p className="text-xs text-gray-400">Analyzing market signals against your concept</p>
-    </motion.div>
-  );
-}
-
-function SignalsScreen({
-  signals,
-  keywords,
-  selectedSignals,
-  setSelectedSignals,
-  onValidate,
-  onBack,
-  relaxedResults,
-  showRefinement,
-  refinementSuggestions,
-  refining,
-  onGetRefinements,
-  onApplyRefinement,
-}: {
-  signals: ScoredSignal[];
-  keywords: string[];
-  selectedSignals: string[];
-  setSelectedSignals: React.Dispatch<React.SetStateAction<string[]>>;
-  onValidate: () => void;
-  onBack: () => void;
-  relaxedResults: boolean;
-  showRefinement: boolean;
-  refinementSuggestions: string[];
-  refining: boolean;
-  onGetRefinements: () => void;
-  onApplyRefinement: (idea: string) => void;
-}) {
-  const supporting = signals.filter(s => s.signalType === 'SUPPORTING');
-  const risks = signals.filter(s => s.signalType === 'RISK');
-  const neutral = signals.filter(s => s.signalType === 'NEUTRAL');
-
-  const toggleSignal = (url: string) => {
-    setSelectedSignals(prev =>
-      prev.includes(url)
-        ? prev.filter(u => u !== url)
-        : prev.length < 6
-        ? [...prev, url]
-        : prev,
-    );
-  };
-
-  return (
-    <motion.div
-      key="signals"
-      initial={{ opacity: 0, x: 40 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -40 }}
-      className="space-y-5 py-4"
-    >
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={onBack}
-          className="text-sm text-gray-500 hover:text-black transition-colors"
-        >
-          ←
-        </button>
-        <div>
-          <h2 className="text-lg font-semibold">Market signals found</h2>
-          <p className="text-xs text-gray-500">
-            {signals.length} signals · {supporting.length} supporting · {risks.length} risks ·{' '}
-            {neutral.length} neutral
-          </p>
-        </div>
+      <div className="space-y-2">
+        <p className="text-sm font-medium text-gray-800">{stages[stage]}</p>
+        <p className="text-xs text-gray-400">This takes about 15-20 seconds</p>
       </div>
-
-      <div className="space-y-1">
-        <p className="text-xs text-gray-400 uppercase tracking-wide font-medium">Searched for</p>
-        <div className="flex flex-wrap gap-1.5">
-          {keywords.map(k => (
-            <span
-              key={k}
-              className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full border border-blue-200"
-            >
-              {k}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      <div className="flex gap-3">
-        {[
-          { count: supporting.length, label: 'Supporting', bg: 'bg-green-50 border-green-200', text: 'text-green-700', sub: 'text-green-600' },
-          { count: risks.length, label: 'Risks', bg: 'bg-red-50 border-red-200', text: 'text-red-700', sub: 'text-red-600' },
-          { count: neutral.length, label: 'Neutral', bg: 'bg-gray-50 border-gray-200', text: 'text-gray-700', sub: 'text-gray-500' },
-        ].map(({ count, label, bg, text, sub }) => (
-          <div key={label} className={`flex-1 p-3 ${bg} rounded-lg border text-center`}>
-            <div className={`text-lg font-bold ${text}`}>{count}</div>
-            <div className={`text-xs ${sub}`}>{label}</div>
-          </div>
+      <div className="flex gap-1.5">
+        {stages.map((_, i) => (
+          <div
+            key={i}
+            className={`h-1 rounded-full transition-all duration-500 ${
+              i <= stage ? 'w-6 bg-black' : 'w-2 bg-gray-200'
+            }`}
+          />
         ))}
       </div>
-
-      <p className="text-xs text-gray-500">
-        Select up to 6 signals to include in your validation. Top 3 pre-selected.
-      </p>
-
-      <div className="space-y-3">
-        {signals.map(signal => {
-          const isSelected = selectedSignals.includes(signal.url);
-          const colorMap = {
-            SUPPORTING: { card: 'border-green-300 bg-green-50', badge: 'bg-green-100 text-green-800' },
-            RISK: { card: 'border-red-300 bg-red-50', badge: 'bg-red-100 text-red-800' },
-            NEUTRAL: { card: 'border-gray-200 bg-white', badge: 'bg-gray-100 text-gray-700' },
-          }[signal.signalType];
-
-          return (
-            <button
-              key={signal.url}
-              type="button"
-              onClick={() => toggleSignal(signal.url)}
-              className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
-                isSelected ? 'border-black bg-white shadow-sm' : `${colorMap.card} opacity-80`
-              }`}
-            >
-              <div className="flex items-start justify-between gap-2 mb-2">
-                <div className="flex items-center gap-2">
-                  <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${colorMap.badge}`}>
-                    {signal.signalType}
-                  </span>
-                  <span className="text-[10px] text-gray-400 font-mono uppercase">
-                    {signal.source}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-gray-500">
-                    {signal.relevanceScore}% match
-                  </span>
-                  <div
-                    className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${
-                      isSelected ? 'bg-black border-black' : 'border-gray-300'
-                    }`}
-                  >
-                    {isSelected && <span className="text-white text-[10px]">✓</span>}
-                  </div>
-                </div>
-              </div>
-
-              <p className="text-sm font-medium leading-snug mb-1">{signal.title}</p>
-
-              {signal.snippet && (
-                <p className="text-xs text-gray-500 leading-relaxed line-clamp-2">
-                  {signal.snippet}
-                </p>
-              )}
-
-              {signal.matchedKeywords.length > 0 && (
-                <div className="flex flex-wrap gap-1 mt-2">
-                  {signal.matchedKeywords.slice(0, 3).map(k => (
-                    <span
-                      key={k}
-                      className="text-[9px] px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded-full"
-                    >
-                      {k}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Refinement panel — shown when signals are scarce or results were relaxed */}
-      {(signals.length < 4 || relaxedResults) && !refining && (
-        <div className="p-4 bg-amber-50 rounded-xl border border-amber-200 space-y-3">
-          <div className="flex items-start gap-2">
-            <span className="text-amber-500 text-lg flex-shrink-0">💡</span>
-            <div>
-              <p className="text-sm font-medium text-amber-800">
-                {signals.length === 0
-                  ? 'No signals found for this idea'
-                  : signals.length < 4
-                  ? 'Few signals found for this idea'
-                  : 'Results are broadly matched'}
-              </p>
-              <p className="text-xs text-amber-600 mt-0.5 leading-relaxed">
-                Try refining your idea with more specific industry terms, target market,
-                or geographic context to find stronger market signals.
-              </p>
-            </div>
-          </div>
-
-          {!showRefinement && (
-            <button
-              type="button"
-              onClick={onGetRefinements}
-              disabled={refining}
-              className="w-full py-2.5 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              ✨ Help me refine this idea
-            </button>
-          )}
-
-          {showRefinement && refinementSuggestions.length > 0 && (
-            <div className="space-y-2">
-              <p className="text-xs font-medium text-amber-700 uppercase tracking-wide">
-                Try one of these refined versions:
-              </p>
-              {refinementSuggestions.map((suggestion, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => onApplyRefinement(suggestion)}
-                  className="w-full text-left p-3 bg-white rounded-lg border border-amber-200 text-sm text-gray-700 leading-relaxed hover:border-amber-400 hover:bg-amber-50 transition-all"
-                >
-                  <span className="text-amber-500 font-medium text-xs block mb-1">
-                    Refinement {i + 1}
-                  </span>
-                  {suggestion}
-                </button>
-              ))}
-              <button
-                type="button"
-                onClick={onBack}
-                className="w-full py-2 text-xs text-amber-600 hover:text-amber-800"
-              >
-                ← Edit my idea manually instead
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {refining && (
-        <div className="flex items-center justify-center gap-3 py-6 text-amber-600">
-          <span className="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
-          <span className="text-sm">Generating refinements...</span>
-        </div>
-      )}
-
-      {signals.length === 0 && !refining && !showRefinement && (
-        <div className="text-center py-6 space-y-3">
-          <div className="text-3xl">🔍</div>
-          <p className="text-sm text-gray-500 leading-relaxed max-w-xs mx-auto">
-            No articles matched your keywords in the current feed. Try refining above or check back later.
-          </p>
-        </div>
-      )}
-
-      {signals.length > 0 && (
-        <button
-          type="button"
-          onClick={onValidate}
-          disabled={selectedSignals.length === 0}
-          className="w-full py-3 bg-black text-white rounded-xl text-sm font-medium disabled:opacity-40 hover:bg-gray-900 transition-colors sticky bottom-4"
-        >
-          ⚡ Validate My Idea ({selectedSignals.length} signals selected)
-        </button>
-      )}
     </motion.div>
   );
 }
+
+// ---------------------------------------------------------------------------
+// ValidationResults
+// ---------------------------------------------------------------------------
 
 function ValidationResults({
   result,
   ideaText,
   countryTag,
-  signals,
   onRefine,
   onReset,
 }: {
   result: ValidationResult;
   ideaText: string;
-  selectedMode: MarketMode;
   countryTag: string;
-  signals: ScoredSignal[];
   onRefine: () => void;
   onReset: () => void;
 }) {
@@ -568,115 +413,184 @@ function ValidationResults({
     result.validation_score >= 40 ? 'bg-gray-50 border-gray-200' :
     'bg-red-50 border-red-200';
 
-  const timingBadge =
-    result.market_timing === 'Perfect timing' ? 'bg-green-100 text-green-800' :
-    result.market_timing === 'Good timing' ? 'bg-blue-100 text-blue-800' :
-    result.market_timing === 'Early' ? 'bg-amber-100 text-amber-800' :
-    'bg-red-100 text-red-800';
-
   return (
     <motion.div
       key="results"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="space-y-5 py-4"
+      className="space-y-4 py-4 max-w-xl mx-auto"
     >
-      {/* Score header */}
+      {/* Score card */}
       <div className={`p-6 rounded-2xl border-2 text-center ${scoreBg}`}>
-        <div className={`text-6xl font-bold ${scoreColor} mb-1`}>
+        <div className={`text-5xl font-bold ${scoreColor} mb-1`}>
           {result.validation_score}
+          <span className="text-2xl font-normal opacity-50">/100</span>
         </div>
-        <div className={`text-lg font-semibold ${scoreColor} mb-2`}>
+        <div className={`text-base font-semibold ${scoreColor} mb-3`}>
           {result.verdict}
         </div>
-        <p className="text-sm text-gray-600 leading-relaxed max-w-sm mx-auto">
-          {result.verdict_reason}
-        </p>
-      </div>
-
-      {/* Idea summary */}
-      <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
-        <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-1">Your idea</p>
-        <p className="text-sm text-gray-700 leading-relaxed line-clamp-3">{ideaText}</p>
+        <p className="text-sm text-gray-700 leading-relaxed">{result.verdict_reason}</p>
         {countryConfig && (
-          <div className="flex items-center gap-1 mt-2 text-xs text-gray-500">
+          <div className="flex items-center justify-center gap-1.5 mt-3 text-xs text-gray-500">
             <span>{countryConfig.flag}</span>
             <span>Validated for {countryConfig.name}</span>
           </div>
         )}
       </div>
 
-      {/* Evidence */}
-      <div className="p-4 bg-green-50 rounded-xl border border-green-200">
-        <p className="text-xs font-semibold text-green-700 uppercase tracking-wide mb-3">
-          ✓ Supporting evidence
+      {/* Market overview */}
+      <div className="p-4 rounded-xl border border-gray-200 space-y-2">
+        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+          Market overview in {countryTag}
         </p>
-        <ul className="space-y-2">
-          {result.supporting_evidence.map((e, i) => (
-            <li key={i} className="text-sm text-green-800 leading-relaxed flex gap-2">
-              <span className="text-green-500 flex-shrink-0 mt-0.5">•</span>
-              {e}
-            </li>
-          ))}
-        </ul>
+        <p className="text-sm text-gray-700 leading-relaxed">{result.market_overview}</p>
       </div>
 
-      {result.risk_factors.length > 0 && (
-        <div className="p-4 bg-red-50 rounded-xl border border-red-200">
-          <p className="text-xs font-semibold text-red-700 uppercase tracking-wide mb-3">
-            ⚠ Risk factors
+      {/* Local policy */}
+      <div className="p-4 rounded-xl border border-blue-200 bg-blue-50 space-y-2">
+        <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide">
+          Local policy and regulations
+        </p>
+        <p className="text-sm text-blue-900 leading-relaxed">{result.local_policy}</p>
+      </div>
+
+      {/* Supporting evidence */}
+      {result.supporting_evidence.length > 0 && (
+        <div className="p-4 rounded-xl border border-green-200 bg-green-50 space-y-2">
+          <p className="text-xs font-semibold text-green-700 uppercase tracking-wide">
+            Supporting factors
           </p>
-          <ul className="space-y-2">
-            {result.risk_factors.map((r, i) => (
-              <li key={i} className="text-sm text-red-800 leading-relaxed flex gap-2">
-                <span className="text-red-400 flex-shrink-0 mt-0.5">•</span>
-                {r}
+          <ol className="space-y-2">
+            {result.supporting_evidence.map((e, i) => (
+              <li key={i} className="flex gap-2 text-sm text-green-900 leading-relaxed">
+                <span className="text-green-500 font-medium flex-shrink-0">{i + 1}.</span>
+                {e}
               </li>
             ))}
-          </ul>
+          </ol>
         </div>
       )}
 
-      {/* Timing + positioning */}
-      <div className="p-4 rounded-xl border border-gray-200 space-y-3">
+      {/* Risk factors */}
+      {result.risk_factors.length > 0 && (
+        <div className="p-4 rounded-xl border border-red-200 bg-red-50 space-y-2">
+          <p className="text-xs font-semibold text-red-700 uppercase tracking-wide">
+            Risk factors
+          </p>
+          <ol className="space-y-2">
+            {result.risk_factors.map((r, i) => (
+              <li key={i} className="flex gap-2 text-sm text-red-900 leading-relaxed">
+                <span className="text-red-400 font-medium flex-shrink-0">{i + 1}.</span>
+                {r}
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
+
+      {/* Market timing */}
+      <div className="p-4 rounded-xl border border-gray-200 space-y-2">
         <div className="flex items-center justify-between">
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
             Market timing
           </p>
-          <span className={`text-xs font-medium px-3 py-1 rounded-full ${timingBadge}`}>
+          <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
+            result.market_timing === 'Perfect timing' ? 'bg-green-100 text-green-800' :
+            result.market_timing === 'Good timing' ? 'bg-blue-100 text-blue-800' :
+            result.market_timing === 'Early' ? 'bg-amber-100 text-amber-800' :
+            'bg-red-100 text-red-800'
+          }`}>
             {result.market_timing}
           </span>
         </div>
-        <p className="text-sm text-gray-600 leading-relaxed">{result.timing_reason}</p>
-
-        <div className="pt-3 border-t border-gray-100">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-            Ideal customer
-          </p>
-          <p className="text-sm text-gray-700">{result.ideal_customer}</p>
-        </div>
-
-        <div className="pt-3 border-t border-gray-100">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-            Competitive gap
-          </p>
-          <p className="text-sm text-gray-700">{result.competitive_gap}</p>
-        </div>
+        <p className="text-sm text-gray-700 leading-relaxed">{result.timing_reason}</p>
       </div>
 
-      {result.recommended_pivot && (
-        <div className="p-4 bg-amber-50 rounded-xl border border-amber-200">
-          <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-2">
-            💡 Recommended pivot
+      {/* Funding sources */}
+      {result.funding_sources?.length > 0 && (
+        <div className="p-4 rounded-xl border border-gray-200 space-y-3">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            Funding sources in {countryTag}
           </p>
-          <p className="text-sm text-amber-800 leading-relaxed">{result.recommended_pivot}</p>
+          <div className="space-y-3">
+            {result.funding_sources.map((f, i) => (
+              <div key={i} className="p-3 bg-gray-50 rounded-lg space-y-1">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-sm font-medium text-gray-800">{f.name}</p>
+                  {f.url && (
+                    <a
+                      href={f.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-blue-600 hover:underline flex-shrink-0"
+                    >
+                      Visit
+                    </a>
+                  )}
+                </div>
+                <p className="text-xs text-gray-600 leading-relaxed">{f.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Startup cost */}
+      {result.estimated_startup_cost && (
+        <div className="p-4 rounded-xl border border-gray-200 space-y-2">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            Estimated startup cost
+          </p>
+          <div className="flex items-end gap-2">
+            <span className="text-2xl font-bold text-gray-800">
+              ${result.estimated_startup_cost.low.toLocaleString()} –
+              ${result.estimated_startup_cost.high.toLocaleString()}
+            </span>
+            <span className="text-xs text-gray-400 mb-1">USD</span>
+          </div>
+          {result.estimated_startup_cost.local_low && (
+            <p className="text-sm text-gray-500">
+              {result.estimated_startup_cost.local_low} –{' '}
+              {result.estimated_startup_cost.local_high}{' '}
+              {getCountryConfig(countryTag)?.currency ?? ''}
+            </p>
+          )}
+          <p className="text-xs text-gray-500 leading-relaxed">
+            {result.estimated_startup_cost.notes}
+          </p>
+        </div>
+      )}
+
+      {/* Ideal customer */}
+      <div className="p-4 rounded-xl border border-gray-200 space-y-1">
+        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+          Ideal customer in {countryTag}
+        </p>
+        <p className="text-sm text-gray-700 leading-relaxed">{result.ideal_customer}</p>
+      </div>
+
+      {/* Competitive landscape */}
+      <div className="p-4 rounded-xl border border-gray-200 space-y-1">
+        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+          Competitive landscape
+        </p>
+        <p className="text-sm text-gray-700 leading-relaxed">{result.competitive_landscape}</p>
+      </div>
+
+      {/* Recommended pivot */}
+      {result.recommended_pivot && (
+        <div className="p-4 rounded-xl border border-amber-200 bg-amber-50 space-y-1">
+          <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide">
+            Recommended pivot
+          </p>
+          <p className="text-sm text-amber-900 leading-relaxed">{result.recommended_pivot}</p>
         </div>
       )}
 
       {/* First moves */}
-      <div className="p-4 rounded-xl border border-gray-200">
-        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
-          Your first moves
+      <div className="p-4 rounded-xl border border-gray-200 space-y-3">
+        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+          Your first 3 moves in {countryTag}
         </p>
         <ol className="space-y-3">
           {result.first_move.map((move, i) => (
@@ -690,53 +604,21 @@ function ValidationResults({
         </ol>
       </div>
 
-      {/* Signal sources */}
-      {signals.length > 0 && (
-        <div className="space-y-2">
-          <p className="text-xs text-gray-400 uppercase tracking-wide font-medium">
-            Signals used in validation
-          </p>
-          <div className="space-y-1">
-            {signals.map(s => (
-              <div key={s.url} className="flex items-center gap-2 text-xs text-gray-500">
-                <span
-                  className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                    s.signalType === 'SUPPORTING'
-                      ? 'bg-green-500'
-                      : s.signalType === 'RISK'
-                      ? 'bg-red-500'
-                      : 'bg-gray-400'
-                  }`}
-                />
-                <a
-                  href={s.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-black hover:underline line-clamp-1"
-                >
-                  {s.title}
-                </a>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Actions */}
-      <div className="flex flex-col gap-3 pt-2">
+      <div className="flex flex-col gap-3 pt-2 pb-8">
         <button
           type="button"
-          onClick={() => exportValidation(result, ideaText, signals, countryTag)}
+          onClick={() => exportValidation(result, ideaText, countryTag)}
           className="w-full py-3 border-2 border-black text-black rounded-xl text-sm font-medium hover:bg-black hover:text-white transition-colors"
         >
-          ⬇ Download Validation Report
+          Download Validation Report
         </button>
         <button
           type="button"
           onClick={onRefine}
-          className="w-full py-2 text-sm text-gray-500 hover:text-black transition-colors"
+          className="w-full py-2.5 text-sm text-gray-500 hover:text-black transition-colors"
         >
-          🔄 Refine my idea
+          Refine my idea
         </button>
         <button
           type="button"
@@ -754,273 +636,150 @@ function ValidationResults({
 // Main component
 // ---------------------------------------------------------------------------
 
-export const ValidateMode: React.FC<ValidateModeProps> = ({ selectedMode, countryTag }) => {
+export const ValidateMode: React.FC<ValidateModeProps> = ({ selectedMode, countryTag: propCountryTag }) => {
   const [step, setStep] = useState<ValidateStep>('input');
   const [ideaText, setIdeaText] = useState('');
-  const [keywords, setKeywords] = useState<string[]>([]);
-  const [signals, setSignals] = useState<ScoredSignal[]>([]);
-  const [selectedSignals, setSelectedSignals] = useState<string[]>([]);
+  const [localCountry, setLocalCountry] = useState(propCountryTag || '');
   const [result, setResult] = useState<ValidationResult | null>(null);
   const [error, setError] = useState('');
-  const [relaxedResults, setRelaxedResults] = useState(false);
-  const [showRefinement, setShowRefinement] = useState(false);
-  const [refinementSuggestions, setRefinementSuggestions] = useState<string[]>([]);
-  const [refining, setRefining] = useState(false);
-  const cancelledRef = useRef(false);
+  const abortRef = useRef<AbortController | null>(null);
+
+  // Sync if parent country changes and user hasn't set their own
+  useEffect(() => {
+    if (propCountryTag && !localCountry) setLocalCountry(propCountryTag);
+  }, [propCountryTag, localCountry]);
 
   const genAI = () =>
     new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
 
-  const getRefinementSuggestions = async () => {
-    setRefining(true);
+  const handleValidate = async () => {
+    setStep('analyzing');
+    setError('');
+    abortRef.current = new AbortController();
+
+    const countryConfig = localCountry ? getCountryConfig(localCountry) : null;
+    const currency = countryConfig?.currency ?? 'USD';
+    const region = countryConfig?.region ?? selectedMode;
+
     try {
       const response = await genAI().models.generateContent({
         model: 'gemini-2.5-flash',
         contents: [{
           role: 'user',
           parts: [{
-            text: `An entrepreneur described this business idea but we could not find strong market signals for it. Help them refine it to be more specific and searchable.
+            text: `You are a business validation expert specializing in emerging and developing markets. Validate this business idea thoroughly.
 
-ORIGINAL IDEA: "${ideaText}"
-KEYWORDS WE TRIED: ${keywords.join(', ')}
-SIGNALS FOUND: ${signals.length}
-MARKET: ${selectedMode}
-${countryTag ? `COUNTRY: ${countryTag}` : ''}
+BUSINESS IDEA:
+"${ideaText}"
 
-Provide 3 refined versions of their idea that:
-1. Are more specific about the problem solved
-2. Use industry terminology that appears in news
-3. Reference current market trends
-4. Are grounded in the ${countryTag || selectedMode} market context
+TARGET COUNTRY: ${localCountry}
+MARKET REGION: ${region}
+LOCAL CURRENCY: ${currency}
 
-Return ONLY a valid JSON array of 3 strings. No markdown. No backticks. No explanation.
-Example: ["refined idea 1", "refined idea 2", "refined idea 3"]`,
+Provide a thorough validation covering:
+1. Whether this business is viable in ${localCountry}
+2. Specific local policies and regulations that apply to this type of business
+3. Real market conditions in ${localCountry} for this industry
+4. Specific funding sources available in ${localCountry} for this idea
+5. Who the ideal local customer actually is
+6. What competition looks like locally
+7. Key risks specific to ${localCountry}
+8. Concrete first steps for THIS country
+
+CRITICAL FORMATTING RULES:
+- Use plain English only
+- No markdown syntax
+- No asterisks, hashes, backticks, or symbols of any kind
+- Write in clean paragraphs and numbered lists only
+- All currency in local currency (${currency}) AND USD
+- Be specific to ${localCountry} — not generic advice
+
+Return ONLY this JSON object. No text before or after. No markdown:
+{
+  "validation_score": a number between 0 and 100,
+  "verdict": exactly one of: "Strong Signal" or "Moderate Signal" or "Weak Signal" or "Counter Signal",
+  "verdict_reason": "2 to 3 plain sentences explaining the score. No symbols.",
+  "market_overview": "3 to 4 sentences about current market conditions in ${localCountry} for this type of business. Be specific.",
+  "local_policy": "2 to 3 sentences about specific regulations, licenses, or permits required in ${localCountry} for this business.",
+  "supporting_evidence": [
+    "Plain sentence about market support factor 1",
+    "Plain sentence about market support factor 2",
+    "Plain sentence about market support factor 3"
+  ],
+  "risk_factors": [
+    "Plain sentence about risk 1",
+    "Plain sentence about risk 2"
+  ],
+  "market_timing": exactly one of: "Perfect timing" or "Good timing" or "Early" or "Late to market",
+  "timing_reason": "1 to 2 plain sentences.",
+  "funding_sources": [
+    {
+      "name": "Name of grant or loan program in ${localCountry}",
+      "description": "Plain sentence about what it offers and eligibility",
+      "url": "official website URL or empty string"
+    }
+  ],
+  "ideal_customer": "Specific description of the ideal customer in ${localCountry}.",
+  "competitive_landscape": "2 sentences about competition in ${localCountry}.",
+  "recommended_pivot": "One sentence pivot suggestion or empty string if not needed",
+  "first_move": [
+    "Specific action step 1 for ${localCountry}",
+    "Specific action step 2 for ${localCountry}",
+    "Specific action step 3 for ${localCountry}"
+  ],
+  "estimated_startup_cost": {
+    "low": a number in USD,
+    "high": a number in USD,
+    "local_low": "amount in ${currency}",
+    "local_high": "amount in ${currency}",
+    "notes": "Plain sentence about what costs to expect"
+  }
+}`,
           }],
         }],
-        config: { maxOutputTokens: 800 },
-      });
-      const raw = response.text ?? '';
-      const arrayMatch = raw.match(/\[[\s\S]*?\]/);
-      const suggestions: string[] = arrayMatch ? JSON.parse(arrayMatch[0]) : [];
-      setRefinementSuggestions(suggestions);
-      setShowRefinement(true);
-    } catch (err) {
-      console.error('Refinement failed:', err);
-    } finally {
-      setRefining(false);
-    }
-  };
-
-  const handleFindSignals = async (ideaOverride?: string) => {
-    setStep('extracting');
-    setError('');
-    setRelaxedResults(false);
-    setShowRefinement(false);
-    setRefinementSuggestions([]);
-    if (ideaOverride) setIdeaText(ideaOverride);
-    cancelledRef.current = false;
-
-    try {
-      // Step A: Extract keywords using Gemini
-      // Ask for single-word or short (2-word max) terms so they match news headlines
-      const kwResponse = await genAI().models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: [
-          {
-            role: 'user',
-            parts: [
-              {
-                text: `Extract 15 diverse search keywords and phrases from this business idea to find relevant news articles. Include:
-- Core product/service terms
-- Industry category terms
-- Target market descriptors
-- Geographic terms if mentioned
-- Problem/pain point terms
-- Broader related industry terms
-- Trend terms related to this space
-- Economic/market terms
-
-IMPORTANT: Also include BROADER related terms. For example if the idea is about Caribbean food subscription boxes, also include terms like "food delivery", "specialty food", "ethnic food", "diaspora market", "direct to consumer", "food ecommerce", "meal kit".
-
-Return ONLY a valid JSON array of strings. No markdown. No backticks. No explanation.
-Example format: ["term1", "term2", "term3"]
-
-Business idea: "${ideaOverride || ideaText}"`,
-              },
-            ],
-          },
-        ],
-        config: { maxOutputTokens: 500 },
+        config: { maxOutputTokens: 2000 },
       });
 
-      if (cancelledRef.current) return;
+      const rawText = response.text ?? '';
+      console.log('[VALIDATE] raw response preview:', rawText.substring(0, 200));
 
-      const textToUse = ideaOverride || ideaText;
-      const rawText = kwResponse.text ?? '';
-      console.log('[VALIDATE] raw keyword response:', rawText);
-      let extractedKeywords: string[] = [];
+      let parsed: ValidationResult | null = null;
 
       // Try 1: direct parse
       try {
-        const parsed = JSON.parse(rawText.trim());
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          extractedKeywords = parsed;
-        }
+        parsed = JSON.parse(rawText.trim());
       } catch { /* fall through */ }
 
-      // Try 2: find JSON array anywhere in the response
-      if (extractedKeywords.length === 0) {
-        const arrayMatch = rawText.match(/\[[\s\S]*\]/);
-        if (arrayMatch) {
-          try {
-            const parsed = JSON.parse(arrayMatch[0]);
-            if (Array.isArray(parsed)) extractedKeywords = parsed;
-          } catch { /* fall through */ }
+      // Try 2: find JSON object in response
+      if (!parsed) {
+        const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          try { parsed = JSON.parse(jsonMatch[0]); } catch { /* fall through */ }
         }
       }
 
-      // Try 3: extract quoted strings
-      if (extractedKeywords.length === 0) {
-        const quoted = rawText.match(/"([^"]+)"/g);
-        if (quoted) {
-          extractedKeywords = quoted
-            .map(q => q.replace(/"/g, '').trim())
-            .filter(q => q.length > 2);
-        }
+      if (!parsed) throw new Error('Could not parse validation response');
+
+      // Sanitize all text fields
+      parsed.verdict_reason = sanitize(parsed.verdict_reason);
+      parsed.market_overview = sanitize(parsed.market_overview);
+      parsed.local_policy = sanitize(parsed.local_policy);
+      parsed.timing_reason = sanitize(parsed.timing_reason);
+      parsed.ideal_customer = sanitize(parsed.ideal_customer);
+      parsed.competitive_landscape = sanitize(parsed.competitive_landscape);
+      parsed.recommended_pivot = sanitize(parsed.recommended_pivot ?? '');
+      parsed.supporting_evidence = sanitizeArray(parsed.supporting_evidence);
+      parsed.risk_factors = sanitizeArray(parsed.risk_factors);
+      parsed.first_move = sanitizeArray(parsed.first_move);
+      if (Array.isArray(parsed.funding_sources)) {
+        parsed.funding_sources = parsed.funding_sources.map(f => ({
+          name: sanitize(f.name ?? ''),
+          description: sanitize(f.description ?? ''),
+          url: typeof f.url === 'string' ? f.url.trim() : '',
+        }));
+      } else {
+        parsed.funding_sources = [];
       }
-
-      // Try 4: split by commas/newlines
-      if (extractedKeywords.length === 0) {
-        extractedKeywords = rawText
-          .replace(/[\[\]`]/g, '')
-          .split(/[,\n]+/)
-          .map(k => k.replace(/"/g, '').trim())
-          .filter(k => k.length > 2 && k.length < 50);
-      }
-
-      // Final cleanup — ensure all values are clean strings, no backticks or markdown
-      extractedKeywords = extractedKeywords
-        .filter(k => k && typeof k === 'string')
-        .map(k => String(k).replace(/`/g, '').trim())
-        .filter(k => k.length > 2)
-        .slice(0, 15);
-
-      // Absolute fallback — extract meaningful words from the idea text
-      if (extractedKeywords.length === 0) {
-        const stopWords = new Set([
-          'the','a','an','and','or','but','in','on','at','to','for','of','with',
-          'by','from','want','start','create','build','launch','have','that',
-          'this','will','can','would','about','more','than','when','where',
-        ]);
-        extractedKeywords = textToUse
-          .toLowerCase()
-          .replace(/[^\w\s]/g, ' ')
-          .split(/\s+/)
-          .filter(w => w.length > 4 && !stopWords.has(w))
-          .slice(0, 10);
-      }
-
-      console.log('[VALIDATE] final keywords:', extractedKeywords);
-
-      if (extractedKeywords.length === 0) {
-        throw new Error('Could not extract keywords from idea');
-      }
-
-      setKeywords(extractedKeywords);
-
-      // Step B: Fetch via dedicated validate-feed endpoint (all markets, keyword-scored server-side)
-      const safeKeywords = extractedKeywords
-        .filter(k => k && typeof k === 'string')
-        .map(k => String(k).trim())
-        .filter(k => k.length > 0);
-      const params = new URLSearchParams({
-        keywords: safeKeywords.join(','),
-        region: selectedMode,
-        countryTag: countryTag || '',
-      });
-
-      const feedRes = await fetch(`/api/validate-feed?${params.toString()}`);
-      if (cancelledRef.current) return;
-
-      const feedData = await feedRes.json();
-      const scored: ScoredSignal[] = feedData.items || [];
-      if (feedData.relaxed) setRelaxedResults(true);
-
-      console.log('[VALIDATE] scored articles:', scored.length);
-      console.log('[VALIDATE] relevance scores:', scored.slice(0, 5).map((a: ScoredSignal) => ({
-        title: a.title.substring(0, 50),
-        score: a.relevanceScore,
-        hits: a.matchedKeywords,
-      })));
-
-      if (cancelledRef.current) return;
-
-      setSignals(scored);
-      setSelectedSignals(scored.slice(0, 3).map(s => s.url));
-      setStep('signals');
-    } catch (err) {
-      if (cancelledRef.current) return;
-      console.error('Signal search failed:', err);
-      setError('Failed to find signals. Please try again.');
-      setStep('input');
-    }
-  };
-
-  const handleValidate = async () => {
-    setStep('analyzing');
-    cancelledRef.current = false;
-
-    const selectedArticles = signals.filter(s => selectedSignals.includes(s.url));
-    const countryBlock = buildCountryBlock(countryTag);
-
-    try {
-      const validationResponse = await genAI().models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: [
-          {
-            role: 'user',
-            parts: [
-              {
-                text: `You are a startup market validator for underserved entrepreneurs. Analyze whether market evidence supports or challenges this business idea.
-
-ENTREPRENEUR'S IDEA:
-"${ideaText}"
-
-MARKET CONTEXT: ${selectedMode}
-${countryTag ? `TARGET COUNTRY/REGION: ${countryTag}` : ''}
-${countryBlock}
-
-MARKET SIGNALS FOUND (${selectedArticles.length}):
-${selectedArticles.map((a, i) => `${i + 1}. [${a.signalType}] ${a.title}: ${a.snippet}`).join('\n')}
-
-Return ONLY a JSON object. No markdown. No other text:
-{
-  "validation_score": number 0-100,
-  "verdict": "Strong Signal" | "Moderate Signal" | "Weak Signal" | "Counter Signal",
-  "verdict_reason": "2-3 sentence explanation",
-  "supporting_evidence": ["string", "string", "string"],
-  "risk_factors": ["string", "string"],
-  "market_timing": "Perfect timing" | "Good timing" | "Early" | "Late to market",
-  "timing_reason": "1-2 sentence explanation",
-  "recommended_pivot": "string or null",
-  "ideal_customer": "specific customer description",
-  "competitive_gap": "what gap exists to fill",
-  "first_move": ["action 1", "action 2", "action 3"],
-  "signal_sources": ["article title 1", "article title 2"]
-}`,
-              },
-            ],
-          },
-        ],
-        config: { maxOutputTokens: 1500 },
-      });
-
-      if (cancelledRef.current) return;
-
-      const raw = validationResponse.text ?? '';
-      const parsed: ValidationResult = JSON.parse(raw.replace(/```json|```/g, '').trim());
-
-      if (cancelledRef.current) return;
 
       setResult(parsed);
       setStep('results');
@@ -1030,21 +789,19 @@ Return ONLY a JSON object. No markdown. No other text:
         addDoc(collection(db, 'idea_validations'), {
           userId: auth.currentUser.uid,
           idea: ideaText,
-          keywords,
+          countryTag: localCountry || null,
           marketMode: selectedMode,
-          countryTag: countryTag || null,
           validationScore: parsed.validation_score,
           verdict: parsed.verdict,
           result: parsed,
-          signalCount: selectedSignals.length,
           createdAt: new Date().toISOString(),
         }).catch(err => console.warn('Validation save failed:', err));
       }
     } catch (err) {
-      if (cancelledRef.current) return;
-      console.error('Validation failed:', err);
+      if ((err as Error).name === 'AbortError') return;
+      console.error('[VALIDATE] failed:', err);
       setError('Validation failed. Please try again.');
-      setStep('signals');
+      setStep('input');
     }
   };
 
@@ -1060,43 +817,21 @@ Return ONLY a JSON object. No markdown. No other text:
           <IdeaInputScreen
             ideaText={ideaText}
             setIdeaText={setIdeaText}
-            selectedMode={selectedMode}
-            countryTag={countryTag}
-            onSubmit={handleFindSignals}
+            localCountry={localCountry}
+            setLocalCountry={setLocalCountry}
+            onSubmit={handleValidate}
           />
         )}
-        {step === 'extracting' && <ExtractingScreen />}
-        {step === 'signals' && (
-          <SignalsScreen
-            signals={signals}
-            keywords={keywords}
-            selectedSignals={selectedSignals}
-            setSelectedSignals={setSelectedSignals}
-            onValidate={handleValidate}
-            onBack={() => setStep('input')}
-            relaxedResults={relaxedResults}
-            showRefinement={showRefinement}
-            refinementSuggestions={refinementSuggestions}
-            refining={refining}
-            onGetRefinements={getRefinementSuggestions}
-            onApplyRefinement={(idea) => handleFindSignals(idea)}
-          />
-        )}
-        {step === 'analyzing' && <AnalyzingScreen />}
+        {step === 'analyzing' && <AnalyzingScreen countryTag={localCountry} />}
         {step === 'results' && result && (
           <ValidationResults
             result={result}
             ideaText={ideaText}
-            selectedMode={selectedMode}
-            countryTag={countryTag}
-            signals={signals.filter(s => selectedSignals.includes(s.url))}
+            countryTag={localCountry}
             onRefine={() => setStep('input')}
             onReset={() => {
               setStep('input');
               setIdeaText('');
-              setKeywords([]);
-              setSignals([]);
-              setSelectedSignals([]);
               setResult(null);
               setError('');
             }}
