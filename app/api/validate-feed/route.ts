@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
 
   const keywords = keywordsParam
     .split(',')
-    .map(k => k.trim())
+    .map(k => (typeof k === 'string' ? k.trim() : ''))
     .filter(k => k.length > 2);
 
   try {
@@ -53,8 +53,9 @@ export async function GET(request: NextRequest) {
       const matched: string[] = [];
 
       for (const keyword of keywords) {
+        if (!keyword || typeof keyword !== 'string') continue;
         const kw = keyword.toLowerCase().trim();
-        if (!kw || kw.length < 3) continue;
+        if (kw.length < 2) continue;
 
         if (text.includes(kw)) {
           // Exact phrase match

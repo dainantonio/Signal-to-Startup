@@ -855,42 +855,86 @@ Business idea: "${ideaOverride || ideaText}"`,
 
       if (cancelledRef.current) return;
 
-      const kwText = kwResponse.text ?? '';
-      console.log('[VALIDATE] raw keyword response:', kwText);
+      const textToUse = ideaOverride || ideaText;
+      const rawText = kwResponse.text ?? '';
+      console.log('[VALIDATE] raw keyword response:', rawText);
       let extractedKeywords: string[] = [];
+
+      // Try 1: direct parse
       try {
-        // Robustly extract JSON array — find [...] regardless of surrounding markdown
-        const arrayMatch = kwText.match(/\[[\s\S]*?\]/);
-        const jsonToParse = arrayMatch ? arrayMatch[0] : kwText.replace(/```json|```/gi, '').trim();
-        const parsed = JSON.parse(jsonToParse);
-        extractedKeywords = (Array.isArray(parsed) ? parsed.flat() : [])
-          .map((k: unknown) => String(k).replace(/`/g, '').trim())
-          .filter((k: string) => k.length > 2 && !k.startsWith('`'));
-      } catch {
-        // Fallback: split on common delimiters, strip markdown artifacts
-        extractedKeywords = kwText
-          .replace(/```json|```/gi, '')
-          .split(/[,\n"[\]]+/)
-          .map(k => k.replace(/`/g, '').trim())
-          .filter(k => k.length > 3 && k.length < 40 && !k.startsWith('{'));
+        const parsed = JSON.parse(rawText.trim());
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          extractedKeywords = parsed;
+        }
+      } catch { /* fall through */ }
+
+      // Try 2: find JSON array anywhere in the response
+      if (extractedKeywords.length === 0) {
+        const arrayMatch = rawText.match(/\[[\s\S]*\]/);
+        if (arrayMatch) {
+          try {
+            const parsed = JSON.parse(arrayMatch[0]);
+            if (Array.isArray(parsed)) extractedKeywords = parsed;
+          } catch { /* fall through */ }
+        }
       }
-      // Final safety — strip any remaining backtick artifacts
-      extractedKeywords = extractedKeywords.map(k => k.replace(/`/g, '').trim()).filter(k => k.length > 2);
-      // Ensure we always have at least a few keywords derived from the idea itself
-      if (extractedKeywords.length < 3) {
-        const fallback = (ideaOverride || ideaText).toLowerCase()
-          .replace(/[^a-z\s]/g, ' ')
+
+      // Try 3: extract quoted strings
+      if (extractedKeywords.length === 0) {
+        const quoted = rawText.match(/"([^"]+)"/g);
+        if (quoted) {
+          extractedKeywords = quoted
+            .map(q => q.replace(/"/g, '').trim())
+            .filter(q => q.length > 2);
+        }
+      }
+
+      // Try 4: split by commas/newlines
+      if (extractedKeywords.length === 0) {
+        extractedKeywords = rawText
+          .replace(/[\[\]`]/g, '')
+          .split(/[,\n]+/)
+          .map(k => k.replace(/"/g, '').trim())
+          .filter(k => k.length > 2 && k.length < 50);
+      }
+
+      // Final cleanup — ensure all values are clean strings, no backticks or markdown
+      extractedKeywords = extractedKeywords
+        .filter(k => k && typeof k === 'string')
+        .map(k => String(k).replace(/`/g, '').trim())
+        .filter(k => k.length > 2)
+        .slice(0, 15);
+
+      // Absolute fallback — extract meaningful words from the idea text
+      if (extractedKeywords.length === 0) {
+        const stopWords = new Set([
+          'the','a','an','and','or','but','in','on','at','to','for','of','with',
+          'by','from','want','start','create','build','launch','have','that',
+          'this','will','can','would','about','more','than','when','where',
+        ]);
+        extractedKeywords = textToUse
+          .toLowerCase()
+          .replace(/[^\w\s]/g, ' ')
           .split(/\s+/)
-          .filter(w => w.length > 4)
-          .slice(0, 8);
-        extractedKeywords = [...new Set([...extractedKeywords, ...fallback])];
+          .filter(w => w.length > 4 && !stopWords.has(w))
+          .slice(0, 10);
       }
+
+      console.log('[VALIDATE] final keywords:', extractedKeywords);
+
+      if (extractedKeywords.length === 0) {
+        throw new Error('Could not extract keywords from idea');
+      }
+
       setKeywords(extractedKeywords);
-      console.log('[VALIDATE] clean keywords:', extractedKeywords);
 
       // Step B: Fetch via dedicated validate-feed endpoint (all markets, keyword-scored server-side)
+      const safeKeywords = extractedKeywords
+        .filter(k => k && typeof k === 'string')
+        .map(k => String(k).trim())
+        .filter(k => k.length > 0);
       const params = new URLSearchParams({
-        keywords: extractedKeywords.join(','),
+        keywords: safeKeywords.join(','),
         region: selectedMode,
         countryTag: countryTag || '',
       });

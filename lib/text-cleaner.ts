@@ -6,6 +6,9 @@ import he from 'he';
  */
 export function cleanText(raw: string): string {
   if (!raw) return '';
+  if (typeof raw !== 'string') {
+    try { return String(raw).trim(); } catch { return ''; }
+  }
 
   // Decode all HTML entities (&#8217; &#038; &amp; etc.)
   let t = he.decode(raw);
@@ -49,6 +52,7 @@ export function cleanText(raw: string): string {
  */
 export function cleanArticleBody(raw: string): string {
   if (!raw) return '';
+  if (typeof raw !== 'string') return '';
 
   let t = cleanText(raw);
 
