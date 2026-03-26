@@ -291,6 +291,12 @@ function SignalsScreen({
   setSelectedSignals,
   onValidate,
   onBack,
+  relaxedResults,
+  showRefinement,
+  refinementSuggestions,
+  refining,
+  onGetRefinements,
+  onApplyRefinement,
 }: {
   signals: ScoredSignal[];
   keywords: string[];
@@ -298,6 +304,12 @@ function SignalsScreen({
   setSelectedSignals: React.Dispatch<React.SetStateAction<string[]>>;
   onValidate: () => void;
   onBack: () => void;
+  relaxedResults: boolean;
+  showRefinement: boolean;
+  refinementSuggestions: string[];
+  refining: boolean;
+  onGetRefinements: () => void;
+  onApplyRefinement: (idea: string) => void;
 }) {
   const supporting = signals.filter(s => s.signalType === 'SUPPORTING');
   const risks = signals.filter(s => s.signalType === 'RISK');
@@ -435,19 +447,80 @@ function SignalsScreen({
         })}
       </div>
 
-      {signals.length === 0 && (
-        <div className="text-center py-12 text-gray-400">
-          <p className="text-lg mb-2">No signals found</p>
-          <p className="text-sm">
-            Try broadening your idea description or changing the market mode.
+      {/* Refinement panel — shown when signals are scarce or results were relaxed */}
+      {(signals.length < 4 || relaxedResults) && !refining && (
+        <div className="p-4 bg-amber-50 rounded-xl border border-amber-200 space-y-3">
+          <div className="flex items-start gap-2">
+            <span className="text-amber-500 text-lg flex-shrink-0">💡</span>
+            <div>
+              <p className="text-sm font-medium text-amber-800">
+                {signals.length === 0
+                  ? 'No signals found for this idea'
+                  : signals.length < 4
+                  ? 'Few signals found for this idea'
+                  : 'Results are broadly matched'}
+              </p>
+              <p className="text-xs text-amber-600 mt-0.5 leading-relaxed">
+                Try refining your idea with more specific industry terms, target market,
+                or geographic context to find stronger market signals.
+              </p>
+            </div>
+          </div>
+
+          {!showRefinement && (
+            <button
+              type="button"
+              onClick={onGetRefinements}
+              disabled={refining}
+              className="w-full py-2.5 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              ✨ Help me refine this idea
+            </button>
+          )}
+
+          {showRefinement && refinementSuggestions.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-amber-700 uppercase tracking-wide">
+                Try one of these refined versions:
+              </p>
+              {refinementSuggestions.map((suggestion, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => onApplyRefinement(suggestion)}
+                  className="w-full text-left p-3 bg-white rounded-lg border border-amber-200 text-sm text-gray-700 leading-relaxed hover:border-amber-400 hover:bg-amber-50 transition-all"
+                >
+                  <span className="text-amber-500 font-medium text-xs block mb-1">
+                    Refinement {i + 1}
+                  </span>
+                  {suggestion}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={onBack}
+                className="w-full py-2 text-xs text-amber-600 hover:text-amber-800"
+              >
+                ← Edit my idea manually instead
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {refining && (
+        <div className="flex items-center justify-center gap-3 py-6 text-amber-600">
+          <span className="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+          <span className="text-sm">Generating refinements...</span>
+        </div>
+      )}
+
+      {signals.length === 0 && !refining && !showRefinement && (
+        <div className="text-center py-6 space-y-3">
+          <div className="text-3xl">🔍</div>
+          <p className="text-sm text-gray-500 leading-relaxed max-w-xs mx-auto">
+            No articles matched your keywords in the current feed. Try refining above or check back later.
           </p>
-          <button
-            type="button"
-            onClick={onBack}
-            className="mt-4 text-sm text-black underline"
-          >
-            ← Refine your idea
-          </button>
         </div>
       )}
 
@@ -689,14 +762,62 @@ export const ValidateMode: React.FC<ValidateModeProps> = ({ selectedMode, countr
   const [selectedSignals, setSelectedSignals] = useState<string[]>([]);
   const [result, setResult] = useState<ValidationResult | null>(null);
   const [error, setError] = useState('');
+  const [relaxedResults, setRelaxedResults] = useState(false);
+  const [showRefinement, setShowRefinement] = useState(false);
+  const [refinementSuggestions, setRefinementSuggestions] = useState<string[]>([]);
+  const [refining, setRefining] = useState(false);
   const cancelledRef = useRef(false);
 
   const genAI = () =>
     new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
 
-  const handleFindSignals = async () => {
+  const getRefinementSuggestions = async () => {
+    setRefining(true);
+    try {
+      const response = await genAI().models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: [{
+          role: 'user',
+          parts: [{
+            text: `An entrepreneur described this business idea but we could not find strong market signals for it. Help them refine it to be more specific and searchable.
+
+ORIGINAL IDEA: "${ideaText}"
+KEYWORDS WE TRIED: ${keywords.join(', ')}
+SIGNALS FOUND: ${signals.length}
+MARKET: ${selectedMode}
+${countryTag ? `COUNTRY: ${countryTag}` : ''}
+
+Provide 3 refined versions of their idea that:
+1. Are more specific about the problem solved
+2. Use industry terminology that appears in news
+3. Reference current market trends
+4. Are grounded in the ${countryTag || selectedMode} market context
+
+Return ONLY a valid JSON array of 3 strings. No markdown. No backticks. No explanation.
+Example: ["refined idea 1", "refined idea 2", "refined idea 3"]`,
+          }],
+        }],
+        config: { maxOutputTokens: 800 },
+      });
+      const raw = response.text ?? '';
+      const arrayMatch = raw.match(/\[[\s\S]*?\]/);
+      const suggestions: string[] = arrayMatch ? JSON.parse(arrayMatch[0]) : [];
+      setRefinementSuggestions(suggestions);
+      setShowRefinement(true);
+    } catch (err) {
+      console.error('Refinement failed:', err);
+    } finally {
+      setRefining(false);
+    }
+  };
+
+  const handleFindSignals = async (ideaOverride?: string) => {
     setStep('extracting');
     setError('');
+    setRelaxedResults(false);
+    setShowRefinement(false);
+    setRefinementSuggestions([]);
+    if (ideaOverride) setIdeaText(ideaOverride);
     cancelledRef.current = false;
 
     try {
@@ -709,23 +830,27 @@ export const ValidateMode: React.FC<ValidateModeProps> = ({ selectedMode, countr
             role: 'user',
             parts: [
               {
-                text: `Extract exactly 10 search keywords from this business idea to find relevant news articles.
+                text: `Extract 15 diverse search keywords and phrases from this business idea to find relevant news articles. Include:
+- Core product/service terms
+- Industry category terms
+- Target market descriptors
+- Geographic terms if mentioned
+- Problem/pain point terms
+- Broader related industry terms
+- Trend terms related to this space
+- Economic/market terms
 
-Rules:
-- Return ONLY a JSON array of strings. No other text. No markdown.
-- Each keyword must be 1-2 words maximum (e.g. "solar", "energy", "startup")
-- Prefer generic industry terms over specific phrases
-- Include: industry category, technology type, target market, problem domain, geography (country/region name only)
-- DO NOT include full sentences or phrases longer than 2 words
+IMPORTANT: Also include BROADER related terms. For example if the idea is about Caribbean food subscription boxes, also include terms like "food delivery", "specialty food", "ethnic food", "diaspora market", "direct to consumer", "food ecommerce", "meal kit".
 
-Business idea: "${ideaText}"
+Return ONLY a valid JSON array of strings. No markdown. No backticks. No explanation.
+Example format: ["term1", "term2", "term3"]
 
-Example output format: ["solar","energy","installation","homeowners","Jamaica","power","electricity","renewable","financing","startup"]`,
+Business idea: "${ideaOverride || ideaText}"`,
               },
             ],
           },
         ],
-        config: { maxOutputTokens: 400 },
+        config: { maxOutputTokens: 500 },
       });
 
       if (cancelledRef.current) return;
@@ -734,23 +859,26 @@ Example output format: ["solar","energy","installation","homeowners","Jamaica","
       console.log('[VALIDATE] raw keyword response:', kwText);
       let extractedKeywords: string[] = [];
       try {
-        const parsed = JSON.parse(kwText.replace(/```json|```/g, '').trim());
-        // Flatten in case Gemini returned nested arrays
+        // Robustly extract JSON array — find [...] regardless of surrounding markdown
+        const arrayMatch = kwText.match(/\[[\s\S]*?\]/);
+        const jsonToParse = arrayMatch ? arrayMatch[0] : kwText.replace(/```json|```/gi, '').trim();
+        const parsed = JSON.parse(jsonToParse);
         extractedKeywords = (Array.isArray(parsed) ? parsed.flat() : [])
-          .map((k: unknown) => String(k).trim())
-          .filter((k: string) => k.length > 1 && k.split(' ').length <= 3);
+          .map((k: unknown) => String(k).replace(/`/g, '').trim())
+          .filter((k: string) => k.length > 2 && !k.startsWith('`'));
       } catch {
-        // Fallback: extract quoted strings or comma-split
-        const quoted = kwText.match(/"([^"]+)"/g);
-        if (quoted && quoted.length >= 3) {
-          extractedKeywords = quoted.map(s => s.replace(/"/g, '').trim());
-        } else {
-          extractedKeywords = kwText.replace(/["\[\]]/g, '').split(',').map(s => s.trim()).filter(Boolean);
-        }
+        // Fallback: split on common delimiters, strip markdown artifacts
+        extractedKeywords = kwText
+          .replace(/```json|```/gi, '')
+          .split(/[,\n"[\]]+/)
+          .map(k => k.replace(/`/g, '').trim())
+          .filter(k => k.length > 3 && k.length < 40 && !k.startsWith('{'));
       }
+      // Final safety — strip any remaining backtick artifacts
+      extractedKeywords = extractedKeywords.map(k => k.replace(/`/g, '').trim()).filter(k => k.length > 2);
       // Ensure we always have at least a few keywords derived from the idea itself
       if (extractedKeywords.length < 3) {
-        const fallback = ideaText.toLowerCase()
+        const fallback = (ideaOverride || ideaText).toLowerCase()
           .replace(/[^a-z\s]/g, ' ')
           .split(/\s+/)
           .filter(w => w.length > 4)
@@ -758,45 +886,24 @@ Example output format: ["solar","energy","installation","homeowners","Jamaica","
         extractedKeywords = [...new Set([...extractedKeywords, ...fallback])];
       }
       setKeywords(extractedKeywords);
-      console.log('[VALIDATE] extracted keywords:', extractedKeywords);
+      console.log('[VALIDATE] clean keywords:', extractedKeywords);
 
-      // Step B: Fetch ALL feed articles without keyword pre-filter
-      // We score relevance ourselves in Step C — don't let the niche param
-      // pre-filter articles before we can score them
+      // Step B: Fetch via dedicated validate-feed endpoint (all markets, keyword-scored server-side)
       const params = new URLSearchParams({
-        sectors: 'ai,policy,markets,funding,sustainability,realestate,health',
+        keywords: extractedKeywords.join(','),
         region: selectedMode,
-        recency: '7d',
-        countryTags: countryTag || '',
-        // Use only the top 3 broadest keywords as a loose pre-filter
-        niche: extractedKeywords.slice(0, 3).join(' '),
+        countryTag: countryTag || '',
       });
 
-      const feedRes = await fetch(`/api/live-feed?${params.toString()}`);
+      const feedRes = await fetch(`/api/validate-feed?${params.toString()}`);
       if (cancelledRef.current) return;
 
       const feedData = await feedRes.json();
-      const articles: ScoredSignal[] = feedData.items || feedData || [];
-      console.log('[VALIDATE] feed raw count:', articles.length);
-      console.log('[VALIDATE] feed sample:', articles.slice(0, 3).map(a => a.title));
-
-      // Step C: Score by absolute keyword hits (any 1 match = relevant)
-      // Using percentage was broken: with 2 keywords an article needs 50% hit rate.
-      // Now: score = hits * 20 (capped at 100), threshold = 1 hit minimum.
-      const scored: ScoredSignal[] = articles
-        .map((article: ScoredSignal) => {
-          const text = `${article.title} ${article.snippet}`.toLowerCase();
-          const matchedKeywords = extractedKeywords.filter(k => text.includes(k.toLowerCase()));
-          const relevanceScore = Math.min(matchedKeywords.length * 20, 100);
-          const signalType = classifySignal(text);
-          return { ...article, relevanceScore, signalType, matchedKeywords };
-        })
-        .filter((a: ScoredSignal) => a.matchedKeywords.length >= 1)
-        .sort((a: ScoredSignal, b: ScoredSignal) => b.relevanceScore - a.relevanceScore)
-        .slice(0, 12);
+      const scored: ScoredSignal[] = feedData.items || [];
+      if (feedData.relaxed) setRelaxedResults(true);
 
       console.log('[VALIDATE] scored articles:', scored.length);
-      console.log('[VALIDATE] relevance scores:', scored.map(a => ({
+      console.log('[VALIDATE] relevance scores:', scored.slice(0, 5).map((a: ScoredSignal) => ({
         title: a.title.substring(0, 50),
         score: a.relevanceScore,
         hits: a.matchedKeywords,
@@ -923,6 +1030,12 @@ Return ONLY a JSON object. No markdown. No other text:
             setSelectedSignals={setSelectedSignals}
             onValidate={handleValidate}
             onBack={() => setStep('input')}
+            relaxedResults={relaxedResults}
+            showRefinement={showRefinement}
+            refinementSuggestions={refinementSuggestions}
+            refining={refining}
+            onGetRefinements={getRefinementSuggestions}
+            onApplyRefinement={(idea) => handleFindSignals(idea)}
           />
         )}
         {step === 'analyzing' && <AnalyzingScreen />}
