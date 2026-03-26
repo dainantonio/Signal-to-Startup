@@ -737,7 +737,7 @@ Return ONLY this JSON object. No text before or after. No markdown:
 }`,
           }],
         }],
-        config: { maxOutputTokens: 2000 },
+        config: { maxOutputTokens: 8192 },
       });
 
       const rawText = response.text ?? '';
