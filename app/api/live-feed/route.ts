@@ -4,7 +4,7 @@ const NEWS_API_KEY = process.env.NEWS_API_KEY;
 
 // ─── Sector definitions ───────────────────────────────────────────────────
 // Each sector has a targeted query, a label, and a color identity
-export const SECTORS = {
+const SECTORS = {
   ai: {
     label: 'AI & Tech',
     color: 'indigo',
