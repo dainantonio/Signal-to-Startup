@@ -21,7 +21,7 @@ import { SignalInput } from '../SignalInput';
 import { marketModeConfigs } from '../MarketModeSelector';
 import { ResultsDashboard } from '../ResultsDashboard';
 import { DeepDiveModal } from '../DeepDiveModal';
-import { Onboarding } from '../Onboarding';
+import Onboarding, { UserPreferences } from '../Onboarding';
 import { PipelineProgress } from '../PipelineProgress';
 import { Search, BarChart3, Target, Rocket } from 'lucide-react';
 import { useAgentAuth } from './useAgentAuth';
@@ -38,7 +38,7 @@ export default function TrendIntelligenceAgent() {
   const [copied, setCopied] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
   const [showOnboarding, setShowOnboarding] = useState(() => {
-    try { return !localStorage.getItem('s2s_onboarded'); } catch { return true; }
+    try { return localStorage.getItem('onboardingComplete') !== 'true'; } catch { return true; }
   });
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [hasLastResult, setHasLastResult] = useState(() => {
@@ -73,6 +73,26 @@ export default function TrendIntelligenceAgent() {
       }
     }
   }, []);
+
+  // Load saved preferences on mount
+  React.useEffect(() => {
+    try {
+      const saved = localStorage.getItem('userPreferences');
+      if (saved) {
+        const prefs: UserPreferences = JSON.parse(saved);
+        if (prefs.marketMode) setSelectedMode(prefs.marketMode);
+        if (prefs.countryTag) handleSetCountryTags([prefs.countryTag]);
+      }
+    } catch {}
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleOnboardingComplete = (prefs: UserPreferences) => {
+    setShowOnboarding(false);
+    if (prefs.marketMode) setSelectedMode(prefs.marketMode);
+    if (prefs.countryTag) handleSetCountryTags([prefs.countryTag]);
+    // sectors saved to localStorage by Onboarding; SignalInput reads on mount
+  };
 
   const analysis = useAgentAnalysis(user, selectedMode, countryTags);
 
@@ -138,27 +158,6 @@ export default function TrendIntelligenceAgent() {
     { id: 2, label: 'Analysis', icon: BarChart3 },
     { id: 3, label: 'Matrix', icon: Target },
     { id: 4, label: 'Execution', icon: Rocket },
-  ];
-
-  const exampleSignals = [
-    {
-      label: 'Rural Policy',
-      text: 'New federal initiative announced to subsidize high-speed satellite internet for rural farming communities in the Midwest. $500M allocated for infrastructure and local tech support training.',
-      location: 'Midwest, USA',
-      focus: 'Tech Support'
-    },
-    {
-      label: 'Green Energy',
-      text: 'City council passes mandate requiring all commercial buildings over 10,000 sq ft to install EV charging stations by 2027. Rebates available for early adopters who install before 2025.',
-      location: 'California',
-      focus: 'Installation'
-    },
-    {
-      label: 'Micro-Logistics',
-      text: "Major e-commerce platform opening 50 new 'last-mile' micro-fulfillment centers in dense urban areas. Seeking local partners for bicycle and electric scooter delivery fleets.",
-      location: 'London, UK',
-      focus: 'Delivery'
-    }
   ];
 
   const copyToClipboard = (text: string, id: string) => {
@@ -236,6 +235,11 @@ export default function TrendIntelligenceAgent() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Show onboarding for new users before the main app
+  if (showOnboarding) {
+    return <Onboarding onComplete={handleOnboardingComplete} />;
+  }
+
   return (
     <div className="min-h-screen-safe bg-background text-foreground p-4 md:p-8 font-sans selection:bg-primary/20">
       <div className="max-w-6xl mx-auto">
@@ -288,6 +292,17 @@ export default function TrendIntelligenceAgent() {
                     <LogOut className="w-3.5 h-3.5" />
                   </button>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    localStorage.removeItem('onboardingComplete');
+                    localStorage.removeItem('userPreferences');
+                    window.location.reload();
+                  }}
+                  className="text-xs text-gray-400 hover:text-black transition-colors hidden sm:block"
+                >
+                  Reset preferences
+                </button>
               </div>
             ) : (
               <div className="flex items-center gap-2">
@@ -545,7 +560,6 @@ export default function TrendIntelligenceAgent() {
           result={analysis.result}
           analyzeSignal={analysis.analyzeSignal}
           cancelAnalysis={analysis.cancelAnalysis}
-          exampleSignals={exampleSignals}
           selectedMode={selectedMode}
           setSelectedMode={handleSetSelectedMode}
           countryTags={countryTags}
@@ -562,17 +576,6 @@ export default function TrendIntelligenceAgent() {
               className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-8 font-mono text-sm"
             >
               {analysis.error}
-            </motion.div>
-          )}
-
-          {!analysis.result && !analysis.loading && !analysis.error && showOnboarding && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.5 }}
-            >
-              <Onboarding onDismiss={() => setShowOnboarding(false)} />
             </motion.div>
           )}
 

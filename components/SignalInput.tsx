@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, Lightbulb, MapPin, Zap, TrendingUp, Loader2, X, RefreshCw, Sparkles, FileUp, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Search, MapPin, Zap, TrendingUp, Loader2, X, RefreshCw, Sparkles, FileUp, CheckCircle2, AlertCircle } from 'lucide-react';
 import { MarketMode, FeedSignal, SectorKey, RecencyFilter, FeedFilters, SECTOR_CONFIGS } from './types';
 import { LOADING_STAGE_LABELS } from './agent/useAgentAnalysis';
 import { MarketModeSelector } from './MarketModeSelector';
@@ -37,7 +37,6 @@ interface SignalInputProps {
   result: unknown | null;
   analyzeSignal: (overrideInput?: string) => void;
   cancelAnalysis: () => void;
-  exampleSignals: { label: string; text: string; location: string; focus: string }[];
   selectedMode: MarketMode;
   setSelectedMode: (mode: MarketMode) => void;
   countryTags: string[];
@@ -49,7 +48,7 @@ export const SignalInput: React.FC<SignalInputProps> = ({
   location, setLocation, focus, setFocus, loading, loadingStage = 0, loadingProgress = 5,
   result, analyzeSignal, cancelAnalysis,
   countryTags, setCountryTags,
-  exampleSignals, selectedMode, setSelectedMode,
+  selectedMode, setSelectedMode,
 }) => {
   const [inputMode, setInputMode] = useState<'paste' | 'feed'>('paste');
   const [pdfLoading, setPdfLoading] = useState(false);
@@ -92,7 +91,17 @@ export const SignalInput: React.FC<SignalInputProps> = ({
   const [countryInput, setCountryInput] = useState('');
   const [showCountry, setShowCountry] = useState(false);
   const [lastFetchKey, setLastFetchKey] = useState('');
-  const [filters, setFilters] = useState<FeedFilters>({ sectors: ALL_SECTORS, recency: '3d' });
+  const [showFilterDrawer, setShowFilterDrawer] = useState(false);
+  const [filters, setFilters] = useState<FeedFilters>(() => {
+    try {
+      const saved = localStorage.getItem('userPreferences');
+      if (saved) {
+        const prefs = JSON.parse(saved);
+        if (prefs.sectors?.length) return { sectors: prefs.sectors, recency: '3d' };
+      }
+    } catch {}
+    return { sectors: ALL_SECTORS, recency: '3d' };
+  });
 
   const fetchKey = `${selectedMode}|${filters.sectors.join(',')}|${filters.recency}|${focus}|${countryTags.join(',')}`;
 
@@ -341,62 +350,62 @@ export const SignalInput: React.FC<SignalInputProps> = ({
               <div className="absolute bottom-4 right-4 text-primary/20 group-focus-within:text-primary/40 transition-colors"><Sparkles className="w-6 h-6" /></div>
             </div>
           </div>
-          <div className="flex flex-wrap gap-2 items-center">
-            <span className="text-[10px] font-mono uppercase text-muted flex items-center gap-1.5 w-full mb-1"><Lightbulb className="w-3 h-3" /> Try an example:</span>
-            {exampleSignals.map((sig, i) => (
-              <button key={i} onClick={() => { setInput(sig.text); setLocation(sig.location); setFocus(sig.focus); }}
-                className="px-4 py-2 bg-white border border-border/10 rounded-lg text-[10px] font-mono uppercase text-muted hover:text-foreground hover:border-border/30 hover:bg-gray-50 transition-all shadow-sm active:scale-95">
-                {sig.label}
-              </button>
-            ))}
-          </div>
         </div>
       ) : (
-        <div className="space-y-5">
-          {/* Sector chips */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-mono uppercase text-muted tracking-widest">Filter by sector</span>
-              <button onClick={() => setFilters(prev => ({ ...prev, sectors: prev.sectors.length === ALL_SECTORS.length ? ['ai'] : ALL_SECTORS }))}
-                className="text-[10px] font-mono uppercase text-primary hover:opacity-70 transition-opacity">
-                {filters.sectors.length === ALL_SECTORS.length ? 'Deselect all' : 'Select all'}
-              </button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {ALL_SECTORS.map(key => {
-                const cfg = SECTOR_CONFIGS[key];
-                const active = filters.sectors.includes(key);
-                return (
-                  <button key={key} onClick={() => toggleSector(key)}
-                    className={`px-3 py-1.5 rounded-full font-mono text-[10px] uppercase tracking-wider font-bold border transition-all duration-200 ${active ? `${cfg.badgeBg} ${cfg.badgeText} border-transparent shadow-sm` : 'bg-white text-muted border-border/10 hover:border-border/30 hover:bg-gray-50'}`}>
-                    {cfg.label}
+        <div className="space-y-4">
+          {/* Slim filter bar */}
+          {(() => {
+            const countryTag = countryTags[0] ?? '';
+            const hasActiveFilters =
+              countryTags.length > 0 ||
+              filters.sectors.length < ALL_SECTORS.length ||
+              filters.recency !== '3d';
+            return (
+              <div className="flex items-center justify-between px-1 py-1">
+                {/* Active filter summary */}
+                <div className="flex items-center gap-2">
+                  {countryTag && (
+                    <span className="flex items-center gap-1 text-xs text-gray-600 font-medium">
+                      {COUNTRY_CONTEXT[countryTag.toLowerCase()]?.flag ?? '🌍'} {countryTag}
+                    </span>
+                  )}
+                  {filters.sectors.length < ALL_SECTORS.length && (
+                    <span className="text-xs text-gray-500">
+                      {filters.sectors.length} sectors
+                    </span>
+                  )}
+                  {!countryTag && filters.sectors.length === ALL_SECTORS.length && (
+                    <span className="text-xs text-gray-400">All signals</span>
+                  )}
+                </div>
+                {/* Controls */}
+                <div className="flex items-center gap-2">
+                  {!fetchingFeed && signals.length > 0 && (
+                    <span className="text-xs text-gray-400">{signals.length} signals</span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setShowFilterDrawer(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-600 hover:border-gray-400 transition-colors"
+                  >
+                    ⚙ Filters
+                    {hasActiveFilters && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-black" />
+                    )}
                   </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Recency + refresh */}
-          <div className="flex items-center justify-between gap-3 flex-wrap">
-            <div className="flex bg-white border border-border/10 rounded-xl p-0.5 shadow-sm">
-              {(['24h', '3d', '7d'] as RecencyFilter[]).map(r => (
-                <button key={r} onClick={() => setFilters(prev => ({ ...prev, recency: r }))}
-                  className={`px-3 py-1.5 rounded-lg font-mono text-[10px] uppercase tracking-wider transition-all ${filters.recency === r ? 'bg-foreground text-background shadow-sm' : 'text-muted hover:text-foreground hover:bg-gray-50'}`}>
-                  {r === '24h' ? 'Today' : r === '3d' ? '3 Days' : '1 Week'}
-                </button>
-              ))}
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="text-[10px] font-mono text-muted flex items-center gap-2">
-                <span className="w-2 h-2 bg-red-400 rounded-full animate-pulse" />
-                {selectedMode !== 'global' ? `${selectedMode} signals` : 'Global'}
-              </span>
-              <button onClick={() => fetchFeed(true)} disabled={fetchingFeed} aria-label="Refresh feed"
-                className="p-2 hover:bg-white border border-transparent hover:border-border/10 rounded-lg transition-all text-muted hover:text-foreground">
-                <RefreshCw className={`w-4 h-4 ${fetchingFeed ? 'animate-spin' : ''}`} />
-              </button>
-            </div>
-          </div>
+                  <button
+                    type="button"
+                    onClick={() => fetchFeed(true)}
+                    disabled={fetchingFeed}
+                    aria-label="Refresh feed"
+                    className="p-1.5 text-gray-400 hover:text-black transition-colors"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${fetchingFeed ? 'animate-spin' : ''}`} />
+                  </button>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Dedup count banner */}
           {feedMeta && !fetchingFeed && (
@@ -565,6 +574,163 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                 })
             }
           </div>
+
+          {/* Filter drawer backdrop */}
+          {showFilterDrawer && (
+            <div
+              className="fixed inset-0 z-40 bg-black/20"
+              onClick={() => setShowFilterDrawer(false)}
+            />
+          )}
+
+          {/* Filter drawer panel */}
+          <div className={`fixed right-0 top-0 bottom-0 z-50 w-80 bg-white shadow-2xl transform transition-transform duration-300 flex flex-col ${showFilterDrawer ? 'translate-x-0' : 'translate-x-full'}`}>
+            {/* Drawer header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-100 flex-shrink-0">
+              <h3 className="text-sm font-semibold">Feed filters</h3>
+              <button
+                type="button"
+                onClick={() => setShowFilterDrawer(false)}
+                className="text-gray-400 hover:text-black transition-colors text-lg leading-none"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Drawer content */}
+            <div className="overflow-y-auto flex-1 pb-20 space-y-6 p-4">
+
+              {/* Market mode */}
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Market</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {([
+                    { id: 'global' as MarketMode, flag: '🌐', label: 'Global' },
+                    { id: 'caribbean' as MarketMode, flag: '🌴', label: 'Caribbean' },
+                    { id: 'africa' as MarketMode, flag: '🌍', label: 'Africa' },
+                    { id: 'uk' as MarketMode, flag: '🇬🇧', label: 'UK' },
+                  ]).map(m => (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => setSelectedMode(m.id)}
+                      className={`flex items-center gap-2 p-2.5 rounded-lg border text-xs font-medium transition-all ${
+                        selectedMode === m.id
+                          ? 'border-black bg-gray-50 text-black'
+                          : 'border-gray-200 text-gray-600 hover:border-gray-400'
+                      }`}
+                    >
+                      <span>{m.flag}</span>
+                      <span>{m.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Country */}
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Country</p>
+                <div className="flex flex-wrap gap-2">
+                  {['Jamaica', 'Trinidad', 'Nigeria', 'Ghana', 'Kenya', 'United Kingdom', 'United States'].map(country => {
+                    const isSelected = countryTags[0] === country;
+                    return (
+                      <button
+                        key={country}
+                        type="button"
+                        onClick={() => setCountryTags(isSelected ? [] : [country])}
+                        className={`flex items-center gap-1 px-2.5 py-1 rounded-full border text-xs font-medium transition-all ${
+                          isSelected
+                            ? 'bg-black text-white border-black'
+                            : 'border-gray-200 text-gray-600 hover:border-gray-400'
+                        }`}
+                      >
+                        <span>{COUNTRY_CONTEXT[country.toLowerCase()]?.flag ?? '🌍'}</span>
+                        <span>{country}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Sectors */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Sectors</p>
+                  <button
+                    type="button"
+                    onClick={() => setFilters(prev => ({ ...prev, sectors: ALL_SECTORS }))}
+                    className="text-xs text-gray-400 underline hover:text-black"
+                  >
+                    Select all
+                  </button>
+                </div>
+                <div className="space-y-1.5">
+                  {ALL_SECTORS.map(sector => {
+                    const cfg = SECTOR_CONFIGS[sector];
+                    const isSelected = filters.sectors.includes(sector);
+                    return (
+                      <button
+                        key={sector}
+                        type="button"
+                        onClick={() => toggleSector(sector)}
+                        className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg border text-xs font-medium transition-all ${
+                          isSelected
+                            ? 'border-black bg-gray-50'
+                            : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                        }`}
+                      >
+                        <span className={isSelected ? 'text-black' : ''}>{cfg.label}</span>
+                        <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
+                          isSelected ? 'bg-black border-black' : 'border-gray-300'
+                        }`}>
+                          {isSelected && <span className="text-white text-[9px]">✓</span>}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Time range */}
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Time range</p>
+                <div className="flex rounded-lg border border-gray-200 overflow-hidden">
+                  {([
+                    { value: '24h', label: 'Today' },
+                    { value: '3d', label: '3 days' },
+                    { value: '7d', label: '1 week' },
+                  ] as { value: RecencyFilter; label: string }[]).map((opt, i) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setFilters(prev => ({ ...prev, recency: opt.value }))}
+                      className={`flex-1 py-2 text-xs font-medium transition-colors ${
+                        i > 0 ? 'border-l border-gray-200' : ''
+                      } ${
+                        filters.recency === opt.value
+                          ? 'bg-black text-white'
+                          : 'text-gray-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Drawer footer */}
+            <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-100 bg-white">
+              <button
+                type="button"
+                onClick={() => { setShowFilterDrawer(false); fetchFeed(true); }}
+                className="w-full py-3 bg-black text-white rounded-xl text-sm font-semibold hover:bg-gray-900 transition-colors"
+              >
+                Apply filters
+              </button>
+            </div>
+          </div>
+
         </div>
       )}
 
