@@ -140,5 +140,11 @@ service cloud.firestore {
       allow update: if isDocOwner();
       allow delete: if isDocOwner() || isAdmin();
     }
+
+    match /waitlist/{entryId} {
+      allow create: if true;
+      allow read: if isAdmin();
+      allow delete: if isAdmin();
+    }
   }
 }

@@ -1,26 +1,46 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from '@/firebase';
 import dynamic from 'next/dynamic';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import LandingPage from '@/components/LandingPage';
 
-const TrendIntelligenceAgent = dynamic(() => import('@/components/agent/TrendIntelligenceAgent'), {
-  ssr: false,
-  loading: () => (
-    <div className="min-h-screen-safe bg-background flex items-center justify-center">
-      <div className="flex flex-col items-center gap-6">
-        <div className="w-16 h-16 border-4 border-primary/10 border-t-primary rounded-full animate-spin" />
-        <p className="text-[10px] font-mono uppercase font-bold tracking-widest text-muted">Loading...</p>
-      </div>
-    </div>
-  ),
-});
+const TrendIntelligenceAgent = dynamic(
+  () => import('@/components/agent/TrendIntelligenceAgent'),
+  { ssr: false },
+);
 
 export default function Home() {
-  return (
-    <main>
-      <ErrorBoundary>
-        <TrendIntelligenceAgent />
-      </ErrorBoundary>
-    </main>
-  );
+  const [authState, setAuthState] = useState<
+    'loading' | 'authenticated' | 'unauthenticated'
+  >('loading');
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, user => {
+      setAuthState(user ? 'authenticated' : 'unauthenticated');
+    });
+    return () => unsubscribe();
+  }, []);
+
+  if (authState === 'loading') {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-black border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (authState === 'authenticated') {
+    return (
+      <main>
+        <ErrorBoundary>
+          <TrendIntelligenceAgent />
+        </ErrorBoundary>
+      </main>
+    );
+  }
+
+  return <LandingPage />;
 }
