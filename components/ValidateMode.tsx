@@ -148,7 +148,9 @@ function exportValidation(
 const PRESET_COUNTRIES = [
   'Jamaica', 'Trinidad', 'Barbados', 'Guyana',
   'Nigeria', 'Ghana', 'Kenya',
+  'Mexico', 'Brazil', 'Colombia',
   'United States', 'United Kingdom',
+  'India', 'Philippines',
 ];
 
 const BUSINESS_TYPES = [

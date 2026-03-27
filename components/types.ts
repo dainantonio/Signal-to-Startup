@@ -18,7 +18,7 @@ export interface Opportunity {
   money_score: number;
 }
 
-export type MarketMode = 'global' | 'caribbean' | 'uk' | 'africa';
+export type MarketMode = 'global' | 'caribbean' | 'africa' | 'uk' | 'latam';
 
 export interface MarketModeConfig {
   id: MarketMode;

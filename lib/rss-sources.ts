@@ -40,6 +40,18 @@ export const COUNTRY_CONTEXT: Record<string, CountryContext> = {
   atlanta:      { keywords: ['Atlanta', 'Georgia', 'ATL'],                                       flag: '🇺🇸', currency: 'USD', region: 'global'    },
   miami:        { keywords: ['Miami', 'South Florida', 'Dade'],                                  flag: '🇺🇸', currency: 'USD', region: 'global'    },
   houston:      { keywords: ['Houston', 'Texas', 'HTX'],                                         flag: '🇺🇸', currency: 'USD', region: 'global'    },
+  // LATIN AMERICA
+  mexico:       { keywords: ['Mexico', 'Mexican', 'Ciudad de Mexico', 'CDMX', 'Guadalajara', 'Monterrey', 'MX'], flag: '🇲🇽', currency: 'MXN', region: 'latam' },
+  brazil:       { keywords: ['Brazil', 'Brazilian', 'Brasil', 'São Paulo', 'Rio de Janeiro', 'BR'],               flag: '🇧🇷', currency: 'BRL', region: 'latam' },
+  colombia:     { keywords: ['Colombia', 'Colombian', 'Bogota', 'Medellin', 'Cali', 'CO'],                        flag: '🇨🇴', currency: 'COP', region: 'latam' },
+  argentina:    { keywords: ['Argentina', 'Argentine', 'Buenos Aires', 'AR', 'Argentinian'],                      flag: '🇦🇷', currency: 'ARS', region: 'latam' },
+  chile:        { keywords: ['Chile', 'Chilean', 'Santiago', 'CL'],                                               flag: '🇨🇱', currency: 'CLP', region: 'latam' },
+  peru:         { keywords: ['Peru', 'Peruvian', 'Lima', 'PE'],                                                    flag: '🇵🇪', currency: 'PEN', region: 'latam' },
+  // ASIA-PACIFIC
+  india:        { keywords: ['India', 'Indian', 'Mumbai', 'Delhi', 'Bangalore', 'Bengaluru', 'IN'],               flag: '🇮🇳', currency: 'INR', region: 'global' },
+  philippines:  { keywords: ['Philippines', 'Filipino', 'Manila', 'Cebu', 'PH'],                                  flag: '🇵🇭', currency: 'PHP', region: 'global' },
+  singapore:    { keywords: ['Singapore', 'Singaporean', 'SG', 'SGD'],                                            flag: '🇸🇬', currency: 'SGD', region: 'global' },
+  uae:          { keywords: ['UAE', 'Dubai', 'Abu Dhabi', 'Emirates', 'AE'],                                      flag: '🇦🇪', currency: 'AED', region: 'global' },
 };
 
 export interface RSSSource {
@@ -117,8 +129,16 @@ export const RSS_SOURCES: RSSSource[] = [
   { url: 'https://techcrunch.com/tag/europe/feed/',                               market: 'uk', sector: 'ai',                name: 'TC Europe',         tier: 1 },
 
   // AFRICA & DIASPORA
-  { url: 'https://techcabal.com/feed/',                                           market: 'africa', sector: 'ai',             name: 'TechCabal',         tier: 2 },
-  { url: 'https://disrupt-africa.com/feed/',                                      market: 'africa', sector: 'funding',        name: 'Disrupt Africa',    tier: 2 },
-  { url: 'https://www.howwemadeitinafrica.com/feed/',                             market: 'africa', sector: 'markets',        name: 'How We Made It',    tier: 3 },
-  { url: 'https://africabusiness.com/feed/',                                      market: 'africa', sector: 'markets',        name: 'Africa Business',   tier: 3 },
+  { url: 'https://techcabal.com/feed/',                                           market: 'africa', sector: 'ai',             name: 'TechCabal',              tier: 2 },
+  { url: 'https://disrupt-africa.com/feed/',                                      market: 'africa', sector: 'funding',        name: 'Disrupt Africa',         tier: 2 },
+  { url: 'https://www.howwemadeitinafrica.com/feed/',                             market: 'africa', sector: 'markets',        name: 'How We Made It',         tier: 3 },
+  { url: 'https://africabusiness.com/feed/',                                      market: 'africa', sector: 'markets',        name: 'Africa Business',        tier: 3 },
+
+  // LATIN AMERICA
+  { url: 'https://www.infobae.com/economia/rss/',                                 market: 'latam',  sector: 'markets',        name: 'Infobae Economia',       tier: 2 },
+  { url: 'https://feeds.folha.uol.com.br/mercado/rss091.xml',                    market: 'latam',  sector: 'markets',        name: 'Folha Mercado',          tier: 2 },
+  { url: 'https://www.contxto.com/en/feed/',                                      market: 'latam',  sector: 'ai',             name: 'Contxto LatAm Tech',     tier: 2 },
+  { url: 'https://startupbrasil.com.br/feed/',                                    market: 'latam',  sector: 'ai',             name: 'Startup Brasil',         tier: 3 },
+  { url: 'https://businessinsider.mx/feed',                                       market: 'latam',  sector: 'markets',        name: 'Business Insider Mexico',tier: 3 },
+  { url: 'https://www.lavanguardia.com/rss/economia.xml',                         market: 'latam',  sector: 'markets',        name: 'La Vanguardia Economia', tier: 3 },
 ];

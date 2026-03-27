@@ -49,6 +49,7 @@ const REGION_BOOST: Record<string, string> = {
   caribbean: '(Jamaica OR Trinidad OR Barbados OR Guyana OR Caribbean OR CARICOM OR "West Indies")',
   uk:        '(UK OR Britain OR "United Kingdom" OR England OR Scotland OR Wales OR HMRC OR "Companies House")',
   africa:    '(Africa OR Nigeria OR Kenya OR Ghana OR "South Africa" OR Ethiopia OR "Sub-Saharan")',
+  latam:     '(Mexico OR Brazil OR Colombia OR Argentina OR Chile OR Peru OR "Latin America" OR LatAm OR CDMX OR "São Paulo")',
   global:    '', // no boost — global = everything
 };
 

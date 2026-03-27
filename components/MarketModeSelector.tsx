@@ -5,10 +5,10 @@ import { MarketMode, MarketModeConfig } from './types';
 
 export const marketModeConfigs: Record<MarketMode, MarketModeConfig> = {
   global: {
-    id: 'global', label: 'Global', flag: '🌐',
-    description: 'General US/international context. Broad market signals.',
-    grantSources: [],
-    promptContext: 'General Business context. Focus on scalable, international opportunities.'
+    id: 'global', label: 'Global / US', flag: '🌐',
+    description: 'United States and worldwide markets. Broad signals.',
+    grantSources: ['Small Business Administration (SBA)', 'SBIR/STTR Federal Grants', 'Angel Capital Association', 'National Venture Capital Association'],
+    promptContext: 'Focus on US market dynamics, scalable business models, and international opportunities. Reference SBA programs where relevant.'
   },
   caribbean: {
     id: 'caribbean', label: 'Caribbean', flag: '🌴',
@@ -22,18 +22,31 @@ export const marketModeConfigs: Record<MarketMode, MarketModeConfig> = {
 - Consider local constraints: high energy costs (favour solar-adjacent or low-power models), import reliance (favour locally-sourced or digital products), tourism-heavy economies (seasonal demand, foreign-currency revenue), and mobile-first infrastructure (WhatsApp-native tools, USSD fallbacks).
 - Use local terminology where appropriate (e.g., "hustle", "link up", "yard", "higgler", "corner shop").`
   },
+  africa: {
+    id: 'africa', label: 'Africa', flag: '🌍',
+    description: 'Sub-Saharan Africa, diaspora entrepreneurs. Mobile-first, fintech-adjacent.',
+    grantSources: ['Tony Elumelu Foundation', 'African Development Bank', 'World Bank IFC', 'Mastercard Foundation', 'Bank of Industry (BOI) Nigeria'],
+    promptContext: 'Focus on mobile money infrastructure (M-Pesa, MTN MoMo), informal economy formalization, diaspora remittance economy, and leapfrog technology adoption.'
+  },
   uk: {
     id: 'uk', label: 'UK & Europe', flag: '🇬🇧',
     description: 'UK/EU market. Innovate UK, Horizon Europe, British Business Bank.',
-    grantSources: ['Innovate UK Smart Grants', 'British Business Bank Start Up Loans', 'Horizon Europe', 'Local Enterprise Partnerships'],
-    promptContext: 'Focus on UK regulatory landscape, HMRC compliance, Companies House requirements, R&D tax credits.'
+    grantSources: ['Innovate UK Smart Grants', 'British Business Bank Start Up Loans', 'Horizon Europe', 'Local Enterprise Partnerships', "Prince's Trust Enterprise Programme"],
+    promptContext: 'Focus on UK regulatory landscape, HMRC compliance, Companies House requirements, R&D tax credits, and EU market access.'
   },
-  africa: {
-    id: 'africa', label: 'Africa & Diaspora', flag: '🌍',
-    description: 'Sub-Saharan Africa, diaspora entrepreneurs. Mobile-first, fintech-adjacent.',
-    grantSources: ['Tony Elumelu Foundation', 'African Development Bank', 'World Bank IFC', 'Mastercard Foundation'],
-    promptContext: 'Focus on mobile money infrastructure (M-Pesa, MTN MoMo), informal economy formalization, diaspora remittance economy.'
-  }
+  latam: {
+    id: 'latam', label: 'Latin America', flag: '🌎',
+    description: 'Mexico, Brazil, Colombia, Argentina. IDB, BNDES, Endeavor ecosystem.',
+    grantSources: ['Inter-American Development Bank (IDB)', 'BNDES (Brazil Development Bank)', 'iNNpulsa Colombia', 'INADEM Mexico', 'Endeavor Network', 'CORFO Chile'],
+    promptContext: `LATIN AMERICA CONTEXT:
+- Focus on Spanish and Portuguese speaking markets
+- Consider informal economy and cash-based transactions
+- Mobile-first population with growing fintech adoption
+- Reference IDB and local development bank programs
+- Consider remittance corridors from US diaspora
+- Account for regulatory variation between countries
+- Strong e-commerce and logistics growth sector`
+  },
 };
 
 interface MarketModeSelectorProps {

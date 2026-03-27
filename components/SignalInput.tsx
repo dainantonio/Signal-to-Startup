@@ -605,10 +605,11 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Market</p>
                 <div className="grid grid-cols-2 gap-2">
                   {([
-                    { id: 'global' as MarketMode, flag: '🌐', label: 'Global' },
+                    { id: 'global' as MarketMode, flag: '🌐', label: 'Global / US' },
                     { id: 'caribbean' as MarketMode, flag: '🌴', label: 'Caribbean' },
                     { id: 'africa' as MarketMode, flag: '🌍', label: 'Africa' },
-                    { id: 'uk' as MarketMode, flag: '🇬🇧', label: 'UK' },
+                    { id: 'uk' as MarketMode, flag: '🇬🇧', label: 'UK & Europe' },
+                    { id: 'latam' as MarketMode, flag: '🌎', label: 'Latin America' },
                   ]).map(m => (
                     <button
                       key={m.id}
@@ -631,7 +632,7 @@ export const SignalInput: React.FC<SignalInputProps> = ({
               <div className="space-y-2">
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Country</p>
                 <div className="flex flex-wrap gap-2">
-                  {['Jamaica', 'Trinidad', 'Nigeria', 'Ghana', 'Kenya', 'United Kingdom', 'United States'].map(country => {
+                  {['United States', 'Jamaica', 'Nigeria', 'Brazil', 'Mexico', 'Ghana', 'Kenya', 'United Kingdom', 'Colombia', 'India', 'Philippines', 'Singapore'].map(country => {
                     const isSelected = countryTags[0] === country;
                     return (
                       <button

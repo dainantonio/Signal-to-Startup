@@ -66,36 +66,43 @@ const BUSINESS_TYPES = [
 
 const MARKETS: { id: MarketMode; flag: string; label: string; description: string }[] = [
   {
+    id: 'global',
+    flag: '🌐',
+    label: 'Global / US',
+    description: 'United States and worldwide. The largest market with the most signals.',
+  },
+  {
     id: 'caribbean',
     flag: '🌴',
     label: 'Caribbean',
-    description: 'Jamaica, Trinidad, Barbados, Guyana and across the Caribbean',
+    description: 'Jamaica, Trinidad, Barbados, Guyana and across the Caribbean.',
   },
   {
     id: 'africa',
     flag: '🌍',
     label: 'Africa',
-    description: 'Nigeria, Ghana, Kenya, Rwanda and across the continent',
+    description: 'Nigeria, Ghana, Kenya, Rwanda and across the continent.',
   },
   {
     id: 'uk',
     flag: '🇬🇧',
     label: 'UK & Europe',
-    description: 'United Kingdom and European markets',
+    description: 'United Kingdom and European markets.',
   },
   {
-    id: 'global',
-    flag: '🌐',
-    label: 'Global / US',
-    description: 'United States and international markets',
+    id: 'latam',
+    flag: '🌎',
+    label: 'Latin America',
+    description: 'Mexico, Brazil, Colombia, Chile, Argentina and across LatAm.',
   },
 ];
 
 const COUNTRY_OPTIONS: Record<MarketMode, string[]> = {
+  global: ['United States', 'Canada', 'Australia', 'Singapore', 'UAE', 'India'],
   caribbean: ['Jamaica', 'Trinidad', 'Barbados', 'Guyana', 'Haiti', 'Bahamas'],
   africa: ['Nigeria', 'Ghana', 'Kenya', 'South Africa', 'Rwanda', 'Ethiopia'],
   uk: ['United Kingdom', 'Ireland', 'Germany', 'France', 'Netherlands'],
-  global: ['United States', 'Canada', 'Australia', 'Singapore', 'UAE'],
+  latam: ['Mexico', 'Brazil', 'Colombia', 'Argentina', 'Chile', 'Peru'],
 };
 
 function getCountryFlag(country: string): string {

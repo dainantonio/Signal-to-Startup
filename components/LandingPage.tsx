@@ -327,8 +327,14 @@ export default function LandingPage() {
             funding sources, regulations, and customer context.
           </p>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           {[
+            {
+              flag: '🌐',
+              market: 'Global / US',
+              countries: 'United States, Canada, Australia and worldwide',
+              funding: 'SBA, Angel investors, Federal grants',
+            },
             {
               flag: '🌴',
               market: 'Caribbean',
@@ -344,14 +350,14 @@ export default function LandingPage() {
             {
               flag: '🇬🇧',
               market: 'UK & Europe',
-              countries: 'United Kingdom, EU markets',
+              countries: 'United Kingdom and EU markets',
               funding: 'Innovate UK, British Business Bank',
             },
             {
-              flag: '🌐',
-              market: 'Global',
-              countries: 'United States and worldwide',
-              funding: 'SBA, Angel investors, VC',
+              flag: '🌎',
+              market: 'Latin America',
+              countries: 'Mexico, Brazil, Colombia, Chile, Argentina',
+              funding: 'IDB, BNDES, iNNpulsa, CORFO',
             },
           ].map((m, i) => (
             <motion.div
