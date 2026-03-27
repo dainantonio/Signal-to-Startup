@@ -146,5 +146,10 @@ service cloud.firestore {
       allow read: if isAdmin();
       allow delete: if isAdmin();
     }
+
+    match /demo_analyses/{id} {
+      allow create: if true;
+      allow read: if isAdmin();
+    }
   }
 }

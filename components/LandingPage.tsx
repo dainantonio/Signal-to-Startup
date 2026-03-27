@@ -3,12 +3,14 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
 import { auth, googleProvider, signInWithPopup, db, addDoc, collection } from '@/firebase';
+import DemoMode from '@/components/DemoMode';
 
 export default function LandingPage() {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [showDemo, setShowDemo] = useState(false);
 
   const handleWaitlist = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,6 +47,10 @@ export default function LandingPage() {
       console.error('Sign in failed:', err);
     }
   };
+
+  if (showDemo) {
+    return <DemoMode onSignUp={handleSignIn} onBack={() => setShowDemo(false)} />;
+  }
 
   return (
     <div className="min-h-screen bg-white font-sans">
@@ -154,6 +160,19 @@ export default function LandingPage() {
               </button>
             </p>
           )}
+
+          {/* Demo CTA */}
+          <div className="mt-4 flex items-center justify-center gap-3">
+            <div className="h-px bg-gray-200 flex-1 max-w-16" />
+            <span className="text-xs text-gray-400">or</span>
+            <div className="h-px bg-gray-200 flex-1 max-w-16" />
+          </div>
+          <button
+            onClick={() => setShowDemo(true)}
+            className="w-full sm:w-auto px-8 py-3 border-2 border-gray-200 text-gray-700 rounded-xl text-sm font-medium hover:border-black hover:text-black transition-all"
+          >
+            Try a free analysis — no sign up needed
+          </button>
         </motion.div>
       </section>
 
@@ -220,6 +239,14 @@ export default function LandingPage() {
               <p className="text-sm text-gray-500 leading-relaxed">{item.description}</p>
             </motion.div>
           ))}
+        </div>
+        <div className="text-center mt-10">
+          <button
+            onClick={() => setShowDemo(true)}
+            className="px-6 py-3 border-2 border-gray-200 text-gray-700 rounded-xl text-sm font-medium hover:border-black hover:text-black transition-all"
+          >
+            See it work → Try a free analysis
+          </button>
         </div>
       </section>
 
@@ -424,6 +451,13 @@ export default function LandingPage() {
           <p className="text-xs text-gray-400">
             Free during beta. No credit card. Unsubscribe anytime.
           </p>
+
+          <button
+            onClick={() => setShowDemo(true)}
+            className="block mx-auto text-sm text-gray-500 hover:text-black underline transition-colors"
+          >
+            Or try a free analysis first →
+          </button>
         </motion.div>
       </section>
 
