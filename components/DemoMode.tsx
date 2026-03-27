@@ -246,47 +246,39 @@ export default function DemoMode({ onSignUp, onBack }: DemoModeProps) {
           role: 'user',
           parts: [{
             text: `You are a startup opportunity finder.
-Analyze this market signal and return a JSON object.
+Be concise. Each field maximum 1-2 short sentences.
+Keep total response under 800 tokens.
 
-Market signal: "${articleText.substring(0, 800)}"
+Analyze this signal: "${articleText.substring(0, 600)}"
 
-RULES:
-- Return ONLY the JSON object below
-- No text before the opening brace
-- No text after the closing brace
-- No markdown formatting
-- No backticks
-- All string values must use double quotes
-- No trailing commas
-
-JSON format:
+Return ONLY this JSON with NO extra text:
 {
-  "trend": "single sentence describing the trend",
-  "summary": "two sentences summarizing the opportunity",
+  "trend": "max 15 words",
+  "summary": "max 30 words total",
   "opportunities": [
     {
-      "name": "short business name",
-      "description": "two sentences about this business",
-      "target_customer": "who buys this",
+      "name": "3-5 words",
+      "description": "max 25 words",
+      "target_customer": "max 10 words",
       "startup_cost": 500,
       "money_score": 80,
-      "why_now": "one sentence on timing",
-      "first_step": "the single most important first action"
+      "why_now": "max 15 words",
+      "first_step": "max 20 words"
     },
     {
-      "name": "second business name",
-      "description": "two sentences about this business",
-      "target_customer": "who buys this",
+      "name": "3-5 words",
+      "description": "max 25 words",
+      "target_customer": "max 10 words",
       "startup_cost": 800,
       "money_score": 75,
-      "why_now": "one sentence on timing",
-      "first_step": "the single most important first action"
+      "why_now": "max 15 words",
+      "first_step": "max 20 words"
     }
   ]
 }`,
           }],
         }],
-        config: { maxOutputTokens: 1000 },
+        config: { maxOutputTokens: 1500 },
       });
 
       clearInterval(progressInterval);
