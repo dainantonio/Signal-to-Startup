@@ -199,7 +199,9 @@ export default function DemoMode({ onSignUp, onBack }: DemoModeProps) {
   const [progress, setProgress] = useState(0);
   const [stage, setStage] = useState('');
   const [demoCount, setDemoCount] = useState(() =>
-    parseInt(sessionStorage.getItem('demoCount') || '0')
+    typeof window !== 'undefined'
+      ? parseInt(sessionStorage.getItem('demoCount') || '0')
+      : 0
   );
   const abortRef = useRef<AbortController | null>(null);
 
