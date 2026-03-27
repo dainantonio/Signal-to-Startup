@@ -114,6 +114,8 @@ const DEMO_ARTICLES: DemoArticle[] = [
   },
 ];
 
+const DEMO_ARTICLE_LIMIT = 5;
+
 const SECTOR_COLORS: Record<string, string> = {
   'AI & Tech': 'bg-indigo-100 text-indigo-800',
   'Policy': 'bg-amber-100 text-amber-800',
@@ -196,13 +198,17 @@ export default function DemoMode({ onSignUp, onBack }: DemoModeProps) {
   const [selectedArticle, setSelectedArticle] = useState<DemoArticle | null>(null);
   const [progress, setProgress] = useState(0);
   const [stage, setStage] = useState('');
+  const [demoCount, setDemoCount] = useState(() =>
+    parseInt(sessionStorage.getItem('demoCount') || '0')
+  );
   const abortRef = useRef<AbortController | null>(null);
 
   const genAI = () => new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
 
   const handleAnalyze = async (article: DemoArticle) => {
-    // If demo already used this session, show gate
-    if (sessionStorage.getItem('demoUsed')) {
+    // If demo limit reached this session, show gate
+    const demoUsed = demoCount >= DEMO_ARTICLE_LIMIT;
+    if (demoUsed) {
       setDemoStep('gate');
       return;
     }
@@ -387,7 +393,10 @@ Return ONLY this JSON with NO extra text:
 
       setResult(parsed);
       setDemoStep('results');
-      sessionStorage.setItem('demoUsed', 'true');
+      const currentCount = parseInt(sessionStorage.getItem('demoCount') || '0');
+      const newCount = currentCount + 1;
+      sessionStorage.setItem('demoCount', String(newCount));
+      setDemoCount(newCount);
 
       // Fire-and-forget demo analytics
       addDoc(collection(db, 'demo_analyses'), {
@@ -418,7 +427,12 @@ Return ONLY this JSON with NO extra text:
             <span className="text-xs px-2 py-1 bg-amber-100 text-amber-700 rounded-full font-medium">
               Demo mode
             </span>
-            <span className="text-xs text-gray-400 hidden sm:block">1 free analysis</span>
+            {demoCount < DEMO_ARTICLE_LIMIT && (
+              <span className="text-xs text-gray-400 hidden sm:block">
+                {DEMO_ARTICLE_LIMIT - demoCount} free
+                {DEMO_ARTICLE_LIMIT - demoCount === 1 ? ' analysis' : ' analyses'} remaining
+              </span>
+            )}
           </div>
           <button
             onClick={onSignUp}
@@ -626,10 +640,10 @@ Return ONLY this JSON with NO extra text:
             className="max-w-sm mx-auto px-4 py-20 text-center space-y-5"
           >
             <div className="text-4xl">🔒</div>
-            <h2 className="text-xl font-semibold">You have used your free analysis</h2>
+            <h2 className="text-xl font-semibold">You have used your 5 free analyses</h2>
             <p className="text-sm text-gray-500 leading-relaxed">
-              Sign up free to get unlimited analyses, save your opportunities, and access
-              the full execution suite.
+              You have explored 5 opportunities. Sign up free for unlimited daily analyses,
+              full execution suites, and your personal opportunity dashboard.
             </p>
             <button
               onClick={onSignUp}
