@@ -182,7 +182,7 @@ export async function GET(req: NextRequest) {
         const sector = SECTORS[sectorKey];
 
         // Build final query: sector query + region boost + niche boost
-        let q = sector.query;
+        let q: string = sector.query;
         if (regionBoost) q = `(${q}) AND ${regionBoost}`;
         if (nicheBoost) q = `(${q}) ${nicheBoost}`;
 
