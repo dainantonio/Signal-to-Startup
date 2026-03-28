@@ -370,7 +370,7 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
         - Return exactly 3 opportunities maximum, prioritized by money_score.
         - Be specific, not generic
         - Avoid vague startup ideas
-        - ALL ideas MUST be low-cost startups.
+        - ALL ideas must be lean to start — achievable without large upfront capital.
         - Set 'status' to 'New' for all new opportunities.
         - Assign a 'priority' (High, Medium, Low) based on the balance of ROI potential vs. difficulty.
         - Identify if an idea is likely to qualify for government funding or grants (e.g., sustainability, rural development, small business support).
@@ -574,7 +574,7 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
 
         TASKS:
         1. Create a professional 1-page business plan (Executive Summary, Market Analysis, Operations, Revenue Model).
-        2. Provide a granular startup cost breakdown (focus on low-cost execution).
+        2. Provide a granular startup cost breakdown (focus on lean, efficient execution).
         3. Identify 3-5 specific grant types or funding sources this business could qualify for.
         4. Create a 30-day execution checklist.
         5. Identify 3-5 specific venture capital firms, angel networks, or investor groups that specialize in this niche or stage.

@@ -20,7 +20,7 @@ const jetbrains = JetBrains_Mono({
 export const metadata: Metadata = {
   title: 'Signal to Startup by EntrepAIneur',
   description:
-    'Turn news, policy, and market signals into actionable low-cost business opportunities. AI-powered startup intelligence for Caribbean, African, UK and US entrepreneurs.',
+    'Turn news, policy, and market signals into actionable business opportunities. AI-powered startup intelligence for Caribbean, African, Latin American, UK and US entrepreneurs.',
   manifest: '/manifest.json',
   icons: {
     icon: [
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: 'Signal to Startup',
-    description: 'Turn any news story into your next business. AI-powered. Under $2K to start.',
+    description: 'Turn any news story into your next business. AI-powered. Start lean, grow fast.',
     url: 'https://signal-to-startup.vercel.app',
     siteName: 'Signal to Startup',
     type: 'website',

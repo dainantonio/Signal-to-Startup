@@ -3,7 +3,6 @@
 import React, { useState, useCallback } from 'react';
 import {
   Globe,
-  TrendingUp,
   History,
   LogIn,
   LogOut,
@@ -27,6 +26,7 @@ import { Search, BarChart3, Target, Rocket } from 'lucide-react';
 import { useAgentAuth } from './useAgentAuth';
 import { useAgentAnalysis } from './useAgentAnalysis';
 import { ValidateMode } from '../ValidateMode';
+import Logo from '../Logo';
 
 type AppMode = 'discover' | 'validate';
 
@@ -246,16 +246,9 @@ export default function TrendIntelligenceAgent() {
         {/* Header */}
         <header className="mb-8 md:mb-12 border-b border-border/10 pb-6 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-2">
-            <div className="flex items-center gap-3 mb-1">
-              <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/20">
-                <TrendingUp className="w-6 h-6" />
-              </div>
-              <h1 className="text-3xl md:text-5xl font-bold tracking-tighter uppercase italic font-serif">
-                Signal to Startup
-              </h1>
-            </div>
+            <Logo size="lg" showWordmark showSubbrand theme="light" />
             <p className="text-xs md:text-sm uppercase tracking-widest text-muted font-medium max-w-xl leading-relaxed">
-              Turn news, policy, and market signals into actionable, low-cost business opportunities.
+              Turn news, policy, and market signals into actionable business opportunities.
             </p>
           </div>
           <div className="flex items-center gap-3 self-start md:self-auto">

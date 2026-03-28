@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { motion } from 'motion/react';
 import { auth, googleProvider, signInWithPopup, db, addDoc, collection } from '@/firebase';
 import DemoMode from '@/components/DemoMode';
+import Logo from '@/components/Logo';
 
 export default function LandingPage() {
   const [email, setEmail] = useState('');
@@ -21,23 +22,30 @@ export default function LandingPage() {
     setSubmitting(true);
     setError('');
     try {
+      // Save to Firestore
       await addDoc(collection(db, 'waitlist'), {
         email: email.toLowerCase().trim(),
         joinedAt: new Date().toISOString(),
         source: 'landing-page',
       });
-      setSubmitted(true);
     } catch {
-      // Fallback to localStorage
+      // Fallback to localStorage if Firestore unavailable
       try {
         const existing = JSON.parse(localStorage.getItem('waitlist') || '[]');
         existing.push({ email, joinedAt: new Date().toISOString() });
         localStorage.setItem('waitlist', JSON.stringify(existing));
       } catch { /* ignore */ }
-      setSubmitted(true);
-    } finally {
-      setSubmitting(false);
     }
+
+    // Send welcome email via Resend (fire-and-forget — don't block UI)
+    fetch('/api/waitlist', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.toLowerCase().trim() }),
+    }).catch(() => { /* ignore email errors */ });
+
+    setSubmitted(true);
+    setSubmitting(false);
   };
 
   const handleSignIn = async () => {
@@ -58,13 +66,7 @@ export default function LandingPage() {
       {/* NAV */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-sm border-b border-gray-100">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-black rounded-lg flex items-center justify-center">
-              <span className="text-white text-xs font-bold">S</span>
-            </div>
-            <span className="text-sm font-semibold">Signal to Startup</span>
-            <span className="text-xs text-gray-400 hidden sm:block">by EntrepAIneur</span>
-          </div>
+          <Logo size="sm" showWordmark showSubbrand={false} theme="light" />
           <button
             onClick={handleSignIn}
             className="text-sm font-medium text-gray-600 hover:text-black transition-colors"
@@ -107,7 +109,7 @@ export default function LandingPage() {
         >
           Signal to Startup reads the news so you do not have to. Every article is a market
           signal. We find the hidden business opportunity inside it — with a full execution
-          plan, under $2,000 to start.
+          plan, all designed to start lean and grow fast.
         </motion.p>
 
         <motion.div
@@ -180,8 +182,8 @@ export default function LandingPage() {
       <section className="border-y border-gray-100 py-6 px-4 bg-gray-50">
         <div className="max-w-4xl mx-auto flex flex-wrap items-center justify-center gap-8 text-center">
           {[
-            { number: '4', label: 'Markets covered' },
-            { number: '$2K', label: 'Max startup cost' },
+            { number: '5', label: 'Global markets' },
+            { number: '< 1 week', label: 'Time to first step' },
             { number: '30+', label: 'Live signals daily' },
             { number: '50+', label: 'Countries supported' },
           ].map(stat => (
@@ -215,7 +217,7 @@ export default function LandingPage() {
               icon: '⚡',
               title: 'AI finds the opportunity',
               description:
-                'Our AI analyzes the signal and surfaces 3 actionable business opportunities hidden inside it — all startable for under $2,000.',
+                'Our AI analyzes the signal and surfaces 3 actionable business opportunities hidden inside it — all designed to start lean and grow fast.',
             },
             {
               step: '03',
@@ -287,7 +289,7 @@ export default function LandingPage() {
               },
               {
                 icon: '💰',
-                title: 'Under $2,000 to start',
+                title: 'Low-barrier business ideas',
                 description:
                   'Every idea is scored for startup cost, speed to launch, and ROI potential. No big capital required.',
               },
@@ -472,8 +474,7 @@ export default function LandingPage() {
         <div className="max-w-5xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
             <div className="space-y-2">
-              <p className="text-sm font-semibold text-white">Signal to Startup</p>
-              <p className="text-xs text-gray-400">by EntrepAIneur</p>
+              <Logo size="sm" showWordmark showSubbrand theme="dark" />
               <p className="text-xs text-gray-500 leading-relaxed mt-1">
                 Turn market signals into startup opportunities — powered by AI.
               </p>

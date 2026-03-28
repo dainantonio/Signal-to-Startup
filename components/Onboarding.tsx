@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { MarketMode, SectorKey } from './types';
 import { COUNTRY_CONTEXT } from '@/lib/rss-sources';
+import Logo from './Logo';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -157,12 +158,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
 
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-4 border-b border-gray-100">
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 bg-black rounded-md flex items-center justify-center">
-            <span className="text-white text-xs font-bold">S</span>
-          </div>
-          <span className="text-sm font-semibold">Signal to Startup</span>
-        </div>
+        <Logo size="sm" showWordmark theme="light" />
         <span className="text-xs text-gray-400">{step} of {totalSteps}</span>
       </div>
 

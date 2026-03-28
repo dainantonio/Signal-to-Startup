@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { auth, db, onAuthStateChanged, addDoc, collection, FirebaseUser } from '@/firebase';
+import Logo from '@/components/Logo';
 
 type ShareStep = 'loading' | 'preview' | 'saved' | 'error';
 
@@ -177,10 +178,7 @@ export default function SharePageInner() {
     <div className="min-h-screen bg-white flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-100">
-        <div className="flex items-center gap-2">
-          <span className="text-lg">📡</span>
-          <span className="text-sm font-semibold">Signal to Startup</span>
-        </div>
+        <Logo size="sm" showWordmark theme="light" />
         <button
           onClick={() => router.push('/')}
           className="text-sm text-gray-400 hover:text-black transition-colors"
