@@ -34,6 +34,13 @@ export const OpportunityCard: React.FC<OpportunityCardProps> = ({
       transition={{ duration: 0.4, delay: index * 0.05 }}
       className={`group bg-white border flex flex-col relative overflow-hidden rounded-3xl shadow-sm hover:shadow-lg transition-all duration-300 ${isBestIdea ? 'border-emerald-200 ring-1 ring-emerald-300 ring-offset-2' : 'border-border/10 hover:border-primary/20'}`}
     >
+      {/* Opportunity number */}
+      <div className="absolute top-4 left-4 z-10">
+        <div className="w-7 h-7 bg-gray-100 border border-gray-200 rounded-full flex items-center justify-center font-mono font-bold text-xs text-gray-500">
+          {index + 1}
+        </div>
+      </div>
+
       {/* Best Idea Badge */}
       {isBestIdea && (
         <div className="absolute top-4 right-4 z-10">
@@ -44,7 +51,7 @@ export const OpportunityCard: React.FC<OpportunityCardProps> = ({
         </div>
       )}
 
-      <div className="p-6 md:p-8 flex flex-col flex-1 gap-6">
+      <div className="p-6 md:p-8 pt-12 md:pt-14 flex flex-col flex-1 gap-6">
         {/* Header row */}
         <div className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">

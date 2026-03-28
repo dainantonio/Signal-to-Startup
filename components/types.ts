@@ -49,11 +49,35 @@ export interface AnalysisResult {
   countryTag?: string;
 }
 
+export interface CostBreakdownItem {
+  item: string;
+  cost: number;
+  type: 'one-time' | 'monthly';
+  notes?: string;
+}
+
+export interface GrantItem {
+  name: string;
+  organization: string;
+  amount: string;
+  who_qualifies: string;
+  why_this_qualifies: string;
+  how_to_apply: string;
+}
+
+export interface ChecklistStep {
+  title: string;
+  description: string;
+  phase: number; // 1=Research, 2=Legal/Setup, 3=Build, 4=Launch
+  time_estimate: string;
+  cost?: string;
+}
+
 export interface DeepDiveResult {
   business_plan: string;
-  cost_breakdown: { item: string; cost: number }[];
-  grants: string[];
-  checklist: string[];
+  cost_breakdown: CostBreakdownItem[];
+  grants: GrantItem[];
+  checklist: ChecklistStep[];
   investors: { name: string; focus: string; stage: string; website?: string }[];
 }
 

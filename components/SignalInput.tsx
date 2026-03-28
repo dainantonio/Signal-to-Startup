@@ -27,6 +27,8 @@ interface SignalInputProps {
   setUrlInput: (val: string) => void;
   fetchingUrl: boolean;
   fetchUrl: () => void;
+  urlFetchStatus?: 'idle' | 'success' | 'error' | 'paywalled' | 'timeout';
+  setUrlFetchStatus?: (s: 'idle' | 'success' | 'error' | 'paywalled' | 'timeout') => void;
   location: string;
   setLocation: (val: string) => void;
   focus: string;
@@ -45,6 +47,7 @@ interface SignalInputProps {
 
 export const SignalInput: React.FC<SignalInputProps> = ({
   input, setInput, urlInput, setUrlInput, fetchingUrl, fetchUrl,
+  urlFetchStatus = 'idle', setUrlFetchStatus,
   location, setLocation, focus, setFocus, loading, loadingStage = 0, loadingProgress = 5,
   result, analyzeSignal, cancelAnalysis,
   countryTags, setCountryTags,
@@ -54,6 +57,7 @@ export const SignalInput: React.FC<SignalInputProps> = ({
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pdfStatus, setPdfStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Card pop-out states
   const [analyzingUrl, setAnalyzingUrl] = useState<string | null>(null);
@@ -83,6 +87,13 @@ export const SignalInput: React.FC<SignalInputProps> = ({
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
+
+  // Scroll textarea into view after successful URL fetch
+  useEffect(() => {
+    if (urlFetchStatus === 'success' && textareaRef.current) {
+      setTimeout(() => textareaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+    }
+  }, [urlFetchStatus]);
 
   const [signals, setSignals] = useState<FeedSignal[]>([]);
   const [feedMeta, setFeedMeta] = useState<{ total: number; duplicatesRemoved: number } | null>(null);
@@ -301,19 +312,44 @@ export const SignalInput: React.FC<SignalInputProps> = ({
       {inputMode === 'paste' ? (
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-[10px] font-mono uppercase tracking-widest text-muted font-bold">Import from URL or PDF</label>
+            <label className="text-[10px] font-mono uppercase tracking-widest text-muted font-bold">Paste an article URL</label>
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="flex-1 relative group">
-                <input type="text" value={urlInput} onChange={e => setUrlInput(e.target.value)} placeholder="Paste a URL or PDF link to fetch content..."
-                  className="w-full bg-white border border-border/10 rounded-xl p-4 pl-11 pr-10 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none font-sans text-sm transition-all shadow-sm" />
+                <input
+                  type="text"
+                  value={urlInput}
+                  onChange={e => { setUrlInput(e.target.value); if (setUrlFetchStatus) setUrlFetchStatus('idle'); }}
+                  onKeyDown={e => { if (e.key === 'Enter' && urlInput.trim()) fetchUrl(); }}
+                  placeholder="https://techcrunch.com/..."
+                  className="w-full bg-white border border-border/10 rounded-xl p-4 pl-11 pr-10 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none font-sans text-sm transition-all shadow-sm"
+                />
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted group-focus-within:text-primary transition-colors" />
-                {urlInput && <button type="button" onClick={() => setUrlInput('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-muted hover:text-foreground"><X className="w-4 h-4" /></button>}
+                {urlInput && <button type="button" onClick={() => { setUrlInput(''); if (setUrlFetchStatus) setUrlFetchStatus('idle'); }} className="absolute right-4 top-1/2 -translate-y-1/2 text-muted hover:text-foreground"><X className="w-4 h-4" /></button>}
               </div>
               <button onClick={fetchUrl} disabled={fetchingUrl || !urlInput.trim()}
                 className="bg-foreground text-background px-8 py-4 rounded-xl font-mono text-[11px] uppercase tracking-widest hover:bg-foreground/90 disabled:opacity-40 transition-all shadow-lg shadow-foreground/5 flex-shrink-0 flex items-center justify-center gap-2">
-                {fetchingUrl ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Fetch Content'}
+                {fetchingUrl ? <><Loader2 className="w-4 h-4 animate-spin" /> Fetching...</> : 'Fetch Article'}
               </button>
             </div>
+            {/* URL fetch status */}
+            {urlFetchStatus === 'success' && (
+              <div className="flex items-center gap-2 text-[11px] font-mono text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+                <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
+                Article loaded — {input.length.toLocaleString()} characters — ready to analyze
+              </div>
+            )}
+            {(urlFetchStatus === 'error' || urlFetchStatus === 'timeout') && (
+              <div className="flex items-center gap-2 text-[11px] font-mono text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                Could not fetch this article — paste the text manually instead
+              </div>
+            )}
+            {urlFetchStatus === 'paywalled' && (
+              <div className="flex items-center gap-2 text-[11px] font-mono text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                This article is behind a paywall — paste the visible text manually
+              </div>
+            )}
             {/* PDF file upload */}
             <div className="flex items-center gap-3 flex-wrap">
               <input
@@ -345,7 +381,7 @@ export const SignalInput: React.FC<SignalInputProps> = ({
           <div className="space-y-1.5">
             <label className="text-[10px] font-mono uppercase tracking-widest text-muted font-bold">Or paste signal directly</label>
             <div className="relative group">
-              <textarea value={input} onChange={e => setInput(e.target.value)} placeholder="Paste a news article, policy update, or market signal here..."
+              <textarea ref={textareaRef} value={input} onChange={e => setInput(e.target.value)} placeholder="Paste a news article, policy update, or market signal here..."
                 className="w-full h-48 md:h-64 bg-white border border-border/10 rounded-2xl p-6 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none resize-none font-sans text-base leading-relaxed transition-all shadow-sm" />
               <div className="absolute bottom-4 right-4 text-primary/20 group-focus-within:text-primary/40 transition-colors"><Sparkles className="w-6 h-6" /></div>
             </div>

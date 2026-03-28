@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Coins, Lightbulb } from 'lucide-react';
-import { DeepDiveResult, MarketMode } from './types';
+import { Coins, ExternalLink, CheckCircle2, Lightbulb } from 'lucide-react';
+import { DeepDiveResult, GrantItem, MarketMode } from './types';
 import { marketModeConfigs } from './MarketModeSelector';
 
 interface GrantFinderProps {
@@ -13,6 +13,10 @@ export const GrantFinder: React.FC<GrantFinderProps> = ({ deepDiveResult, select
   const modeConfig = marketModeConfigs[selectedMode];
   const hasModeSpecificGrants = selectedMode !== 'global' && modeConfig.grantSources.length > 0;
 
+  // Handle both legacy string[] and new GrantItem[] formats
+  const grants = deepDiveResult.grants as (GrantItem | string)[];
+  const isRichGrants = grants.length > 0 && typeof grants[0] === 'object';
+
   return (
     <motion.div
       key="grants"
@@ -22,50 +26,130 @@ export const GrantFinder: React.FC<GrantFinderProps> = ({ deepDiveResult, select
       className="space-y-8"
     >
       <div className="flex items-center gap-4 border-b-2 border-foreground pb-4">
-        <div className="p-3 bg-amber-100 text-amber-600 rounded-xl">
+        <div className="p-3 bg-amber-100 text-amber-600 rounded-xl flex-shrink-0">
           <Coins className="w-6 h-6" />
         </div>
-        <h3 className="text-2xl font-serif italic tracking-tight">Non-Dilutive Funding</h3>
+        <div>
+          <h3 className="text-2xl font-serif italic tracking-tight">Grant Finder</h3>
+          <p className="text-xs text-gray-400 font-mono mt-0.5">
+            Funding sources specific to this business type and location
+          </p>
+        </div>
       </div>
 
+      {/* Region-specific grant sources banner */}
       {hasModeSpecificGrants && (
-        <div className="bg-amber-50 border-2 border-foreground p-6 shadow-[4px_4px_0px_0px_rgba(26,26,26,1)] mb-8">
-          <div className="flex items-center gap-2 mb-4">
-            <span className="text-xl">{modeConfig.flag}</span>
-            <h4 className="font-mono text-xs uppercase font-bold tracking-widest">
-              Recommended for {modeConfig.label}:
-            </h4>
+        <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-lg">{modeConfig.flag}</span>
+            <p className="text-xs font-mono uppercase font-bold tracking-widest text-amber-800">
+              Key funding bodies for {modeConfig.label}
+            </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="flex flex-wrap gap-2">
             {modeConfig.grantSources.map((grant, i) => (
-              <div key={`mode-${i}`} className="flex items-center gap-3 bg-white border border-foreground p-3 shadow-[2px_2px_0px_0px_rgba(26,26,26,1)]">
-                <div className="w-2 h-2 bg-amber-500 rounded-full" />
-                <span className="text-[10px] font-mono uppercase font-bold">{grant}</span>
-              </div>
+              <span
+                key={i}
+                className="px-3 py-1.5 bg-white border border-amber-200 rounded-lg text-xs font-mono font-bold text-amber-800"
+              >
+                {grant}
+              </span>
             ))}
           </div>
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {deepDiveResult.grants.map((grant, i) => (
-          <div key={i} className="group relative bg-white border-2 border-foreground p-6 shadow-[4px_4px_0px_0px_rgba(26,26,26,1)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(26,26,26,1)] transition-all">
-            <div className="absolute -top-3 -right-3 bg-foreground text-background text-[10px] font-mono px-2 py-1 uppercase">
-              Option {i + 1}
-            </div>
-            <h4 className="font-bold text-sm uppercase tracking-tight pr-4">{grant}</h4>
-          </div>
-        ))}
-      </div>
+      {/* Grant cards */}
+      {isRichGrants ? (
+        <div className="space-y-4">
+          {(grants as GrantItem[]).map((grant, i) => {
+            const hasLink = grant.how_to_apply && (
+              grant.how_to_apply.startsWith('http') ||
+              grant.how_to_apply.startsWith('www')
+            );
+            const applyUrl = hasLink
+              ? (grant.how_to_apply.startsWith('http') ? grant.how_to_apply : `https://${grant.how_to_apply}`)
+              : null;
 
-      <div className="bg-gray-50 p-6 border-2 border-dashed border-foreground relative overflow-hidden">
-        <div className="relative z-10">
-          <p className="text-[10px] font-mono uppercase font-bold mb-2 opacity-50">Expert Guidance</p>
-          <p className="text-sm leading-relaxed italic font-serif">
-            &quot;Check your local Small Business Development Center (SBDC) for specific regional variations of these grants. Many local municipalities offer &apos;micro-grants&apos; specifically for businesses with startup costs under $5,000.&quot;
-          </p>
+            return (
+              <div
+                key={i}
+                className="bg-white border border-gray-200 rounded-xl p-5 space-y-3 hover:border-amber-300 hover:shadow-sm transition-all"
+              >
+                {/* Header */}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                      <span className="text-[9px] font-mono font-bold bg-amber-100 text-amber-700 px-2 py-0.5 rounded uppercase">
+                        Option {i + 1}
+                      </span>
+                      <span className="text-xs font-mono text-gray-400">{grant.organization}</span>
+                    </div>
+                    <h4 className="font-semibold text-sm text-gray-900">{grant.name}</h4>
+                  </div>
+                  <div className="flex-shrink-0 bg-green-50 border border-green-200 rounded-lg px-2.5 py-1.5 text-center">
+                    <p className="text-[9px] font-mono text-green-600 uppercase">Amount</p>
+                    <p className="text-xs font-bold text-green-800 whitespace-nowrap">{grant.amount}</p>
+                  </div>
+                </div>
+
+                {/* Eligibility */}
+                <div className="space-y-1.5">
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-gray-600 leading-relaxed">
+                      <span className="font-semibold text-gray-700">Why you qualify: </span>
+                      {grant.why_this_qualifies}
+                    </p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-[10px] font-mono text-gray-400 mt-0.5 flex-shrink-0">WHO</span>
+                    <p className="text-xs text-gray-500 leading-relaxed">{grant.who_qualifies}</p>
+                  </div>
+                </div>
+
+                {/* Apply button */}
+                <div className="pt-1">
+                  {applyUrl ? (
+                    <a
+                      href={applyUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-black text-white rounded-lg text-xs font-mono font-bold hover:bg-gray-800 transition-colors"
+                    >
+                      Apply / Learn more <ExternalLink className="w-3 h-3" />
+                    </a>
+                  ) : (
+                    <p className="text-xs text-gray-500 italic">{grant.how_to_apply}</p>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
-        <Lightbulb className="absolute -bottom-4 -right-4 w-24 h-24 opacity-[0.03] rotate-12" />
+      ) : (
+        // Legacy string[] fallback
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {(grants as string[]).map((grant, i) => (
+            <div
+              key={i}
+              className="bg-white border border-gray-200 rounded-xl p-5 hover:border-amber-300 transition-colors"
+            >
+              <span className="text-[9px] font-mono font-bold bg-amber-100 text-amber-700 px-2 py-0.5 rounded uppercase mb-2 inline-block">
+                Option {i + 1}
+              </span>
+              <h4 className="font-semibold text-sm text-gray-900">{grant}</h4>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="bg-gray-50 p-5 border border-dashed border-gray-300 rounded-xl flex gap-3">
+        <Lightbulb className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+        <p className="text-sm text-gray-600 italic leading-relaxed">
+          Check your local Small Business Development Center (SBDC) for regional variations.
+          Many municipalities offer micro-grants for early-stage businesses that are not widely advertised.
+        </p>
       </div>
     </motion.div>
   );

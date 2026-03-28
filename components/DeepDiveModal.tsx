@@ -135,7 +135,10 @@ export const DeepDiveModal: React.FC<DeepDiveModalProps> = ({
         opportunity: selectedOpportunity,
         deepDive: deepDiveResult,
         status: 'Saved',
-        checklist: deepDiveResult.checklist.map(item => ({ text: item, completed: false })),
+        checklist: deepDiveResult.checklist.map(item => ({
+        text: typeof item === 'string' ? item : (item as { title: string }).title,
+        completed: false,
+      })),
         savedAt: new Date().toISOString(),
         marketMode: selectedMode,
       });
@@ -172,10 +175,10 @@ ${deepDiveResult.business_plan}
 ${deepDiveResult.cost_breakdown.map(c => `- [ ] ${c.item}: **$${c.cost}**`).join('\n')}
 
 ## 30-Day Checklist
-${deepDiveResult.checklist.map(item => `- [ ] ${item}`).join('\n')}
+${deepDiveResult.checklist.map(item => `- [ ] ${typeof item === 'string' ? item : (item as { title: string }).title}`).join('\n')}
 
 ## Funding & Grants
-${deepDiveResult.grants.map(g => `- ${g}`).join('\n')}
+${deepDiveResult.grants.map(g => typeof g === 'string' ? `- ${g}` : `- **${(g as { name: string }).name}** (${(g as { organization: string }).organization})`).join('\n')}
 
 ## Potential Investors
 ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.focus}`).join('\n')}

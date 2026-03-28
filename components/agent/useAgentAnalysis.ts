@@ -163,27 +163,50 @@ const responseSchema = {
 const deepDiveSchema = {
   type: Type.OBJECT,
   properties: {
-    business_plan: { type: Type.STRING, description: "Detailed 1-page business plan in Markdown format." },
+    business_plan: { type: Type.STRING, description: "Complete business plan with exactly 9 numbered sections as plain text." },
     cost_breakdown: {
       type: Type.ARRAY,
       items: {
         type: Type.OBJECT,
         properties: {
-          item: { type: Type.STRING },
-          cost: { type: Type.INTEGER, description: "Estimated cost in USD." }
+          item: { type: Type.STRING, description: "Name of the expense item" },
+          cost: { type: Type.INTEGER, description: "Estimated cost in USD." },
+          type: { type: Type.STRING, description: "'one-time' or 'monthly'" },
+          notes: { type: Type.STRING, description: "Optional tip, free tier info, or variation." }
         },
-        required: ["item", "cost"]
+        required: ["item", "cost", "type"]
       }
     },
     grants: {
       type: Type.ARRAY,
-      items: { type: Type.STRING },
-      description: "List of specific grant types or funding sources (e.g., 'SBA 7(a) Loan', 'USDA Rural Development Grant')."
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          name: { type: Type.STRING, description: "Exact name of the grant or funding program." },
+          organization: { type: Type.STRING, description: "The organization offering it." },
+          amount: { type: Type.STRING, description: "Approximate funding amount (e.g. 'Up to $10,000' or '$500-$5,000')." },
+          who_qualifies: { type: Type.STRING, description: "Who is eligible for this grant." },
+          why_this_qualifies: { type: Type.STRING, description: "One sentence: why this specific business qualifies." },
+          how_to_apply: { type: Type.STRING, description: "Website URL or application process description." }
+        },
+        required: ["name", "organization", "amount", "who_qualifies", "why_this_qualifies", "how_to_apply"]
+      },
+      description: "3-5 specific, real, currently active grants or funding programs for this business type and location."
     },
     checklist: {
       type: Type.ARRAY,
-      items: { type: Type.STRING },
-      description: "A step-by-step execution checklist for the first 30 days."
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          title: { type: Type.STRING, description: "Short action title starting with a verb (e.g. 'Register your business name')" },
+          description: { type: Type.STRING, description: "2-3 specific sentences on what to do and how." },
+          phase: { type: Type.INTEGER, description: "1=Research & Validation, 2=Legal & Setup, 3=Build & Prepare, 4=Launch & First Customers" },
+          time_estimate: { type: Type.STRING, description: "e.g. '2 hours', '1 day', '3 days'" },
+          cost: { type: Type.STRING, description: "e.g. '$0', '$50-150', 'Free'" }
+        },
+        required: ["title", "description", "phase", "time_estimate"]
+      },
+      description: "Exactly 12 steps: 3 per phase (Research, Legal/Setup, Build, Launch). Specific to this business and location."
     },
     investors: {
       type: Type.ARRAY,
@@ -193,7 +216,7 @@ const deepDiveSchema = {
           name: { type: Type.STRING, description: "Name of the VC firm, angel network, or investor group." },
           focus: { type: Type.STRING, description: "Why they are a match (e.g., 'Focuses on early-stage ag-tech')." },
           stage: { type: Type.STRING, description: "Typical investment stage (e.g., 'Seed', 'Pre-seed', 'Angel')." },
-          website: { type: Type.STRING, description: "The investor's actual homepage URL (e.g., 'https://www.sequoiacap.com'). If unknown, leave empty string." }
+          website: { type: Type.STRING, description: "The investor's actual homepage URL. If unknown, leave empty string." }
         },
         required: ["name", "focus", "stage", "website"]
       },
@@ -208,6 +231,7 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
   const [input, setInput] = useState('');
   const [urlInput, setUrlInput] = useState('');
   const [fetchingUrl, setFetchingUrl] = useState(false);
+  const [urlFetchStatus, setUrlFetchStatus] = useState<'idle' | 'success' | 'error' | 'paywalled' | 'timeout'>('idle');
   const [location, setLocation] = useState('');
   const [focus, setFocus] = useState('');
   const [loading, setLoading] = useState(false);
@@ -271,15 +295,27 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
   const fetchUrl = async () => {
     if (!urlInput.trim()) return;
     setFetchingUrl(true);
+    setUrlFetchStatus('idle');
     try {
       const response = await fetch(`/api/fetch-url?url=${encodeURIComponent(urlInput)}`);
-      if (!response.ok) throw new Error('Failed to fetch URL');
+      // Always parse — fetch-url returns 200 even for errors
       const data = await response.json();
+      if (data.paywalled) {
+        setUrlFetchStatus('paywalled');
+        return;
+      }
+      if (data.timedOut || !data.content) {
+        setUrlFetchStatus('timeout');
+        return;
+      }
+      if (data.error) {
+        setUrlFetchStatus('error');
+        return;
+      }
       setInput(data.content);
-      setUrlInput('');
-    } catch (err) {
-      console.error(err);
-      setError('Failed to fetch content from URL. Please ensure it\'s a public page.');
+      setUrlFetchStatus('success');
+    } catch {
+      setUrlFetchStatus('error');
     } finally {
       setFetchingUrl(false);
     }
@@ -367,7 +403,9 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
         ${focus || 'General Business'}
 
         RULES:
-        - Return exactly 3 opportunities maximum, prioritized by money_score.
+        - You MUST return EXACTLY 3 opportunities. Not 2, not 4, not 5. EXACTLY 3.
+        - Each opportunity must be a distinct business model.
+        - If the signal only supports 1-2 strong ideas, create adjacent opportunities in the same space.
         - Be specific, not generic
         - Avoid vague startup ideas
         - ALL ideas must be lean to start — achievable without large upfront capital.
@@ -461,6 +499,36 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
         throw new Error('The AI returned an incomplete response. Please try again.');
       }
       console.log('[6] parsed result — trend:', parsedResult?.trend, '| opportunities:', parsedResult?.opportunities?.length);
+
+      // Enforce exactly 3 opportunities
+      if (!parsedResult.opportunities || parsedResult.opportunities.length < 2) {
+        throw new Error('Insufficient opportunities returned — please try again.');
+      }
+      // Pad to 3 if only 2 returned
+      const base = parsedResult.opportunities[0];
+      while (parsedResult.opportunities.length < 3) {
+        parsedResult.opportunities.push({
+          name: 'Adjacent Service Opportunity',
+          description: 'A complementary service business serving the same market segment identified in this signal.',
+          target_customer: base?.target_customer || 'Small business owners',
+          why_now: base?.why_now || 'Market conditions create immediate demand.',
+          monetization: 'Service fees',
+          pricing_model: 'Monthly retainer or per-project',
+          status: 'New',
+          priority: 'Medium',
+          startup_cost: 500,
+          grant_eligible: false,
+          speed_to_launch: 7,
+          difficulty: 4,
+          roi_potential: 6,
+          urgency: 5,
+          local_fit: 6,
+          competition_gap: 5,
+          money_score: 60,
+        });
+      }
+      // Trim to exactly 3
+      parsedResult.opportunities = parsedResult.opportunities.slice(0, 3);
 
       // Evict oldest cache entry if at capacity
       if (analysisCache.size >= MAX_CACHE_SIZE) {
@@ -570,19 +638,46 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
         Description: ${opp.description}
         Target Customer: ${opp.target_customer}
         Monetization: ${opp.monetization}
-        Location Context: ${location || 'General'}
+        Location: ${location || 'General'}
 
-        TASKS:
-        1. Create a professional 1-page business plan (Executive Summary, Market Analysis, Operations, Revenue Model).
-        2. Provide a granular startup cost breakdown (focus on lean, efficient execution).
-        3. Identify 3-5 specific grant types or funding sources this business could qualify for.
-        4. Create a 30-day execution checklist.
-        5. Identify 3-5 specific venture capital firms, angel networks, or investor groups that specialize in this niche or stage.
-           For each investor, include their actual homepage URL in the 'website' field if you know it with confidence (e.g., Sequoia = https://www.sequoiacap.com, a16z = https://a16z.com).
-           If you are not certain of their URL, leave website as an empty string — do not guess.
+        TASK 1 — BUSINESS PLAN:
+        Generate a complete business plan as plain text (no markdown symbols, no *, no #).
+        Use numbered section headings only. Include exactly these 9 sections in this order:
+        1. Executive Summary (2-3 sentences summarizing the business)
+        2. Market Analysis (what market conditions support this idea right now)
+        3. Target Customer (specific profile — age, location, pain point, budget)
+        4. Revenue Model (how money is made — be specific about pricing)
+        5. Pricing Strategy (specific prices, packages, or tiers)
+        6. Startup Cost Breakdown (narrative summary of what the startup budget covers)
+        7. Marketing Approach (first 3 channels to reach customers with tactics)
+        8. Operations Plan (how the business runs day to day)
+        9. 90-Day Action Plan (weeks 1-4: foundation, weeks 5-8: launch, weeks 9-12: growth)
 
-        TONE: Professional, encouraging, and highly practical.
-        Be concise — each field should be 1-2 sentences. Do not over-explain.
+        TASK 2 — STARTUP COST BREAKDOWN:
+        Provide an itemized list of startup expenses with a specific dollar amount for each.
+        For each item include: type ('one-time' or 'monthly') and a notes field with tips.
+        Return 5-10 items covering realistic expenses for this specific business.
+
+        TASK 3 — GRANTS & FUNDING:
+        Identify 3-5 specific, real, currently active grants or funding programs for this business in ${location || 'this region'}.
+        For each: exact program name, the organization offering it, approximate amount, who qualifies, why this business qualifies, and how to apply.
+        Focus only on grants that genuinely apply — do not list generic or inapplicable programs.
+
+        TASK 4 — LAUNCH CHECKLIST:
+        Create exactly 12 steps in 4 phases (3 steps per phase):
+        Phase 1 (Research & Validation): steps before spending any money
+        Phase 2 (Legal & Setup): registration, licenses, accounts
+        Phase 3 (Build & Prepare): product, service, or offering
+        Phase 4 (Launch & First Customers): getting first revenue
+        For each step: clear action title (verb first), 2-3 specific sentences on what to do, time estimate, and cost if any.
+        Make every step specific to this business and location — no generic advice.
+
+        TASK 5 — INVESTORS:
+        Identify 3-5 specific venture capital firms, angel networks, or investor groups that specialize in this niche or stage.
+        For each investor, include their actual homepage URL in 'website' if you know it with confidence.
+        If you are not certain of their URL, leave website as an empty string — do not guess.
+
+        TONE: Professional, practical, and specific. Every recommendation must be actionable this week.
       `;
 
       const response = await genAI.models.generateContent({
@@ -665,7 +760,7 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
     history,
     input, setInput,
     urlInput, setUrlInput,
-    fetchingUrl, fetchUrl,
+    fetchingUrl, fetchUrl, urlFetchStatus, setUrlFetchStatus,
     location, setLocation,
     focus, setFocus,
     loading,

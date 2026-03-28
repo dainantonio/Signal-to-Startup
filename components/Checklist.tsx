@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { CheckCircle2, Loader2, Check, CheckSquare } from 'lucide-react';
-import { DeepDiveResult } from './types';
+import { CheckCircle2, Loader2, Check, CheckSquare, Clock, DollarSign } from 'lucide-react';
+import { DeepDiveResult, ChecklistStep } from './types';
 import { db, doc, getDoc, updateDoc } from '../firebase';
 
 interface ChecklistProps {
@@ -10,16 +10,34 @@ interface ChecklistProps {
 }
 
 interface ChecklistItem {
-  text: string;
+  step: ChecklistStep;
   completed: boolean;
 }
 
+const PHASE_LABELS: Record<number, { label: string; color: string; bg: string }> = {
+  1: { label: 'Research & Validation', color: 'text-blue-700',   bg: 'bg-blue-50 border-blue-200'   },
+  2: { label: 'Legal & Setup',         color: 'text-amber-700',  bg: 'bg-amber-50 border-amber-200'  },
+  3: { label: 'Build & Prepare',       color: 'text-purple-700', bg: 'bg-purple-50 border-purple-200'},
+  4: { label: 'Launch & First Customers', color: 'text-emerald-700', bg: 'bg-emerald-50 border-emerald-200' },
+};
+
+function normalizeStep(raw: ChecklistStep | string): ChecklistStep {
+  if (typeof raw === 'string') {
+    return { title: raw, description: '', phase: 1, time_estimate: '' };
+  }
+  return raw;
+}
+
 export const Checklist: React.FC<ChecklistProps> = ({ deepDiveResult, savedDocId }) => {
-  const [items, setItems] = React.useState<ChecklistItem[]>(
-    deepDiveResult.checklist.map(text => ({ text, completed: false }))
+  const [items, setItems] = React.useState<ChecklistItem[]>(() =>
+    deepDiveResult.checklist.map(raw => ({
+      step: normalizeStep(raw as ChecklistStep | string),
+      completed: false,
+    }))
   );
   const [loading, setLoading] = React.useState(false);
 
+  // Load saved checklist from Firestore
   const loadSavedChecklist = React.useCallback(async () => {
     if (!savedDocId) return;
     setLoading(true);
@@ -27,41 +45,77 @@ export const Checklist: React.FC<ChecklistProps> = ({ deepDiveResult, savedDocId
       const docSnap = await getDoc(doc(db, 'saved_opportunities', savedDocId));
       if (docSnap.exists()) {
         const data = docSnap.data();
-        if (data.checklist) {
-          setItems(data.checklist);
+        if (data.checklist && Array.isArray(data.checklist)) {
+          setItems(prev =>
+            prev.map((item, i) => ({
+              ...item,
+              completed: data.checklist[i]?.completed ?? false,
+            }))
+          );
         }
       }
     } catch (err) {
-      console.error("Error loading checklist", err);
+      console.error('Error loading checklist', err);
     } finally {
       setLoading(false);
     }
   }, [savedDocId]);
 
   React.useEffect(() => {
-    if (savedDocId) {
-      loadSavedChecklist();
-    }
+    if (savedDocId) loadSavedChecklist();
   }, [savedDocId, loadSavedChecklist]);
 
+  // localStorage key for non-saved checklist progress
+  const localKey = `checklist_${deepDiveResult.checklist.map(s => (typeof s === 'string' ? s : (s as ChecklistStep).title)).join('').slice(0, 40)}`;
+
+  // Load from localStorage on mount (when no Firestore savedDocId)
+  React.useEffect(() => {
+    if (savedDocId) return;
+    try {
+      const saved = localStorage.getItem(localKey);
+      if (saved) {
+        const completed: boolean[] = JSON.parse(saved);
+        setItems(prev => prev.map((item, i) => ({ ...item, completed: completed[i] ?? false })));
+      }
+    } catch { /* ignore */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const toggleItem = async (index: number) => {
-    const newItems = [...items];
-    newItems[index].completed = !newItems[index].completed;
+    const newItems = items.map((item, i) =>
+      i === index ? { ...item, completed: !item.completed } : item
+    );
     setItems(newItems);
 
     if (savedDocId) {
       try {
         await updateDoc(doc(db, 'saved_opportunities', savedDocId), {
-          checklist: newItems
+          checklist: newItems.map(item => ({
+            text: item.step.title,
+            completed: item.completed,
+          })),
         });
       } catch (err) {
         console.error('Failed to sync checklist:', err);
       }
+    } else {
+      // Persist to localStorage
+      try {
+        localStorage.setItem(localKey, JSON.stringify(newItems.map(i => i.completed)));
+      } catch { /* ignore */ }
     }
   };
 
   const completedCount = items.filter(i => i.completed).length;
-  const progress = (completedCount / items.length) * 100;
+  const progress = items.length > 0 ? (completedCount / items.length) * 100 : 0;
+
+  // Group by phase
+  const phases = [1, 2, 3, 4].map(phase => ({
+    phase,
+    ...PHASE_LABELS[phase],
+    items: items.map((item, originalIndex) => ({ item, originalIndex }))
+             .filter(({ item }) => item.step.phase === phase),
+  })).filter(p => p.items.length > 0);
 
   return (
     <motion.div
@@ -71,18 +125,19 @@ export const Checklist: React.FC<ChecklistProps> = ({ deepDiveResult, savedDocId
       exit={{ opacity: 0, x: -20 }}
       className="space-y-8"
     >
+      {/* Header */}
       <div className="border-b-2 border-foreground pb-4 flex justify-between items-end">
         <div>
-          <h3 className="text-2xl font-serif italic tracking-tight">30-Day Launch Sequence</h3>
+          <h3 className="text-2xl font-serif italic tracking-tight">Launch Checklist</h3>
           <p className="text-[10px] font-mono uppercase opacity-50 mt-1">From Signal to First Dollar</p>
         </div>
         <div className="text-right">
-          <div className="text-xs font-mono uppercase mb-1">{completedCount}/{items.length} Tasks</div>
-          <div className="w-32 h-2 bg-gray-100 border border-foreground overflow-hidden">
-            <motion.div 
+          <div className="text-xs font-mono uppercase mb-1">{completedCount}/{items.length} Done</div>
+          <div className="w-32 h-2 bg-gray-100 border border-foreground overflow-hidden rounded-full">
+            <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${progress}%` }}
-              className="h-full bg-emerald-500"
+              className="h-full bg-emerald-500 rounded-full"
             />
           </div>
         </div>
@@ -93,24 +148,72 @@ export const Checklist: React.FC<ChecklistProps> = ({ deepDiveResult, savedDocId
           <Loader2 className="w-8 h-8 animate-spin opacity-20" />
         </div>
       ) : (
-        <div className="relative space-y-12 before:absolute before:left-[19px] before:top-2 before:bottom-2 before:w-0.5 before:bg-gray-100">
-          {items.map((item, i) => (
-            <div 
-              key={i} 
-              className={`relative flex gap-8 group cursor-pointer transition-opacity ${item.completed ? 'opacity-50' : ''}`}
-              onClick={() => toggleItem(i)}
-            >
-              <div className={`relative z-10 flex-shrink-0 w-10 h-10 rounded-full bg-white border-2 border-foreground flex items-center justify-center font-bold font-serif italic text-lg transition-all ${item.completed ? 'bg-emerald-500 text-white border-emerald-600' : 'group-hover:bg-foreground group-hover:text-background'}`}>
-                {item.completed ? <Check className="w-6 h-6" /> : i + 1}
+        <div className="space-y-8">
+          {phases.map(({ phase, label, color, bg, items: phaseItems }) => (
+            <div key={phase}>
+              {/* Phase header */}
+              <div className={`flex items-center gap-2 px-4 py-2 rounded-lg border mb-4 ${bg}`}>
+                <span className={`text-xs font-mono font-bold uppercase tracking-widest ${color}`}>
+                  Phase {phase} — {label}
+                </span>
+                <span className={`text-[10px] font-mono ml-auto ${color} opacity-60`}>
+                  {phaseItems.filter(({ item }) => item.completed).length}/{phaseItems.length}
+                </span>
               </div>
-              <div className="flex-grow pt-1.5">
-                <div className="flex items-start justify-between gap-4">
-                  <p className={`text-sm font-medium leading-relaxed pr-8 ${item.completed ? 'line-through' : ''}`}>{item.text}</p>
-                  <div className={`flex-shrink-0 p-1.5 bg-gray-50 border border-gray-200 rounded-lg transition-opacity ${item.completed ? 'opacity-100 bg-emerald-50' : 'opacity-20 group-hover:opacity-100'}`}>
-                    <CheckCircle2 className={`w-4 h-4 ${item.completed ? 'text-emerald-500' : 'text-gray-300'}`} />
+
+              {/* Steps */}
+              <div className="space-y-3">
+                {phaseItems.map(({ item, originalIndex }) => (
+                  <div
+                    key={originalIndex}
+                    onClick={() => toggleItem(originalIndex)}
+                    className={`group relative flex gap-4 p-4 rounded-xl border cursor-pointer transition-all hover:shadow-sm ${
+                      item.completed
+                        ? 'bg-gray-50 border-gray-200 opacity-60'
+                        : 'bg-white border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    {/* Checkbox */}
+                    <div className={`flex-shrink-0 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all mt-0.5 ${
+                      item.completed
+                        ? 'bg-emerald-500 border-emerald-600'
+                        : 'border-gray-300 group-hover:border-gray-500'
+                    }`}>
+                      {item.completed && <Check className="w-3.5 h-3.5 text-white" />}
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-sm font-semibold leading-snug mb-1 ${item.completed ? 'line-through text-gray-400' : 'text-gray-900'}`}>
+                        {item.step.title}
+                      </p>
+                      {item.step.description && (
+                        <p className="text-xs text-gray-500 leading-relaxed mb-2">
+                          {item.step.description}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-3 flex-wrap">
+                        {item.step.time_estimate && (
+                          <span className="flex items-center gap-1 text-[10px] font-mono text-gray-400">
+                            <Clock className="w-3 h-3" />
+                            {item.step.time_estimate}
+                          </span>
+                        )}
+                        {item.step.cost && (
+                          <span className="flex items-center gap-1 text-[10px] font-mono text-gray-400">
+                            <DollarSign className="w-3 h-3" />
+                            {item.step.cost}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Done indicator */}
+                    {item.completed && (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                    )}
                   </div>
-                </div>
-                <div className="mt-4 h-px bg-gray-100 w-full" />
+                ))}
               </div>
             </div>
           ))}
@@ -119,12 +222,14 @@ export const Checklist: React.FC<ChecklistProps> = ({ deepDiveResult, savedDocId
 
       {!savedDocId && (
         <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-3">
-          <div className="p-1 bg-amber-100 rounded text-amber-700">
+          <div className="p-1 bg-amber-100 rounded text-amber-700 flex-shrink-0">
             <CheckSquare className="w-4 h-4" />
           </div>
           <div>
-            <p className="text-xs font-mono uppercase text-amber-800 font-bold">Progress Not Tracked</p>
-            <p className="text-[10px] font-mono text-amber-600 mt-0.5">Save this opportunity to your dashboard to track your progress and keep your checklist synced.</p>
+            <p className="text-xs font-mono uppercase text-amber-800 font-bold">Progress saved locally</p>
+            <p className="text-[10px] font-mono text-amber-600 mt-0.5">
+              Save this opportunity to your dashboard to sync progress across devices.
+            </p>
           </div>
         </div>
       )}
@@ -132,7 +237,11 @@ export const Checklist: React.FC<ChecklistProps> = ({ deepDiveResult, savedDocId
       <div className="bg-foreground text-background p-8 text-center relative overflow-hidden rounded-2xl">
         <div className="relative z-10">
           <h4 className="text-xl font-serif italic mb-2 tracking-tight">Ready to execute?</h4>
-          <p className="text-xs font-mono uppercase tracking-[0.2em] opacity-60 mb-6">Day 31 starts with your first customer.</p>
+          <p className="text-xs font-mono uppercase tracking-[0.2em] opacity-60 mb-6">
+            {completedCount === items.length && items.length > 0
+              ? 'All steps complete — go get that first customer!'
+              : `${items.length - completedCount} steps remaining`}
+          </p>
           <button
             type="button"
             onClick={() => window.print()}

@@ -543,6 +543,8 @@ export default function TrendIntelligenceAgent() {
           setUrlInput={analysis.setUrlInput}
           fetchingUrl={analysis.fetchingUrl}
           fetchUrl={analysis.fetchUrl}
+          urlFetchStatus={analysis.urlFetchStatus}
+          setUrlFetchStatus={analysis.setUrlFetchStatus}
           location={analysis.location}
           setLocation={analysis.setLocation}
           focus={analysis.focus}
