@@ -351,7 +351,7 @@ Return ONLY this JSON with NO extra text:
             opportunities: [
               {
                 name: 'Service Opportunity',
-                description: 'A low-cost service business addressing the needs created by this market shift.',
+                description: 'A lean service business addressing the needs created by this market shift.',
                 target_customer: 'Small businesses and consumers affected by this trend',
                 startup_cost: 500,
                 money_score: 75,
