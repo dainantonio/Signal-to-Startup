@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
 const OWNER_EMAIL = process.env.OWNER_EMAIL || 'hello@entrepaIneur.com';
 const FROM_EMAIL = process.env.FROM_EMAIL || 'Signal to Startup <hello@entrepaIneur.com>';
 
@@ -16,6 +15,8 @@ export async function POST(req: NextRequest) {
     // No key configured — still return success (Firestore handles persistence)
     return NextResponse.json({ ok: true });
   }
+
+  const resend = new Resend(process.env.RESEND_API_KEY);
 
   try {
     // Welcome email to the subscriber
