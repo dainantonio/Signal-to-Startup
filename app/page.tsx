@@ -8,7 +8,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import LandingPage from '@/components/LandingPage';
 
 const TrendIntelligenceAgent = dynamic(
-  () => import('@/components/agent/TrendIntelligenceAgent'),
+  () => import('@/components/agent/TrendIntelligenceAgentNewsroom'),
   { ssr: false },
 );
 

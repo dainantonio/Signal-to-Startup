@@ -26,142 +26,106 @@ export const OpportunityCard: React.FC<OpportunityCardProps> = ({
     badge: 'bg-gray-100 text-gray-700', accent: 'bg-gray-400',
   };
 
+  // Determine edition label (like newspaper section tags)
+  const getEditionLabel = () => {
+    if (opp.money_score >= 80) return { text: 'ROI', color: 'bg-emerald-600' };
+    if (opp.speed_to_launch >= 8) return { text: 'Fast', color: 'bg-blue-600' };
+    if (opp.urgency >= 8) return { text: 'Urgent', color: 'bg-red-600' };
+    return null;
+  };
+
+  const editionLabel = getEditionLabel();
+
   return (
     <motion.div
       layout
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: index * 0.05 }}
-      className={`group bg-white border flex flex-col relative overflow-hidden rounded-3xl shadow-sm hover:shadow-lg transition-all duration-300 ${isBestIdea ? 'border-emerald-200 ring-1 ring-emerald-300 ring-offset-2' : 'border-border/10 hover:border-primary/20'}`}
+      className={`group bg-white border flex flex-col relative overflow-hidden rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 ${isBestIdea ? 'border-emerald-200 ring-2 ring-emerald-300' : 'border-gray-200 hover:border-gray-300'}`}
     >
-      {/* Opportunity number */}
-      <div className="absolute top-4 left-4 z-10">
-        <div className="w-7 h-7 bg-gray-100 border border-gray-200 rounded-full flex items-center justify-center font-mono font-bold text-xs text-gray-500">
-          {index + 1}
+      {/* Edition Label (top-left like newspaper section tag) */}
+      {editionLabel && (
+        <div className="absolute top-0 left-0 z-10">
+          <div className={`${editionLabel.color} text-white px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-br-lg`}>
+            {editionLabel.text}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Best Idea Badge */}
       {isBestIdea && (
-        <div className="absolute top-4 right-4 z-10">
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-primary text-white rounded-full text-[9px] font-mono uppercase font-bold shadow-lg shadow-primary/20">
-            <Sparkles className="w-3 h-3" />
+        <div className="absolute top-3 right-3 z-10">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-black text-white rounded-lg text-xs font-semibold shadow-lg">
+            <Sparkles className="w-3.5 h-3.5" />
             Top Pick
           </div>
         </div>
       )}
 
-      <div className="p-6 md:p-8 pt-12 md:pt-14 flex flex-col flex-1 gap-6">
-        {/* Header row */}
-        <div className="space-y-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${colors.badge}`}>
-              {opp.priority} Priority
+      <div className="p-6 flex flex-col flex-1">
+        {/* Header - cleaner */}
+        <div className="mb-4 pt-2">
+          <h4 className="text-xl font-serif font-bold text-gray-900 leading-tight mb-3">{opp.name}</h4>
+          <p className="text-sm text-gray-600 leading-relaxed">{opp.description}</p>
+        </div>
+
+        {/* Metadata chips - minimal */}
+        <div className="flex flex-wrap gap-2 mb-6">
+          {opp.grant_eligible && (
+            <span className="text-xs px-2.5 py-1 rounded-md font-medium bg-green-50 text-green-700 border border-green-200">
+              Grant Eligible
             </span>
-            {opp.grant_eligible && (
-              <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-blue-100 text-blue-800 flex items-center gap-1">
-                <Coins className="w-3 h-3" />
-                Grant Eligible
-              </span>
-            )}
-            {countryTags.length > 0 && (
-              <span className={`text-[9px] font-mono px-2 py-0.5 uppercase font-bold rounded-full flex items-center gap-1 ${
-                opp.local_fit >= 8 ? 'bg-green-100 text-green-800' :
-                opp.local_fit >= 5 ? 'bg-amber-100 text-amber-800' :
-                                     'bg-gray-100 text-gray-600'
-              }`}>
-                <Target className="w-3 h-3" />
-                Local fit {opp.local_fit}/10
-              </span>
-            )}
-          </div>
-          <h4 className="font-sans font-semibold text-base leading-snug group-hover:text-primary transition-colors">{opp.name}</h4>
+          )}
+          {countryTags.length > 0 && opp.local_fit >= 7 && (
+            <span className="text-xs px-2.5 py-1 rounded-md font-medium bg-blue-50 text-blue-700 border border-blue-200">
+              Local Fit {opp.local_fit}/10
+            </span>
+          )}
         </div>
 
-        {/* Description */}
-        <p className="text-sm font-medium leading-relaxed text-muted line-clamp-3">{opp.description}</p>
-
-        {/* Money Score Section */}
-        <div className="space-y-3 bg-gray-50/50 p-4 rounded-2xl border border-border/5">
-          <div className="flex justify-between items-end">
-            <div className="space-y-1">
-              <p className="text-[9px] font-mono uppercase text-muted tracking-widest">Money Score</p>
-              <p className="text-2xl font-mono font-bold leading-none">{Math.round(opp.money_score)}<span className="text-xs font-normal opacity-30 ml-1">/100</span></p>
-            </div>
-            <div className="text-right">
-              <p className="text-[9px] font-mono uppercase text-muted tracking-widest mb-1">ROI Potential</p>
-              <div className="flex gap-0.5">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className={`w-1.5 h-3 rounded-full ${i < Math.round(opp.roi_potential / 2) ? colors.accent : 'bg-gray-200'}`} />
-                ))}
-              </div>
-            </div>
+        {/* Key metrics - simplified */}
+        <div className="grid grid-cols-3 gap-4 mb-6 pb-6 border-b border-gray-100">
+          <div>
+            <p className="text-xs text-gray-500 mb-1 font-medium">Cost</p>
+            <p className="text-base font-bold text-gray-900">${(opp.startup_cost / 1000).toFixed(0)}k</p>
           </div>
-          <div className="h-1.5 w-full bg-gray-200/50 rounded-full overflow-hidden">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${opp.money_score}%` }}
-              transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1], delay: index * 0.1 }}
-              className={`h-full ${colors.accent} shadow-[0_0_10px_rgba(0,0,0,0.1)]`}
-            />
+          <div>
+            <p className="text-xs text-gray-500 mb-1 font-medium">Speed</p>
+            <p className="text-base font-bold text-gray-900">{opp.speed_to_launch}/10</p>
           </div>
-        </div>
-
-        {/* Key stats row */}
-        <div className="grid grid-cols-3 gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-1 text-muted">
-              <Coins className="w-3 h-3" />
-              <p className="text-[8px] font-mono uppercase tracking-widest">Cost</p>
-            </div>
-            <p className="text-sm font-bold font-mono">${opp.startup_cost.toLocaleString()}</p>
-          </div>
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-1 text-muted">
-              <Zap className="w-3 h-3" />
-              <p className="text-[8px] font-mono uppercase tracking-widest">Speed</p>
-            </div>
-            <div className="flex gap-0.5">
-              {[...Array(10)].map((_, i) => (
-                <div key={i} className={`h-2 flex-1 rounded-sm ${i < opp.speed_to_launch ? colors.accent : 'bg-gray-200'}`} />
-              ))}
-            </div>
-          </div>
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-1 text-muted">
-              <Target className="w-3 h-3" />
-              <p className="text-[8px] font-mono uppercase tracking-widest">Ease</p>
-            </div>
-            <div className="flex gap-0.5">
-              {[...Array(10)].map((_, i) => (
-                <div key={i} className={`h-2 flex-1 rounded-sm ${i < (10 - opp.difficulty) ? colors.accent : 'bg-gray-200'}`} />
-              ))}
-            </div>
+          <div>
+            <p className="text-xs text-gray-500 mb-1 font-medium">ROI</p>
+            <p className="text-base font-bold text-gray-900">{Math.round(opp.money_score)}</p>
           </div>
         </div>
 
         {/* Target customer */}
-        <div className="pt-4 border-t border-border/5">
-          <p className="text-[9px] font-mono uppercase text-muted tracking-widest mb-2">Target Customer</p>
-          <p className="text-xs font-medium text-foreground leading-snug">{opp.target_customer}</p>
+        <div className="mb-6">
+          <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">Target</p>
+          <p className="text-sm text-gray-700 leading-snug">{opp.target_customer}</p>
         </div>
 
-        {/* CTA */}
+        {/* Spacer to push CTA to bottom */}
+        <div className="flex-1" />
+
+        {/* Fixed CTA at bottom - consistent height across all cards */}
         {isReadOnly ? (
           <Link
             href="/"
-            className="mt-auto w-full bg-foreground text-background py-4 rounded-2xl text-[10px] font-mono uppercase tracking-widest font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-foreground/5 hover:bg-foreground/90"
+            className="w-full bg-black text-white py-4 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 hover:bg-gray-800 shadow-sm"
           >
-            Run Analysis →
+            Run Analysis
+            <ChevronRight className="w-4 h-4" />
           </Link>
         ) : (
           <button
             type="button"
             onClick={() => generateDeepDive(opp)}
-            className={`mt-auto w-full ${colors.accent} text-white py-3.5 rounded-xl text-sm font-semibold tracking-wide transition-all flex items-center justify-center gap-2 shadow-md hover:brightness-110 active:scale-[0.98] group`}
+            className="w-full bg-black text-white py-4 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 hover:bg-gray-800 active:scale-[0.98] shadow-sm"
           >
-            Generate Execution Suite
-            <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            View Execution Suite
+            <ChevronRight className="w-4 h-4" />
           </button>
         )}
       </div>
