@@ -151,34 +151,34 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
       <section id="step-2" className="scroll-mt-24">
         {/* Trend headline */}
         <div className="bg-white border border-border/10 p-4 md:p-8 rounded-3xl shadow-sm mb-4 md:mb-6">
-          <div>
+          <div className="w-full">
             <div className="flex items-center gap-2 text-primary mb-4">
               <Sparkles className="w-4 h-4" />
               <span className="text-xs font-mono uppercase font-bold tracking-wide">Emerging Trend Identified</span>
             </div>
-            <h3 className="text-base md:text-xl font-sans font-semibold leading-snug mb-3 text-foreground max-w-2xl">
+            <h3 className="text-base md:text-xl font-sans font-semibold leading-snug mb-3 text-foreground w-full">
               {result.trend}
             </h3>
-            <p className="text-sm md:text-base text-muted leading-relaxed max-w-2xl">{result.summary}</p>
+            <p className="text-sm md:text-base text-muted leading-relaxed w-full">{result.summary}</p>
           </div>
         </div>
 
         {/* Affected groups + Problems */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6">
-          <div className="bg-white border border-border/10 p-4 md:p-8 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6 items-stretch">
+          <div className="bg-white border border-border/10 p-4 md:p-8 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 h-full">
             <h4 className="text-[10px] font-mono uppercase font-bold tracking-widest flex items-center gap-2 text-primary mb-4">
               <Users className="w-4 h-4" /> Impacted Groups
             </h4>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="grid grid-cols-1 gap-1.5">
               {result.affected_groups.map((g, i) => (
-                <span key={i} className="px-2 py-1 bg-primary/5 border border-primary/10 text-primary text-[10px] font-mono uppercase font-bold rounded-lg">
+                <span key={i} className="w-full px-2 py-1 bg-primary/5 border border-primary/10 text-primary text-[10px] font-mono uppercase font-bold rounded-lg">
                   {g}
                 </span>
               ))}
             </div>
           </div>
 
-          <div className="bg-white border border-border/10 p-4 md:p-8 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300">
+          <div className="bg-white border border-border/10 p-4 md:p-8 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 h-full">
             <h4 className="text-[10px] font-mono uppercase font-bold tracking-widest flex items-center gap-2 text-accent mb-5">
               <AlertTriangle className="w-4 h-4" /> Market Friction & Problems
             </h4>
