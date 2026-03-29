@@ -27,10 +27,11 @@ import Logo from '../Logo';
 
 // New newsroom components
 import { WorkflowStepper } from '../WorkflowStepper';
-import { SignalDesk } from '../SignalDesk';
+import { SignalDeskNewsroom } from '../SignalDeskNewsroom';
 import { BriefingColumns } from '../BriefingColumns';
 import { OpportunityGrid } from '../OpportunityGrid';
 import { StickyActionBar } from '../StickyActionBar';
+import { DailyBrief } from '../DailyBrief';
 
 export default function TrendIntelligenceAgentNewsroom() {
   const { user, login, logout, loginError } = useAgentAuth();
@@ -248,7 +249,7 @@ export default function TrendIntelligenceAgentNewsroom() {
         )}
 
         {/* Signal Desk */}
-        <SignalDesk
+        <SignalDeskNewsroom
           input={analysis.input}
           setInput={analysis.setInput}
           location={analysis.location}
@@ -258,7 +259,7 @@ export default function TrendIntelligenceAgentNewsroom() {
           loading={analysis.loading}
           loadingStage={analysis.loadingStage}
           loadingProgress={analysis.loadingProgress}
-          analyzeSignal={() => analysis.analyzeSignal()}
+          analyzeSignal={(text?: string) => analysis.analyzeSignal(text)}
           cancelAnalysis={analysis.cancelAnalysis}
           selectedMode={selectedMode}
           setSelectedMode={handleSetSelectedMode}
@@ -267,6 +268,14 @@ export default function TrendIntelligenceAgentNewsroom() {
           showQuickEdit={!!analysis.result}
           onQuickEdit={() => {
             window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+        />
+
+        {/* Daily Brief - Floating Button */}
+        <DailyBrief
+          onAnalyzeSignal={(sig) => {
+            const text = [sig.title, sig.snippet].filter(Boolean).join('\n\n');
+            analysis.analyzeSignal(text);
           }}
         />
 
