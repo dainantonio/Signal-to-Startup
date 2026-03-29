@@ -6,28 +6,21 @@ import { Bell, X, TrendingUp, Zap } from 'lucide-react';
 import { FeedSignal, SECTOR_CONFIGS } from './types';
 
 interface DailyBriefProps {
+  isOpen: boolean;
+  onClose: () => void;
   onAnalyzeSignal: (sig: FeedSignal) => void;
 }
 
-export const DailyBrief: React.FC<DailyBriefProps> = ({ onAnalyzeSignal }) => {
-  const [showBrief, setShowBrief] = useState(false);
+export const DailyBrief: React.FC<DailyBriefProps> = ({ isOpen, onClose, onAnalyzeSignal }) => {
   const [topSignals, setTopSignals] = useState<FeedSignal[]>([]);
   const [loading, setLoading] = useState(false);
-  const [lastCheck, setLastCheck] = useState<string | null>(null);
 
-  // Check if user has seen today's brief
+  // Fetch on open
   useEffect(() => {
-    try {
-      const lastCheckDate = localStorage.getItem('dailyBriefLastCheck');
-      const today = new Date().toDateString();
-      
-      if (lastCheckDate !== today) {
-        // Show brief automatically for new day
-        setTimeout(() => setShowBrief(true), 2000);
-      }
-      setLastCheck(lastCheckDate);
-    } catch {}
-  }, []);
+    if (isOpen && topSignals.length === 0) {
+      fetchTopSignals();
+    }
+  }, [isOpen]);
 
   // Fetch top signals
   const fetchTopSignals = async () => {
@@ -55,41 +48,19 @@ export const DailyBrief: React.FC<DailyBriefProps> = ({ onAnalyzeSignal }) => {
     try {
       const today = new Date().toDateString();
       localStorage.setItem('dailyBriefLastCheck', today);
-      setLastCheck(today);
     } catch {}
-    setShowBrief(false);
-  };
-
-  const handleOpen = () => {
-    setShowBrief(true);
-    if (topSignals.length === 0) {
-      fetchTopSignals();
-    }
+    onClose();
   };
 
   return (
-    <>
-      {/* Daily Brief Trigger Button */}
-      <button
-        onClick={handleOpen}
-        className="fixed bottom-24 right-6 z-30 flex items-center gap-2 bg-blue-600 text-white px-5 py-3 rounded-full shadow-2xl hover:bg-blue-700 transition-all group"
-      >
-        <Bell className="w-5 h-5 group-hover:animate-bounce" />
-        <span className="text-sm font-semibold">Daily Brief</span>
-        {lastCheck !== new Date().toDateString() && (
-          <span className="w-2 h-2 bg-red-400 rounded-full animate-pulse" />
-        )}
-      </button>
-
-      {/* Daily Brief Modal */}
-      <AnimatePresence>
-        {showBrief && (
+    <AnimatePresence>
+      {isOpen && (
           <>
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setShowBrief(false)}
+              onClick={() => onClose()}
               className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"
             />
 
@@ -215,6 +186,5 @@ export const DailyBrief: React.FC<DailyBriefProps> = ({ onAnalyzeSignal }) => {
           </>
         )}
       </AnimatePresence>
-    </>
   );
 };

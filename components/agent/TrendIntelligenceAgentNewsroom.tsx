@@ -13,6 +13,7 @@ import {
   ArrowLeft,
   Sparkles,
   RefreshCw,
+  Bell,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Link from 'next/link';
@@ -38,6 +39,7 @@ export default function TrendIntelligenceAgentNewsroom() {
   const { user, login, logout, loginError } = useAgentAuth();
 
   const [showHistory, setShowHistory] = useState(false);
+  const [showDailyBrief, setShowDailyBrief] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
   const [showAnalysisModal, setShowAnalysisModal] = useState(false);
@@ -198,6 +200,23 @@ export default function TrendIntelligenceAgentNewsroom() {
               {user ? (
                 <>
                   <button
+                    onClick={() => setShowDailyBrief(true)}
+                    className="flex items-center gap-2 px-3 md:px-4 py-2 md:py-2.5 bg-blue-600 text-white hover:bg-blue-700 rounded-xl transition-all shadow-sm text-sm relative"
+                  >
+                    <Bell className="w-4 h-4" />
+                    <span className="font-medium hidden sm:inline">Daily Brief</span>
+                    {(() => {
+                      try {
+                        const lastCheck = localStorage.getItem('dailyBriefLastCheck');
+                        return lastCheck !== new Date().toDateString();
+                      } catch {
+                        return false;
+                      }
+                    })() && (
+                      <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-pulse" />
+                    )}
+                  </button>
+                  <button
                     onClick={() => setShowHistory(!showHistory)}
                     className="flex items-center gap-2 px-3 md:px-4 py-2 md:py-2.5 bg-white border border-gray-200 hover:border-gray-300 rounded-xl transition-all shadow-sm text-sm"
                   >
@@ -308,13 +327,18 @@ export default function TrendIntelligenceAgentNewsroom() {
           sourceTitle={modalSourceTitle}
         />
 
-        {/* Daily Brief - Floating Button */}
-        <DailyBrief
-          onAnalyzeSignal={(sig) => {
-            const text = [sig.title, sig.snippet].filter(Boolean).join('\n\n');
-            analysis.analyzeSignal(text);
-          }}
-        />
+        {/* Daily Brief - Controlled from header */}
+        {showDailyBrief && (
+          <DailyBrief
+            isOpen={showDailyBrief}
+            onClose={() => setShowDailyBrief(false)}
+            onAnalyzeSignal={(sig) => {
+              const text = [sig.title, sig.snippet].filter(Boolean).join('\n\n');
+              analysis.analyzeSignal(text);
+              setShowDailyBrief(false);
+            }}
+          />
+        )}
 
         {/* Results Section */}
         <AnimatePresence mode="wait">

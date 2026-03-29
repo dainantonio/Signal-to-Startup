@@ -17,6 +17,11 @@
 }
 
 @layer base {
+  html, body {
+    @apply overflow-x-hidden;
+    max-width: 100vw;
+  }
+
   body {
     @apply bg-background text-foreground antialiased selection:bg-primary/20;
     font-feature-settings: "ss01", "ss02", "cv01", "cv02";
@@ -25,6 +30,12 @@
 
   h1, h2, h3, h4, h5, h6 {
     @apply tracking-tight;
+  }
+
+  * {
+    @apply box-border;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
   }
 }
 

@@ -248,18 +248,18 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
         className="bg-background w-full max-w-6xl h-[92dvh] md:h-[85dvh] overflow-hidden rounded-t-3xl md:rounded-3xl border border-border/10 flex flex-col modal-container shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Modal Header */}
-        <div className="border-b border-border/10 p-4 md:p-6 flex items-center gap-3 bg-white/80 backdrop-blur-md sticky top-0 z-20 no-print">
+        {/* Modal Header - Mobile First */}
+        <div className="border-b border-border/10 p-3 md:p-6 flex items-center gap-2 md:gap-3 bg-white/80 backdrop-blur-md sticky top-0 z-20 no-print">
           <button
             onClick={() => setSelectedOpportunity(null)}
             className="p-2 hover:bg-gray-100 rounded-xl transition-colors flex-shrink-0"
             aria-label="Back to opportunities list"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" />
           </button>
-          <div className="flex-1 min-w-0">
-            <h2 className="font-sans font-semibold text-base leading-snug truncate">{selectedOpportunity.name}</h2>
-            <p className="text-[10px] font-mono uppercase text-muted tracking-widest">Execution Suite</p>
+          <div className="flex-1 min-w-0 overflow-hidden">
+            <h2 className="font-sans font-semibold text-sm md:text-base leading-snug truncate break-words">{selectedOpportunity.name}</h2>
+            <p className="text-[9px] md:text-[10px] font-mono uppercase text-muted tracking-widest">Execution Suite</p>
           </div>
           
           <div className="flex items-center gap-2 flex-shrink-0">
@@ -415,15 +415,15 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
 
         <div className="flex-1 overflow-hidden flex flex-col lg:flex-row min-h-0">
           {/* Tab bar — mobile: sticky horizontal scroll row; desktop: fixed sidebar */}
-          <div className="flex-shrink-0 lg:flex-shrink-0 lg:w-72 border-b lg:border-b-0 lg:border-r border-border/10 bg-gray-50/50 no-print sidebar-tabs sticky top-0 z-10 lg:static lg:z-auto lg:overflow-y-auto">
+          <div className="flex-shrink-0 lg:flex-shrink-0 lg:w-72 border-b lg:border-b-0 lg:border-r border-border/10 bg-gray-50/50 no-print sidebar-tabs sticky top-0 z-10 lg:static lg:z-auto lg:overflow-y-auto overflow-x-auto">
             <div className="relative">
-              <div className="flex lg:flex-col overflow-x-auto scrollbar-hide p-2 lg:p-4 gap-1 lg:gap-2">
+              <div className="flex lg:flex-col overflow-x-auto lg:overflow-x-visible scrollbar-hide p-2 lg:p-4 gap-1 lg:gap-2 min-w-max lg:min-w-0">
                 {tabs.map((tab) => (
                   <button
                     key={tab.id}
                     type="button"
                     onClick={() => setActiveDeepDiveTab(tab.id)}
-                    className={`flex-shrink-0 flex items-center gap-2 lg:gap-3 px-3 lg:px-4 py-2.5 lg:py-3.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                    className={`flex-shrink-0 flex items-center gap-2 lg:gap-3 px-3 lg:px-4 py-2.5 lg:py-3.5 rounded-xl text-[10px] md:text-xs font-bold transition-all whitespace-nowrap ${
                       activeDeepDiveTab === tab.id
                         ? 'bg-white text-primary shadow-md shadow-primary/5 border border-primary/10'
                         : 'text-muted hover:text-foreground hover:bg-white/50'
