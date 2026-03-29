@@ -44,7 +44,7 @@ interface SignalDeskNewsroomProps {
   loading: boolean;
   loadingStage?: number;
   loadingProgress?: number;
-  analyzeSignal: (overrideInput?: string) => void;
+  analyzeSignal: (overrideInput?: string, sourceTitle?: string) => void;
   cancelAnalysis: () => void;
   selectedMode: MarketMode;
   setSelectedMode: (mode: MarketMode) => void;
@@ -221,7 +221,8 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
       text = sig.title;
     }
 
-    analyzeSignal(text);
+    // Pass the article title as sourceTitle
+    analyzeSignal(text, sig.title);
   };
 
   const handleCardCancel = () => {

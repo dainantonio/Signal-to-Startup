@@ -32,6 +32,7 @@ import { BriefingColumns } from '../BriefingColumns';
 import { OpportunityGrid } from '../OpportunityGrid';
 import { StickyActionBar } from '../StickyActionBar';
 import { DailyBrief } from '../DailyBrief';
+import { AnalysisResultModal } from '../AnalysisResultModal';
 
 export default function TrendIntelligenceAgentNewsroom() {
   const { user, login, logout, loginError } = useAgentAuth();
@@ -39,6 +40,8 @@ export default function TrendIntelligenceAgentNewsroom() {
   const [showHistory, setShowHistory] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
+  const [showAnalysisModal, setShowAnalysisModal] = useState(false);
+  const [modalSourceTitle, setModalSourceTitle] = useState<string>('');
   const [showOnboarding, setShowOnboarding] = useState(() => {
     try {
       return localStorage.getItem('onboardingComplete') !== 'true';
@@ -100,6 +103,21 @@ export default function TrendIntelligenceAgentNewsroom() {
   };
 
   const analysis = useAgentAnalysis(user, selectedMode, countryTags);
+
+  // Auto-open modal when analysis completes from feed
+  const prevResultRef = React.useRef(analysis.result);
+  useEffect(() => {
+    if (!prevResultRef.current && analysis.result && modalSourceTitle) {
+      setShowAnalysisModal(true);
+    }
+    prevResultRef.current = analysis.result;
+  }, [analysis.result, modalSourceTitle]);
+
+  // Handle analysis from feed with modal
+  const handleAnalyzeFromFeed = useCallback((text: string, title: string) => {
+    setModalSourceTitle(title);
+    analysis.analyzeSignal(text);
+  }, [analysis]);
 
   // Back to feed
   const handleBackToFeed = useCallback(() => {
@@ -164,68 +182,68 @@ export default function TrendIntelligenceAgentNewsroom() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
-      <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-12">
+    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans overflow-x-hidden">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-6 md:py-12 w-full">
         {/* Header */}
-        <header className="mb-12 pb-8 border-b border-gray-200">
-          <div className="flex items-end justify-between gap-6 flex-wrap">
-            <div>
+        <header className="mb-8 md:mb-12 pb-6 md:pb-8 border-b border-gray-200">
+          <div className="flex flex-col lg:flex-row items-start lg:items-end justify-between gap-4 lg:gap-6">
+            <div className="w-full lg:w-auto">
               <Logo size="lg" showWordmark showSubbrand theme="light" />
               <p className="text-sm text-gray-600 mt-3 max-w-2xl">
                 Turn news, policy, and market signals into actionable business opportunities
               </p>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2 md:gap-3 w-full lg:w-auto">
               {user ? (
                 <>
                   <button
                     onClick={() => setShowHistory(!showHistory)}
-                    className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 hover:border-gray-300 rounded-xl transition-all shadow-sm"
+                    className="flex items-center gap-2 px-3 md:px-4 py-2 md:py-2.5 bg-white border border-gray-200 hover:border-gray-300 rounded-xl transition-all shadow-sm text-sm"
                   >
                     <History className="w-4 h-4 text-gray-600" />
-                    <span className="text-sm font-medium hidden sm:inline">
+                    <span className="font-medium hidden sm:inline">
                       History ({analysis.history.length})
                     </span>
                   </button>
                   <Link
                     href="/dashboard"
-                    className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 hover:border-gray-300 rounded-xl transition-all shadow-sm"
+                    className="flex items-center gap-2 px-3 md:px-4 py-2 md:py-2.5 bg-white border border-gray-200 hover:border-gray-300 rounded-xl transition-all shadow-sm text-sm"
                   >
                     <LayoutDashboard className="w-4 h-4 text-gray-600" />
-                    <span className="text-sm font-medium hidden sm:inline">Pipeline</span>
+                    <span className="font-medium hidden sm:inline">Pipeline</span>
                   </Link>
-                  <div className="flex items-center gap-3 bg-white border border-gray-200 px-4 py-2.5 shadow-sm rounded-xl">
-                    <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-700">
+                  <div className="flex items-center gap-2 md:gap-3 bg-white border border-gray-200 px-3 md:px-4 py-2 md:py-2.5 shadow-sm rounded-xl flex-1 sm:flex-initial">
+                    <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-700">
                       <UserIcon className="w-4 h-4" />
                     </div>
-                    <span className="text-sm font-medium hidden sm:inline">
+                    <span className="text-sm font-medium truncate max-w-[100px] sm:max-w-none">
                       {user.displayName?.split(' ')[0]}
                     </span>
                     <button
                       onClick={logout}
-                      className="text-gray-400 hover:text-red-500 transition-colors"
+                      className="text-gray-400 hover:text-red-500 transition-colors ml-auto"
                     >
                       <LogOut className="w-4 h-4" />
                     </button>
                   </div>
                 </>
               ) : (
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 md:gap-3 w-full sm:w-auto">
                   <button
                     onClick={() => setShowHistory(!showHistory)}
-                    className="p-2.5 bg-white border border-gray-200 hover:border-gray-300 rounded-xl transition-all shadow-sm"
+                    className="p-2 md:p-2.5 bg-white border border-gray-200 hover:border-gray-300 rounded-xl transition-all shadow-sm"
                   >
                     <History className="w-5 h-5 text-gray-600" />
                   </button>
                   <button
                     onClick={login}
-                    className="flex items-center gap-2 bg-black text-white px-5 py-2.5 text-sm font-medium hover:bg-gray-800 transition-all shadow-lg rounded-xl"
+                    className="flex items-center justify-center gap-2 bg-black text-white px-4 md:px-5 py-2 md:py-2.5 text-sm font-medium hover:bg-gray-800 transition-all shadow-lg rounded-xl flex-1 sm:flex-initial"
                   >
                     <LogIn className="w-4 h-4" />
-                    Login to Save
+                    <span className="whitespace-nowrap">Login to Save</span>
                   </button>
-                  {loginError && <p className="text-sm text-red-500">{loginError}</p>}
+                  {loginError && <p className="text-sm text-red-500 w-full sm:w-auto">{loginError}</p>}
                 </div>
               )}
             </div>
@@ -259,7 +277,14 @@ export default function TrendIntelligenceAgentNewsroom() {
           loading={analysis.loading}
           loadingStage={analysis.loadingStage}
           loadingProgress={analysis.loadingProgress}
-          analyzeSignal={(text?: string) => analysis.analyzeSignal(text)}
+          analyzeSignal={(text?: string, title?: string) => {
+            if (title) {
+              handleAnalyzeFromFeed(text || '', title);
+            } else {
+              setModalSourceTitle('');
+              analysis.analyzeSignal(text);
+            }
+          }}
           cancelAnalysis={analysis.cancelAnalysis}
           selectedMode={selectedMode}
           setSelectedMode={handleSetSelectedMode}
@@ -269,6 +294,18 @@ export default function TrendIntelligenceAgentNewsroom() {
           onQuickEdit={() => {
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }}
+        />
+
+        {/* Analysis Result Modal - Auto-opens from feed */}
+        <AnalysisResultModal
+          isOpen={showAnalysisModal}
+          onClose={() => {
+            setShowAnalysisModal(false);
+            setModalSourceTitle('');
+          }}
+          result={analysis.result}
+          generateDeepDive={analysis.generateDeepDive}
+          sourceTitle={modalSourceTitle}
         />
 
         {/* Daily Brief - Floating Button */}

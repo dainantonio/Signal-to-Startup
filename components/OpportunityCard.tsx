@@ -63,47 +63,61 @@ export const OpportunityCard: React.FC<OpportunityCardProps> = ({
         </div>
       )}
 
-      <div className="p-6 flex flex-col flex-1">
-        {/* Header - cleaner */}
+      <div className="p-4 md:p-6 flex flex-col flex-1">
+        {/* Header - cleaner, mobile responsive */}
         <div className="mb-4 pt-2">
-          <h4 className="text-xl font-serif font-bold text-gray-900 leading-tight mb-3">{opp.name}</h4>
-          <p className="text-sm text-gray-600 leading-relaxed">{opp.description}</p>
+          <h4 className="text-lg md:text-xl font-serif font-bold text-gray-900 leading-tight mb-3 break-words hyphens-auto">
+            {opp.name}
+          </h4>
+          <p className="text-sm text-gray-600 leading-relaxed break-words">
+            {opp.description}
+          </p>
         </div>
 
-        {/* Metadata chips - minimal */}
+        {/* Metadata chips - mobile friendly */}
         <div className="flex flex-wrap gap-2 mb-6">
           {opp.grant_eligible && (
-            <span className="text-xs px-2.5 py-1 rounded-md font-medium bg-green-50 text-green-700 border border-green-200">
+            <span className="text-xs px-2.5 py-1 rounded-md font-medium bg-green-50 text-green-700 border border-green-200 whitespace-nowrap">
               Grant Eligible
             </span>
           )}
           {countryTags.length > 0 && opp.local_fit >= 7 && (
-            <span className="text-xs px-2.5 py-1 rounded-md font-medium bg-blue-50 text-blue-700 border border-blue-200">
+            <span className="text-xs px-2.5 py-1 rounded-md font-medium bg-blue-50 text-blue-700 border border-blue-200 whitespace-nowrap">
               Local Fit {opp.local_fit}/10
             </span>
           )}
         </div>
 
-        {/* Key metrics - simplified */}
-        <div className="grid grid-cols-3 gap-4 mb-6 pb-6 border-b border-gray-100">
-          <div>
-            <p className="text-xs text-gray-500 mb-1 font-medium">Cost</p>
-            <p className="text-base font-bold text-gray-900">${(opp.startup_cost / 1000).toFixed(0)}k</p>
+        {/* Key metrics - mobile responsive */}
+        <div className="grid grid-cols-3 gap-3 md:gap-4 mb-6 pb-6 border-b border-gray-100">
+          <div className="min-w-0">
+            <p className="text-xs text-gray-500 mb-1 font-medium truncate">Cost</p>
+            <p className="text-sm md:text-base font-bold text-gray-900 truncate">
+              ${(opp.startup_cost / 1000).toFixed(0)}k
+            </p>
           </div>
-          <div>
-            <p className="text-xs text-gray-500 mb-1 font-medium">Speed</p>
-            <p className="text-base font-bold text-gray-900">{opp.speed_to_launch}/10</p>
+          <div className="min-w-0">
+            <p className="text-xs text-gray-500 mb-1 font-medium truncate">Speed</p>
+            <p className="text-sm md:text-base font-bold text-gray-900">
+              {opp.speed_to_launch}/10
+            </p>
           </div>
-          <div>
-            <p className="text-xs text-gray-500 mb-1 font-medium">ROI</p>
-            <p className="text-base font-bold text-gray-900">{Math.round(opp.money_score)}</p>
+          <div className="min-w-0">
+            <p className="text-xs text-gray-500 mb-1 font-medium truncate">ROI</p>
+            <p className="text-sm md:text-base font-bold text-gray-900">
+              {Math.round(opp.money_score)}
+            </p>
           </div>
         </div>
 
-        {/* Target customer */}
+        {/* Target customer - mobile responsive */}
         <div className="mb-6">
-          <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">Target</p>
-          <p className="text-sm text-gray-700 leading-snug">{opp.target_customer}</p>
+          <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">
+            Target
+          </p>
+          <p className="text-sm text-gray-700 leading-snug break-words">
+            {opp.target_customer}
+          </p>
         </div>
 
         {/* Spacer to push CTA to bottom */}
