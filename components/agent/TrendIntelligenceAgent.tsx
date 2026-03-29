@@ -194,11 +194,11 @@ export default function TrendIntelligenceAgent() {
     window.history.replaceState({}, '', url);
   }, [analysis.selectedOpportunity]);
 
-  // Auto-scroll to results when they first appear
+  // Auto-scroll to results whenever a new result is produced
   const prevResultRef = React.useRef<typeof analysis.result>(null);
   React.useEffect(() => {
-    if (!prevResultRef.current && analysis.result) {
-      console.log('[11] result became non-null — scrolling to results');
+    if (analysis.result && prevResultRef.current !== analysis.result) {
+      console.log('[11] new result received — scrolling to results');
       setTimeout(() => {
         const el = document.getElementById('step-2');
         if (el) {

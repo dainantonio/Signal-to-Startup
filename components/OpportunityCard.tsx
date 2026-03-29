@@ -75,11 +75,11 @@ export const OpportunityCard: React.FC<OpportunityCardProps> = ({
               </span>
             )}
           </div>
-          <h4 className="font-sans font-semibold text-base leading-snug group-hover:text-primary transition-colors">{opp.name}</h4>
+          <h4 className="font-sans font-semibold text-base leading-snug group-hover:text-primary transition-colors break-words [overflow-wrap:anywhere]">{opp.name}</h4>
         </div>
 
         {/* Description */}
-        <p className="text-sm font-medium leading-relaxed text-muted line-clamp-3">{opp.description}</p>
+        <p className="text-sm font-medium leading-relaxed text-muted line-clamp-3 break-words [overflow-wrap:anywhere]">{opp.description}</p>
 
         {/* Money Score Section */}
         <div className="space-y-3 bg-gray-50/50 p-4 rounded-2xl border border-border/5">
@@ -143,7 +143,7 @@ export const OpportunityCard: React.FC<OpportunityCardProps> = ({
         {/* Target customer */}
         <div className="pt-4 border-t border-border/5">
           <p className="text-[9px] font-mono uppercase text-muted tracking-widest mb-2">Target Customer</p>
-          <p className="text-xs font-medium text-foreground leading-snug">{opp.target_customer}</p>
+          <p className="text-xs font-medium text-foreground leading-snug break-words [overflow-wrap:anywhere]">{opp.target_customer}</p>
         </div>
 
         {/* CTA */}
