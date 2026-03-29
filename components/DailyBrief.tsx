@@ -83,7 +83,7 @@ export const DailyBrief: React.FC<DailyBriefProps> = ({ isOpen, onClose, onAnaly
                   </div>
                 </div>
                 <button
-                  onClick={() => setShowBrief(false)}
+                  onClick={() => onClose()}
                   className="p-2 hover:bg-white/20 rounded-full transition-colors"
                 >
                   <X className="w-6 h-6" />
