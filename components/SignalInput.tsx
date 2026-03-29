@@ -386,6 +386,122 @@ export const SignalInput: React.FC<SignalInputProps> = ({
               <div className="absolute bottom-4 right-4 text-primary/20 group-focus-within:text-primary/40 transition-colors"><Sparkles className="w-6 h-6" /></div>
             </div>
           </div>
+
+          {loading ? (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 text-[11px] font-mono text-muted">
+                  <Loader2 className="w-4 h-4 animate-spin text-primary flex-shrink-0" />
+                  <span className="transition-all duration-300">{LOADING_STAGE_LABELS[loadingStage] ?? LOADING_STAGE_LABELS[0]}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); cancelAnalysis(); }}
+                  aria-label="Cancel analysis"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-border/10 rounded-xl text-muted hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition-all text-[10px] font-mono uppercase tracking-wider shadow-sm flex-shrink-0"
+                >
+                  <X className="w-3 h-3" />
+                  Cancel
+                </button>
+              </div>
+              <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
+                <div
+                  className="h-full bg-primary rounded-full transition-all duration-500 ease-out"
+                  style={{ width: `${loadingProgress}%` }}
+                />
+              </div>
+              <div className="flex justify-between text-[9px] font-mono text-muted/50 uppercase tracking-wider">
+                <span>Reading</span>
+                <span>Opportunities</span>
+                <span>Scoring</span>
+                <span>Done</span>
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => analyzeSignal()}
+              disabled={!input.trim()}
+              className="w-full bg-primary text-white py-5 rounded-2xl font-mono text-sm uppercase tracking-widest hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-3 shadow-xl shadow-primary/20 active:scale-[0.98]"
+            >
+              <TrendingUp className="w-5 h-5" />
+              Extract Opportunities
+            </button>
+          )}
+
+          <details className="group rounded-2xl border border-border/10 bg-white">
+            <summary className="cursor-pointer list-none px-4 py-3 text-[10px] font-mono uppercase tracking-widest font-bold text-muted flex items-center justify-between">
+              Optional targeting filters
+              <span className="text-xs transition-transform group-open:rotate-180">⌄</span>
+            </summary>
+            <div className="px-4 pb-4 space-y-4 border-t border-border/10">
+              <div className="pt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-mono uppercase tracking-widest text-muted font-bold">Location</label>
+                  <div className="relative group">
+                    <input type="text" value={location} onChange={e => setLocation(e.target.value)} placeholder="e.g. Kingston, New York"
+                      className="w-full bg-white border border-border/10 rounded-xl p-4 pl-11 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none font-sans text-sm transition-all shadow-sm" />
+                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted group-focus-within:text-primary transition-colors" />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-mono uppercase tracking-widest text-muted font-bold">Niche / Focus</label>
+                  <div className="relative group">
+                    <input type="text" value={focus} onChange={e => setFocus(e.target.value)} placeholder="e.g. Vending, SaaS, Courier"
+                      className="w-full bg-white border border-border/10 rounded-xl p-4 pl-11 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none font-sans text-sm transition-all shadow-sm" />
+                    <Zap className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted group-focus-within:text-primary transition-colors" />
+                  </div>
+                </div>
+              </div>
+              <MarketModeSelector selectedMode={selectedMode} onModeChange={setSelectedMode} />
+
+              <div className="relative flex items-center gap-2">
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    value={countryInput}
+                    onChange={e => { setCountryInput(e.target.value); setShowCountry(true); }}
+                    onFocus={() => setShowCountry(true)}
+                    onBlur={() => setTimeout(() => setShowCountry(false), 150)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') { e.preventDefault(); selectCountry(countrySuggestions[0] ?? countryInput); }
+                      if (e.key === 'Escape') { setShowCountry(false); setCountryInput(''); }
+                    }}
+                    placeholder="Search by country or city... (e.g. Jamaica, Lagos, London)"
+                    className="w-full bg-white border border-border/10 rounded-xl py-3 px-4 pl-10 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none font-sans text-sm transition-all shadow-sm"
+                  />
+                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted pointer-events-none" />
+                  {showCountry && countrySuggestions.length > 0 && (
+                    <div className="absolute z-30 top-full left-0 right-0 mt-1 bg-white border border-border/10 rounded-xl shadow-xl overflow-hidden">
+                      {countrySuggestions.map(key => {
+                        const ctx = COUNTRY_CONTEXT[key];
+                        return (
+                          <button key={key} type="button" onMouseDown={() => selectCountry(key)}
+                            className="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-gray-50 text-left transition-colors">
+                            <span>{ctx.flag}</span>
+                            <span className="font-medium">{capitalize(key)}</span>
+                            <span className="text-[10px] font-mono text-muted ml-auto">{ctx.currency}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+                {countryTags[0] && (() => {
+                  const tag = countryTags[0];
+                  const ctx = COUNTRY_CONTEXT[tag.toLowerCase()];
+                  return (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-primary/10 border border-primary/20 text-primary rounded-full text-[10px] font-mono font-bold flex-shrink-0 whitespace-nowrap">
+                      {ctx?.flag ?? '🌍'} {tag}
+                      <button type="button" onClick={() => setCountryTags([])} aria-label={`Remove ${tag}`} className="ml-0.5 hover:text-red-500 transition-colors">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  );
+                })()}
+              </div>
+            </div>
+          </details>
         </div>
       ) : (
         <div className="space-y-4">
@@ -771,116 +887,6 @@ export const SignalInput: React.FC<SignalInputProps> = ({
         </div>
       )}
 
-      <div id="analyze-actions" className="mt-8 space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-mono uppercase tracking-widest text-muted font-bold">Location</label>
-            <div className="relative group">
-              <input type="text" value={location} onChange={e => setLocation(e.target.value)} placeholder="e.g. Kingston, New York"
-                className="w-full bg-white border border-border/10 rounded-xl p-4 pl-11 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none font-sans text-sm transition-all shadow-sm" />
-              <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted group-focus-within:text-primary transition-colors" />
-            </div>
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-mono uppercase tracking-widest text-muted font-bold">Niche / Focus</label>
-            <div className="relative group">
-              <input type="text" value={focus} onChange={e => setFocus(e.target.value)} placeholder="e.g. Vending, SaaS, Courier"
-                className="w-full bg-white border border-border/10 rounded-xl p-4 pl-11 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none font-sans text-sm transition-all shadow-sm" />
-              <Zap className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted group-focus-within:text-primary transition-colors" />
-            </div>
-          </div>
-        </div>
-        <MarketModeSelector selectedMode={selectedMode} onModeChange={setSelectedMode} />
-
-        {/* Country search — single line */}
-        <div className="relative flex items-center gap-2">
-          <div className="relative flex-1">
-            <input
-              type="text"
-              value={countryInput}
-              onChange={e => { setCountryInput(e.target.value); setShowCountry(true); }}
-              onFocus={() => setShowCountry(true)}
-              onBlur={() => setTimeout(() => setShowCountry(false), 150)}
-              onKeyDown={e => {
-                if (e.key === 'Enter') { e.preventDefault(); selectCountry(countrySuggestions[0] ?? countryInput); }
-                if (e.key === 'Escape') { setShowCountry(false); setCountryInput(''); }
-              }}
-              placeholder="Search by country or city... (e.g. Jamaica, Lagos, London)"
-              className="w-full bg-white border border-border/10 rounded-xl py-3 px-4 pl-10 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none font-sans text-sm transition-all shadow-sm"
-            />
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted pointer-events-none" />
-            {showCountry && countrySuggestions.length > 0 && (
-              <div className="absolute z-30 top-full left-0 right-0 mt-1 bg-white border border-border/10 rounded-xl shadow-xl overflow-hidden">
-                {countrySuggestions.map(key => {
-                  const ctx = COUNTRY_CONTEXT[key];
-                  return (
-                    <button key={key} type="button" onMouseDown={() => selectCountry(key)}
-                      className="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-gray-50 text-left transition-colors">
-                      <span>{ctx.flag}</span>
-                      <span className="font-medium">{capitalize(key)}</span>
-                      <span className="text-[10px] font-mono text-muted ml-auto">{ctx.currency}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-          {countryTags[0] && (() => {
-            const tag = countryTags[0];
-            const ctx = COUNTRY_CONTEXT[tag.toLowerCase()];
-            return (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-primary/10 border border-primary/20 text-primary rounded-full text-[10px] font-mono font-bold flex-shrink-0 whitespace-nowrap">
-                {ctx?.flag ?? '🌍'} {tag}
-                <button type="button" onClick={() => setCountryTags([])} aria-label={`Remove ${tag}`} className="ml-0.5 hover:text-red-500 transition-colors">
-                  <X className="w-3 h-3" />
-                </button>
-              </span>
-            );
-          })()}
-        </div>
-
-        {loading ? (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2 text-[11px] font-mono text-muted">
-                <Loader2 className="w-4 h-4 animate-spin text-primary flex-shrink-0" />
-                <span className="transition-all duration-300">{LOADING_STAGE_LABELS[loadingStage] ?? LOADING_STAGE_LABELS[0]}</span>
-              </div>
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); cancelAnalysis(); }}
-                aria-label="Cancel analysis"
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-border/10 rounded-xl text-muted hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition-all text-[10px] font-mono uppercase tracking-wider shadow-sm flex-shrink-0"
-              >
-                <X className="w-3 h-3" />
-                Cancel
-              </button>
-            </div>
-            <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
-              <div
-                className="h-full bg-primary rounded-full transition-all duration-500 ease-out"
-                style={{ width: `${loadingProgress}%` }}
-              />
-            </div>
-            <div className="flex justify-between text-[9px] font-mono text-muted/50 uppercase tracking-wider">
-              <span>Reading</span>
-              <span>Opportunities</span>
-              <span>Scoring</span>
-              <span>Done</span>
-            </div>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => analyzeSignal()}
-            disabled={!input.trim()}
-            className="w-full bg-primary text-white py-5 rounded-2xl font-mono text-sm uppercase tracking-widest hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-3 shadow-xl shadow-primary/20 active:scale-[0.98]"
-          >
-            <TrendingUp className="w-5 h-5" />
-            Extract Opportunities
-          </button>
-        )}
-      </div>
     </section>
   );
 };
