@@ -47,6 +47,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: true, message: 'No new articles found' });
     }
 
+    console.log('[AGENT] Total articles fetched:', allArticles.length);
+    console.log('[AGENT] Sample article:', JSON.stringify(allArticles[0], null, 2));
+
     // STEP 3: For each user, score articles against their preferences
     const results: { userId: string; newSignals: number }[] = [];
 
@@ -63,6 +66,8 @@ export async function GET(request: NextRequest) {
           (article: { market: string }) =>
             article.market === userMarket || article.market === 'global'
         );
+
+        console.log('[AGENT] Market filtered articles:', marketArticles.length);
 
         // Score each article for this user
         const scoredArticles = marketArticles
@@ -91,12 +96,23 @@ export async function GET(request: NextRequest) {
             }
 
             return { ...article, userScore: score };
-          })
-          .filter((a: { userScore: number }) => a.userScore >= 75)
+          });
+
+        console.log('[AGENT] Article scores for user:',
+          scoredArticles.slice(0, 5).map((a: { title: string; userScore: number; market: string; sector: string }) => ({
+            title: a.title?.substring(0, 50),
+            userScore: a.userScore,
+            market: a.market,
+            sector: a.sector,
+          }))
+        );
+
+        const topArticles = scoredArticles
+          .filter((a: { userScore: number }) => a.userScore >= 60)
           .sort((a: { userScore: number }, b: { userScore: number }) => b.userScore - a.userScore)
           .slice(0, 5);
 
-        if (scoredArticles.length === 0) continue;
+        if (topArticles.length === 0) continue;
 
         // STEP 4: Check which articles user has already seen (last 7 days)
         const seenSnapshot = await db
@@ -106,7 +122,7 @@ export async function GET(request: NextRequest) {
           .get();
 
         const seenUrls = new Set(seenSnapshot.docs.map(d => d.data().url as string));
-        const newArticles = scoredArticles.filter(
+        const newArticles = topArticles.filter(
           (a: { url: string }) => !seenUrls.has(a.url)
         );
 
