@@ -27,6 +27,8 @@ import { useAgentAuth } from './useAgentAuth';
 import { useAgentAnalysis } from './useAgentAnalysis';
 import { ValidateMode } from '../ValidateMode';
 import Logo from '../Logo';
+import NotificationBell from '../NotificationBell';
+import { auth, db, doc, setDoc } from '@/firebase';
 
 type AppMode = 'discover' | 'validate';
 
@@ -57,22 +59,50 @@ export default function TrendIntelligenceAgent() {
     try { localStorage.setItem('s2s_country_tags', JSON.stringify(countryTags)); } catch {}
   }, [countryTags]);
 
+  // Sync preference changes to Firestore so the agent can read them
+  const syncPrefsToFirestore = useCallback(
+    async (updates: Record<string, unknown>) => {
+      try {
+        const user = auth.currentUser;
+        if (!user) return;
+        await setDoc(
+          doc(db, 'user_preferences', user.uid),
+          { ...updates, userId: user.uid, updatedAt: new Date().toISOString() },
+          { merge: true }
+        );
+      } catch {
+        // Non-blocking — localStorage is the source of truth for the UI
+      }
+    },
+    []
+  );
+
   // Clear country tags when market mode changes
   const handleSetSelectedMode = (mode: MarketMode) => {
     setSelectedMode(mode);
     setCountryTags([]);
+    syncPrefsToFirestore({ marketMode: mode, countryTag: '' });
   };
 
   // Auto-switch market mode when a country is selected
-  const handleSetCountryTags = useCallback((tags: string[]) => {
-    setCountryTags(tags);
-    if (tags.length > 0) {
-      const ctx = COUNTRY_CONTEXT[tags[0].toLowerCase()];
-      if (ctx && ctx.region !== 'global') {
-        setSelectedMode(ctx.region as MarketMode);
+  const handleSetCountryTags = useCallback(
+    (tags: string[]) => {
+      setCountryTags(tags);
+      let newMode: MarketMode | undefined;
+      if (tags.length > 0) {
+        const ctx = COUNTRY_CONTEXT[tags[0].toLowerCase()];
+        if (ctx && ctx.region !== 'global') {
+          newMode = ctx.region as MarketMode;
+          setSelectedMode(newMode);
+        }
       }
-    }
-  }, []);
+      syncPrefsToFirestore({
+        countryTag: tags[0] ?? '',
+        ...(newMode ? { marketMode: newMode } : {}),
+      });
+    },
+    [syncPrefsToFirestore]
+  );
 
   // Load saved preferences on mount
   React.useEffect(() => {
@@ -259,6 +289,7 @@ export default function TrendIntelligenceAgent() {
 
             {user ? (
               <div className="flex items-center gap-2">
+                <NotificationBell />
                 <button
                   onClick={() => setShowHistory(!showHistory)}
                   aria-expanded={showHistory}

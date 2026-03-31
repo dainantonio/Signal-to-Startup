@@ -35,6 +35,7 @@ import {
   FirebaseUser,
   signInWithPopup,
   googleProvider,
+  limit,
 } from '@/firebase';
 import { SavedOpportunity, OpportunityStatus } from '@/components/types';
 import { COUNTRY_CONTEXT } from '@/lib/rss-sources';
@@ -60,15 +61,32 @@ interface SavedArticle {
   analyzedAt?: string;
 }
 
+interface AgentSignal {
+  id: string;
+  userId: string;
+  title: string;
+  snippet: string;
+  url: string;
+  source: string;
+  sector: string;
+  market: string;
+  signalScore: number;
+  userScore: number;
+  createdAt: string;
+  read: boolean;
+  analyzed: boolean;
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [savedOpportunities, setSavedOpportunities] = useState<(SavedOpportunity & { id: string })[]>([]);
   const [validations, setValidations] = useState<IdeaValidation[]>([]);
   const [savedArticles, setSavedArticles] = useState<SavedArticle[]>([]);
+  const [agentSignals, setAgentSignals] = useState<AgentSignal[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
-  const [dashboardTab, setDashboardTab] = useState<'opportunities' | 'validations' | 'articles'>('opportunities');
+  const [dashboardTab, setDashboardTab] = useState<'opportunities' | 'validations' | 'articles' | 'signals'>('opportunities');
 
   // Auth listener
   useEffect(() => {
@@ -85,10 +103,11 @@ export default function DashboardPage() {
 
   const loadSavedOpportunities = async (uid: string) => {
     try {
-      const [oppSnap, valSnap, artSnap] = await Promise.all([
+      const [oppSnap, valSnap, artSnap, signalsSnap] = await Promise.all([
         getDocs(query(collection(db, 'saved_opportunities'), where('userId', '==', uid), orderBy('savedAt', 'desc'))),
         getDocs(query(collection(db, 'idea_validations'), where('userId', '==', uid), orderBy('createdAt', 'desc'))),
         getDocs(query(collection(db, 'saved_articles'), where('userId', '==', uid), orderBy('savedAt', 'desc'))),
+        getDocs(query(collection(db, 'agent_signals'), where('userId', '==', uid), orderBy('createdAt', 'desc'), limit(20))),
       ]);
       setSavedOpportunities(
         oppSnap.docs.map(d => ({ id: d.id, ...d.data() })) as (SavedOpportunity & { id: string })[]
@@ -98,6 +117,9 @@ export default function DashboardPage() {
       );
       setSavedArticles(
         artSnap.docs.map(d => ({ id: d.id, ...d.data() })) as SavedArticle[]
+      );
+      setAgentSignals(
+        signalsSnap.docs.map(d => ({ id: d.id, ...d.data() })) as AgentSignal[]
       );
     } catch (err) {
       console.error('Failed to load pipeline:', err);
@@ -199,6 +221,7 @@ export default function DashboardPage() {
             ['opportunities', '💼 Opportunities'],
             ['validations', '💡 Validations'],
             ['articles', '🔖 Saved Articles'],
+            ['signals', `🤖 Agent Signals${agentSignals.filter(s => !s.read).length > 0 ? ` (${agentSignals.filter(s => !s.read).length})` : ''}`],
           ] as const).map(([tab, label]) => (
             <button
               key={tab}
@@ -213,7 +236,31 @@ export default function DashboardPage() {
           ))}
         </div>
 
-        {dashboardTab === 'validations' ? (
+        {dashboardTab === 'signals' ? (
+          <AgentSignalsList
+            signals={agentSignals}
+            loading={loading}
+            onAnalyze={(signal) => {
+              try {
+                sessionStorage.setItem('sharedArticle', JSON.stringify({
+                  url: signal.url,
+                  title: signal.title,
+                  text: signal.snippet,
+                  source: 'agent',
+                }));
+              } catch {}
+              router.push('/');
+            }}
+            onDismiss={async (id) => {
+              try {
+                await updateDoc(doc(db, 'agent_signals', id), { read: true });
+                setAgentSignals(prev => prev.map(s => s.id === id ? { ...s, read: true } : s));
+              } catch (err) {
+                console.error('Failed to dismiss signal:', err);
+              }
+            }}
+          />
+        ) : dashboardTab === 'validations' ? (
           <ValidationsList validations={validations} loading={loading} />
         ) : dashboardTab === 'articles' ? (
           <SavedArticlesList
@@ -566,6 +613,132 @@ function KanbanCard({ opportunity, onStatusChange, isUpdating }: KanbanCardProps
   );
 }
 
+
+// ---------------------------------------------------------------------------
+// Agent Signals list
+// ---------------------------------------------------------------------------
+
+function AgentSignalsList({
+  signals,
+  loading,
+  onAnalyze,
+  onDismiss,
+}: {
+  signals: AgentSignal[];
+  loading: boolean;
+  onAnalyze: (signal: AgentSignal) => void;
+  onDismiss: (id: string) => void;
+}) {
+  const [dismissing, setDismissing] = React.useState<string | null>(null);
+  const unreadCount = signals.filter(s => !s.read).length;
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-32 gap-4">
+        <div className="w-10 h-10 border-4 border-primary/10 border-t-primary rounded-full animate-spin" />
+        <p className="text-[10px] font-mono uppercase font-bold tracking-widest text-muted">Loading...</p>
+      </div>
+    );
+  }
+
+  if (signals.length === 0) {
+    return (
+      <div className="text-center py-32 bg-white border border-dashed border-border/20 rounded-[3rem]">
+        <div className="text-6xl mb-6">🤖</div>
+        <p className="text-lg font-serif italic font-bold mb-2">No agent signals yet</p>
+        <p className="text-sm text-muted font-medium mb-2">
+          The Signal Monitor runs every 2 hours and discovers opportunities matched to your profile.
+        </p>
+        <p className="text-xs text-muted">Make sure you have completed onboarding so the agent knows your preferences.</p>
+      </div>
+    );
+  }
+
+  const timeAgo = (iso: string) => {
+    const h = Math.floor((Date.now() - new Date(iso).getTime()) / 3_600_000);
+    if (h < 1) return 'Just now';
+    if (h < 24) return `${h}h ago`;
+    return `${Math.floor(h / 24)}d ago`;
+  };
+
+  const sectorColor: Record<string, string> = {
+    ai: 'bg-purple-50 text-purple-700',
+    funding: 'bg-green-50 text-green-700',
+    policy: 'bg-blue-50 text-blue-700',
+    markets: 'bg-amber-50 text-amber-700',
+    sustainability: 'bg-emerald-50 text-emerald-700',
+    realestate: 'bg-orange-50 text-orange-700',
+    health: 'bg-rose-50 text-rose-700',
+  };
+
+  return (
+    <div className="space-y-4">
+      {unreadCount > 0 && (
+        <div className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-xl text-sm font-medium w-fit">
+          <span className="w-2 h-2 bg-white rounded-full animate-pulse" />
+          {unreadCount} new signal{unreadCount > 1 ? 's' : ''} discovered for you
+        </div>
+      )}
+
+      {signals.map(signal => (
+        <motion.div
+          key={signal.id}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={`bg-white border rounded-2xl p-5 shadow-sm hover:shadow-md transition-all ${
+            !signal.read ? 'border-black/20' : 'border-border/10'
+          }`}
+        >
+          <div className="flex items-start justify-between gap-3 mb-3">
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-wrap items-center gap-2 mb-2">
+                <span className="text-[10px] font-mono font-bold bg-black text-white px-2 py-0.5 rounded-full">
+                  Score {signal.userScore}
+                </span>
+                <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${sectorColor[signal.sector] ?? 'bg-gray-50 text-gray-600'}`}>
+                  {signal.sector}
+                </span>
+                <span className="text-[10px] font-mono text-muted">{signal.source}</span>
+                {!signal.read && (
+                  <span className="text-[9px] font-mono font-bold bg-black text-white px-1.5 py-0.5 rounded">NEW</span>
+                )}
+              </div>
+              <h3 className="font-semibold text-sm leading-snug line-clamp-2 mb-1">
+                {signal.title}
+              </h3>
+              {signal.snippet && (
+                <p className="text-xs text-muted leading-relaxed line-clamp-2">{signal.snippet}</p>
+              )}
+            </div>
+            <span className="text-[10px] font-mono text-muted flex-shrink-0">{timeAgo(signal.createdAt)}</span>
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => onAnalyze(signal)}
+              className="flex-1 py-2 bg-foreground text-background rounded-xl text-[10px] font-mono uppercase tracking-widest font-bold hover:bg-foreground/90 transition-all"
+            >
+              ⚡ Analyze
+            </button>
+            <button
+              type="button"
+              disabled={dismissing === signal.id || signal.read}
+              onClick={async () => {
+                setDismissing(signal.id);
+                await onDismiss(signal.id);
+                setDismissing(null);
+              }}
+              className="px-4 py-2 border border-border/10 rounded-xl text-[10px] font-mono uppercase text-muted hover:text-gray-700 hover:border-gray-300 transition-all disabled:opacity-40"
+            >
+              {dismissing === signal.id ? '...' : signal.read ? 'Read' : 'Dismiss'}
+            </button>
+          </div>
+        </motion.div>
+      ))}
+    </div>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Saved Articles list

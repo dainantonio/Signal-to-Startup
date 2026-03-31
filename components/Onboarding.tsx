@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { MarketMode, SectorKey } from './types';
 import { COUNTRY_CONTEXT } from '@/lib/rss-sources';
 import Logo from './Logo';
+import { auth, db, doc, setDoc } from '@/firebase';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -123,10 +124,30 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
 
   const totalSteps = 3;
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
     const prefs: UserPreferences = { marketMode, countryTag, sectors, businessTypes };
     localStorage.setItem('userPreferences', JSON.stringify(prefs));
     localStorage.setItem('onboardingComplete', 'true');
+
+    // Also persist to Firestore so the agent can read preferences server-side
+    try {
+      const user = auth.currentUser;
+      if (user) {
+        await setDoc(doc(db, 'user_preferences', user.uid), {
+          ...prefs,
+          userId: user.uid,
+          email: user.email,
+          displayName: user.displayName,
+          updatedAt: new Date().toISOString(),
+          digestEnabled: true,
+        });
+        console.log('[ONBOARDING] Preferences saved to Firestore');
+      }
+    } catch (error) {
+      console.warn('[ONBOARDING] Firestore save failed:', error);
+      // Don't block — localStorage already saved
+    }
+
     onComplete(prefs);
   };
 

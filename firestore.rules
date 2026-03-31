@@ -114,7 +114,7 @@ service cloud.firestore {
     }
 
     match /analyses/{analysisId} {
-      allow read: if true;
+      allow read: if isDocOwner() || request.auth != null || isAdmin();
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
       allow update: if request.auth != null && resource.data.userId == request.auth.uid;
       allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
@@ -149,6 +149,35 @@ service cloud.firestore {
 
     match /demo_analyses/{id} {
       allow create: if true;
+      allow read: if isAdmin();
+    }
+
+    // Agent signals — opportunities discovered by the agent for each user
+    match /agent_signals/{signalId} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isAdmin() || request.auth == null;
+      allow update: if isDocOwner() || isAdmin();
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    // In-app notifications for each user
+    match /notifications/{notificationId} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isAdmin() || request.auth == null;
+      allow update: if isDocOwner() || isAdmin();
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    // User preferences saved from onboarding
+    match /user_preferences/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if isOwner(userId) || isAdmin();
+    }
+
+    // Usage logs
+    match /usage_logs/{logId} {
+      allow create: if isAuthenticated() &&
+        request.resource.data.userId == request.auth.uid;
       allow read: if isAdmin();
     }
   }
