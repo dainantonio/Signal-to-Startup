@@ -12,14 +12,13 @@ export async function GET(request: NextRequest) {
     console.log('[DIGEST] NODE_ENV:', process.env.NODE_ENV);
     console.log('[DIGEST] RESEND_API_KEY present:', !!process.env.RESEND_API_KEY);
 
-    // AUTH TEMPORARILY DISABLED FOR TESTING
-    // const authHeader = request.headers.get('authorization');
-    // if (
-    //   process.env.NODE_ENV === 'production' &&
-    //   authHeader !== `Bearer ${process.env.CRON_SECRET}`
-    // ) {
-    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    // }
+    const authHeader = request.headers.get('authorization');
+    if (
+      process.env.NODE_ENV === 'production' &&
+      authHeader !== `Bearer ${process.env.CRON_SECRET}`
+    ) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     if (!process.env.RESEND_API_KEY) {
       console.log('[DIGEST] RESEND_API_KEY missing - aborting');
@@ -38,7 +37,7 @@ export async function GET(request: NextRequest) {
 
     if (usersSnapshot.empty) {
       console.log('[DIGEST] No users - returning early');
-      return NextResponse.json({ success: true, emailsSent: 0, reason: 'no users', timestamp: new Date().toISOString() });
+      return NextResponse.json({ success: true, emailsSent: 0, timestamp: new Date().toISOString() });
     }
 
     let emailsSent = 0;
