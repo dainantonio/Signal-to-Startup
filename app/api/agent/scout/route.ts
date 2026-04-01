@@ -28,25 +28,28 @@ export async function GET(request: NextRequest) {
   try {
     const db = getAdminDb();
 
-    // STEP 1: Get unanalyzed high-score signals
+    // STEP 1: Get unanalyzed signals, filter by score in code to avoid composite index
     const signalsSnapshot = await db
       .collection('agent_signals')
       .where('analyzed', '==', false)
-      .where('userScore', '>=', 80)
       .get();
 
-    if (signalsSnapshot.empty) {
-      console.log('[SCOUT] No unanalyzed signals found');
+    console.log('[SCOUT] Total unanalyzed:', signalsSnapshot.size);
+
+    const highScoreSignals = signalsSnapshot.docs.filter(d => (d.data().userScore ?? 0) >= 80);
+
+    console.log('[SCOUT] High score signals:', highScoreSignals.length);
+
+    if (highScoreSignals.length === 0) {
+      console.log('[SCOUT] No high-score unanalyzed signals found');
       return NextResponse.json({ success: true, analyzed: 0, message: 'No signals to analyze' });
     }
-
-    console.log(`[SCOUT] Found ${signalsSnapshot.size} signals to analyze`);
 
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
     const results: { signalId: string; opportunityId: string; bestIdea: string | undefined }[] = [];
 
     // Max 3 per run to stay within API limits and execution time
-    const signalsToProcess = signalsSnapshot.docs.slice(0, 3);
+    const signalsToProcess = highScoreSignals.slice(0, 3);
 
     for (const signalDoc of signalsToProcess) {
       const signal = signalDoc.data();
