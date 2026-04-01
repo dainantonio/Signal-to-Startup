@@ -6,7 +6,14 @@ const APP_URL = process.env.APP_URL || 'https://signal-to-startup.vercel.app';
 const FROM_EMAIL = process.env.FROM_EMAIL || 'Signal to Startup <hello@entrepaIneur.com>';
 
 export async function GET(request: NextRequest) {
+  console.log('[DIGEST] Function invoked');
+  console.log('[DIGEST] NODE_ENV:', process.env.NODE_ENV);
+  console.log('[DIGEST] CRON_SECRET present:', !!process.env.CRON_SECRET);
+  console.log('[DIGEST] Auth header:', request.headers.get('authorization'));
+
   const authHeader = request.headers.get('authorization');
+  console.log('[DIGEST] Auth check result:', authHeader === `Bearer ${process.env.CRON_SECRET}`);
+
   if (
     process.env.NODE_ENV === 'production' &&
     authHeader !== `Bearer ${process.env.CRON_SECRET}`
@@ -14,7 +21,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  console.log('[DIGEST] Auth passed - continuing');
+
   if (!process.env.RESEND_API_KEY) {
+    console.log('[DIGEST] RESEND_API_KEY missing - aborting');
     return NextResponse.json({ error: 'RESEND_API_KEY not configured' }, { status: 500 });
   }
 
@@ -143,6 +153,8 @@ export async function GET(request: NextRequest) {
         console.error('[DIGEST] Error for user:', userError);
       }
     }
+
+    console.log('[DIGEST] Returning result:', { emailsSent });
 
     return NextResponse.json({
       success: true,
