@@ -38,16 +38,14 @@ export async function GET(request: NextRequest) {
         const email = userDataDoc.data()?.email as string | undefined;
         if (!email) continue;
 
-        const yesterday = new Date(Date.now() - 24 * 3_600_000).toISOString();
-
         const signalsSnapshot = await db
           .collection('agent_signals')
           .where('userId', '==', userId)
-          .where('createdAt', '>', yesterday)
           .where('read', '==', false)
-          .orderBy('createdAt', 'desc')
           .limit(5)
           .get();
+
+        console.log('[DIGEST] Signals found:', signalsSnapshot.size, 'for user:', userId);
 
         if (signalsSnapshot.empty) continue;
 
@@ -86,6 +84,8 @@ export async function GET(request: NextRequest) {
           month: 'long',
           day: 'numeric',
         });
+
+        console.log('[DIGEST] Sending email to:', email);
 
         await resend.emails.send({
           from: FROM_EMAIL,
