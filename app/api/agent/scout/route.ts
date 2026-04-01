@@ -106,12 +106,12 @@ Return ONLY valid JSON:
 }`;
 
         const response = await ai.models.generateContent({
-          model: 'gemini-2.0-flash',
+          model: 'gemini-2.5-flash',
+          contents: prompt,
           config: {
             responseMimeType: 'application/json',
             maxOutputTokens: 1200,
           },
-          contents: [{ role: 'user', parts: [{ text: prompt }] }],
         });
 
         const rawText = response.text ?? '';
