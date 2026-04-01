@@ -6,26 +6,30 @@ const APP_URL = process.env.APP_URL || 'https://signal-to-startup.vercel.app';
 const FROM_EMAIL = process.env.FROM_EMAIL || 'Signal to Startup <hello@entrepaIneur.com>';
 
 export async function GET(request: NextRequest) {
-  console.log('[DIGEST] VERSION 2026-04-01-08:00');
-  console.log('[DIGEST] START - no auth check');
-
-  // AUTH TEMPORARILY DISABLED FOR TESTING
-  // const authHeader = request.headers.get('authorization');
-  // if (
-  //   process.env.NODE_ENV === 'production' &&
-  //   authHeader !== `Bearer ${process.env.CRON_SECRET}`
-  // ) {
-  //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  // }
-
-  if (!process.env.RESEND_API_KEY) {
-    console.log('[DIGEST] RESEND_API_KEY missing - aborting');
-    return NextResponse.json({ error: 'RESEND_API_KEY not configured' }, { status: 500 });
-  }
-
-  const resend = new Resend(process.env.RESEND_API_KEY);
-
   try {
+    console.log('[DIGEST] VERSION 2026-04-01-09:00');
+    console.log('[DIGEST] START');
+    console.log('[DIGEST] NODE_ENV:', process.env.NODE_ENV);
+    console.log('[DIGEST] RESEND_API_KEY present:', !!process.env.RESEND_API_KEY);
+
+    // AUTH TEMPORARILY DISABLED FOR TESTING
+    // const authHeader = request.headers.get('authorization');
+    // if (
+    //   process.env.NODE_ENV === 'production' &&
+    //   authHeader !== `Bearer ${process.env.CRON_SECRET}`
+    // ) {
+    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // }
+
+    if (!process.env.RESEND_API_KEY) {
+      console.log('[DIGEST] RESEND_API_KEY missing - aborting');
+      return NextResponse.json({ error: 'RESEND_API_KEY not configured' }, { status: 500 });
+    }
+
+    // Lazy init — avoids module-load-time throw if key is undefined
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    console.log('[DIGEST] Resend initialized');
+
     const db = getAdminDb();
     console.log('[DIGEST] Firebase initialized');
 
@@ -34,6 +38,7 @@ export async function GET(request: NextRequest) {
 
     if (usersSnapshot.empty) {
       console.log('[DIGEST] No users - returning early');
+      return NextResponse.json({ success: true, emailsSent: 0, reason: 'no users', timestamp: new Date().toISOString() });
     }
 
     let emailsSent = 0;
@@ -43,7 +48,10 @@ export async function GET(request: NextRequest) {
         const userId = userDoc.id;
         const prefs = userDoc.data();
 
-        if (prefs.digestEnabled === false) continue;
+        if (prefs.digestEnabled === false) {
+          console.log('[DIGEST] User has digest disabled:', userId);
+          continue;
+        }
 
         const userDataDoc = await db.collection('users').doc(userId).get();
         if (!userDataDoc.exists) {
@@ -157,7 +165,7 @@ export async function GET(request: NextRequest) {
         });
 
         emailsSent++;
-        console.log(`[DIGEST] Sent to ${email}`);
+        console.log('[DIGEST] Sent to:', email);
 
       } catch (userError) {
         console.error('[DIGEST] Error for user:', userError);
@@ -172,8 +180,11 @@ export async function GET(request: NextRequest) {
       timestamp: new Date().toISOString(),
     });
 
-  } catch (error) {
-    console.error('[DIGEST] Failed:', error);
-    return NextResponse.json({ error: String(error) }, { status: 500 });
+  } catch (topLevelError) {
+    console.error('[DIGEST] TOP LEVEL ERROR:', topLevelError);
+    return NextResponse.json(
+      { error: String(topLevelError) },
+      { status: 500 }
+    );
   }
 }
