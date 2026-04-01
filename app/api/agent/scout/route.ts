@@ -23,8 +23,9 @@ export async function GET(request: NextRequest) {
 
   console.log('[SCOUT] Auth passed');
 
-  if (!process.env.GEMINI_API_KEY) {
-    console.error('[SCOUT] Missing GEMINI_API_KEY');
+  const geminiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+  if (!geminiKey) {
+    console.error('[SCOUT] Missing GEMINI_API_KEY / NEXT_PUBLIC_GEMINI_API_KEY');
     return NextResponse.json({ error: 'GEMINI_API_KEY not configured' }, { status: 500 });
   }
 
@@ -39,7 +40,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: `Firestore init: ${String(initError)}` }, { status: 500 });
   }
 
-  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+  const ai = new GoogleGenAI({ apiKey: geminiKey });
   console.log('[SCOUT] AI initialized');
 
   console.log('[SCOUT] Opportunity Scout starting...');
@@ -138,11 +139,37 @@ Return ONLY valid JSON:
         console.log('[SCOUT] Raw response length:', rawText.length);
 
         let parsed: Record<string, unknown> | null = null;
+
+        // Clean the text first
+        const cleanedText = rawText
+          .replace(/```json/gi, '')
+          .replace(/```/g, '')
+          .trim();
+
+        // Try 1 — direct parse
         try {
-          parsed = JSON.parse(rawText.trim());
-        } catch {
-          const match = rawText.match(/\{[\s\S]*\}/);
-          if (match) parsed = JSON.parse(match[0]);
+          parsed = JSON.parse(cleanedText);
+          console.log('[SCOUT] Parsed via try 1');
+        } catch {}
+
+        // Try 2 — find JSON object
+        if (!parsed) {
+          const match = cleanedText.match(/\{[\s\S]*\}/);
+          if (match) {
+            try {
+              parsed = JSON.parse(match[0]);
+              console.log('[SCOUT] Parsed via try 2');
+            } catch {}
+          }
+        }
+
+        // Try 3 — fix trailing commas
+        if (!parsed) {
+          try {
+            const fixed = cleanedText.replace(/,(\s*[}\]])/g, '$1');
+            parsed = JSON.parse(fixed);
+            console.log('[SCOUT] Parsed via try 3');
+          } catch {}
         }
 
         if (!parsed) {
