@@ -6,6 +6,7 @@ const APP_URL = process.env.APP_URL || 'https://signal-to-startup.vercel.app';
 const FROM_EMAIL = process.env.FROM_EMAIL || 'Signal to Startup <hello@entrepaIneur.com>';
 
 export async function GET(request: NextRequest) {
+  console.log('[DIGEST] VERSION 2026-04-01-08:00');
   console.log('[DIGEST] START - no auth check');
 
   // AUTH TEMPORARILY DISABLED FOR TESTING
