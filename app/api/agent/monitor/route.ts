@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
               score += typeHits * 8;
             }
 
-            return { ...article, userScore: score };
+            return { ...article, userScore: Math.min(Math.round(score), 99) };
           });
 
         console.log('[AGENT] Article scores for user:',
