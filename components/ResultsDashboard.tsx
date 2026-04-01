@@ -18,11 +18,12 @@ interface ResultsDashboardProps {
   shareOnTwitter: () => void;
   shareOnLinkedIn: () => void;
   countryTags?: string[];
+  isAgentResult?: boolean;
 }
 
 export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
   result, filteredOpportunities, filterType, setFilterType,
-  grantOnly, setGrantOnly, generateDeepDive, shareOnTwitter, shareOnLinkedIn, countryTags = []
+  grantOnly, setGrantOnly, generateDeepDive, shareOnTwitter, shareOnLinkedIn, countryTags = [], isAgentResult = false
 }) => {
   const [copied, setCopied] = useState(false);
 
@@ -131,6 +132,14 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
       transition={{ duration: 0.4 }}
       className="space-y-12"
     >
+      {/* Agent-discovered badge */}
+      {isAgentResult && (
+        <div className="flex items-center gap-3 px-5 py-3 bg-black text-white rounded-2xl text-sm font-medium">
+          <span className="w-2 h-2 bg-white rounded-full animate-pulse flex-shrink-0" />
+          🤖 Discovered by your agent while you were away
+        </div>
+      )}
+
       {/* Country-tailored banner */}
       {countryTags.length > 0 && (
         <div className="flex items-center gap-3 px-5 py-3 bg-primary/5 border border-primary/15 rounded-2xl text-sm font-medium">

@@ -26,6 +26,7 @@ import {
   onAuthStateChanged,
   collection,
   getDocs,
+  getDoc,
   query,
   where,
   orderBy,
@@ -75,6 +76,7 @@ interface AgentSignal {
   createdAt: string;
   read: boolean;
   analyzed: boolean;
+  opportunityId?: string;
 }
 
 export default function DashboardPage() {
@@ -240,6 +242,19 @@ export default function DashboardPage() {
           <AgentSignalsList
             signals={agentSignals}
             loading={loading}
+            onViewOpportunity={async (signal) => {
+              if (!signal.opportunityId) return;
+              try {
+                const oppDoc = await getDoc(doc(db, 'agent_opportunities', signal.opportunityId));
+                if (!oppDoc.exists()) return;
+                const data = oppDoc.data();
+                sessionStorage.setItem('agentOpportunity', JSON.stringify(data.result));
+              } catch (err) {
+                console.error('Failed to load agent opportunity:', err);
+                return;
+              }
+              router.push('/');
+            }}
             onAnalyze={(signal) => {
               try {
                 sessionStorage.setItem('sharedArticle', JSON.stringify({
@@ -621,11 +636,13 @@ function KanbanCard({ opportunity, onStatusChange, isUpdating }: KanbanCardProps
 function AgentSignalsList({
   signals,
   loading,
+  onViewOpportunity,
   onAnalyze,
   onDismiss,
 }: {
   signals: AgentSignal[];
   loading: boolean;
+  onViewOpportunity: (signal: AgentSignal) => void;
   onAnalyze: (signal: AgentSignal) => void;
   onDismiss: (id: string) => void;
 }) {
@@ -714,13 +731,23 @@ function AgentSignalsList({
           </div>
 
           <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => onAnalyze(signal)}
-              className="flex-1 py-2 bg-foreground text-background rounded-xl text-[10px] font-mono uppercase tracking-widest font-bold hover:bg-foreground/90 transition-all"
-            >
-              ⚡ Analyze
-            </button>
+            {signal.analyzed && signal.opportunityId ? (
+              <button
+                type="button"
+                onClick={() => onViewOpportunity(signal)}
+                className="flex-1 py-2 bg-black text-white rounded-xl text-[10px] font-mono uppercase tracking-widest font-bold hover:bg-black/80 transition-all flex items-center justify-center gap-1.5"
+              >
+                🤖 View Opportunity
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => onAnalyze(signal)}
+                className="flex-1 py-2 bg-foreground text-background rounded-xl text-[10px] font-mono uppercase tracking-widest font-bold hover:bg-foreground/90 transition-all"
+              >
+                ⚡ Analyze
+              </button>
+            )}
             <button
               type="button"
               disabled={dismissing === signal.id || signal.read}

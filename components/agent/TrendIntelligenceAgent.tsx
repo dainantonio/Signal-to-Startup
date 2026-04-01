@@ -47,6 +47,7 @@ export default function TrendIntelligenceAgent() {
     try { return !!sessionStorage.getItem('s2s_lastResult'); } catch { return false; }
   });
   const [selectedMode, setSelectedMode] = useState<MarketMode>('global');
+  const [isAgentResult, setIsAgentResult] = useState(false);
   const [hasSeenShareHint, setHasSeenShareHint] = useState(() => {
     try { return localStorage.getItem('seenShareHint') === 'true'; } catch { return false; }
   });
@@ -131,6 +132,7 @@ export default function TrendIntelligenceAgent() {
     setShowCancelConfirm(false);
     analysis.cancelAnalysis();
     analysis.setResult(null);
+    setIsAgentResult(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [analysis]);
 
@@ -164,6 +166,21 @@ export default function TrendIntelligenceAgent() {
       setHasLastResult(false); // user is viewing it — hide banner
     }
   }, [analysis.result]);
+
+  // Pick up pre-analyzed opportunity from agent (via dashboard "View Opportunity")
+  React.useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem('agentOpportunity');
+      if (!raw) return;
+      sessionStorage.removeItem('agentOpportunity');
+      const result = JSON.parse(raw);
+      setTimeout(() => {
+        analysis.setResult(result);
+        setIsAgentResult(true);
+      }, 300);
+    } catch {}
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Pick up shared article from /share page and auto-analyze
   React.useEffect(() => {
@@ -632,6 +649,7 @@ export default function TrendIntelligenceAgent() {
               shareOnTwitter={analysis.shareOnTwitter}
               shareOnLinkedIn={analysis.shareOnLinkedIn}
               countryTags={countryTags}
+              isAgentResult={isAgentResult}
             />
           )}
         </AnimatePresence>
