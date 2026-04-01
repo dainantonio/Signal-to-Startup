@@ -11,6 +11,8 @@ const MARKET_CONTEXT: Record<string, string> = {
 };
 
 export async function GET(request: NextRequest) {
+  console.log('[SCOUT] GET function entered');
+
   const authHeader = request.headers.get('authorization');
   if (
     process.env.NODE_ENV === 'production' &&
@@ -19,14 +21,30 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  console.log('[SCOUT] Opportunity Scout starting...');
+  console.log('[SCOUT] Auth passed');
 
   if (!process.env.GEMINI_API_KEY) {
+    console.error('[SCOUT] Missing GEMINI_API_KEY');
     return NextResponse.json({ error: 'GEMINI_API_KEY not configured' }, { status: 500 });
   }
 
+  console.log('[SCOUT] Env vars present');
+
+  let db: ReturnType<typeof getAdminDb>;
   try {
-    const db = getAdminDb();
+    db = getAdminDb();
+    console.log('[SCOUT] Firestore initialized');
+  } catch (initError) {
+    console.error('[SCOUT] Firestore init failed:', String(initError));
+    return NextResponse.json({ error: `Firestore init: ${String(initError)}` }, { status: 500 });
+  }
+
+  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+  console.log('[SCOUT] AI initialized');
+
+  console.log('[SCOUT] Opportunity Scout starting...');
+
+  try {
 
     // STEP 1: Get unanalyzed signals, filter by score in code to avoid composite index
     const signalsSnapshot = await db
@@ -45,7 +63,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: true, analyzed: 0, message: 'No signals to analyze' });
     }
 
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
     const results: { signalId: string; opportunityId: string; bestIdea: string | undefined }[] = [];
 
     // Max 3 per run to stay within API limits and execution time
