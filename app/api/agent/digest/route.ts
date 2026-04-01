@@ -112,10 +112,11 @@ export async function GET(request: NextRequest) {
           day: 'numeric',
         });
 
-        console.log('[DIGEST] Sending email to:', email);
+        console.log('[DIGEST] Sending to:', email);
+        console.log('[DIGEST] From:', 'onboarding@resend.dev');
 
         await resend.emails.send({
-          from: FROM_EMAIL,
+          from: 'Signal to Startup <onboarding@resend.dev>',
           to: email,
           subject: `${signals.length} new signal${signals.length > 1 ? 's' : ''} matched your profile today`,
           html: `<!DOCTYPE html>
