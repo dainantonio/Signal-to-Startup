@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
 
 const OWNER_EMAIL = process.env.OWNER_EMAIL || 'hello@entrepaIneur.com';
-const FROM_EMAIL = process.env.FROM_EMAIL || 'Signal to Startup <hello@entrepaIneur.com>';
+const FROM_EMAIL = process.env.FROM_EMAIL || 'Signal to Startup <onboarding@resend.dev>';
 
 export async function POST(req: NextRequest) {
   const { email } = await req.json();
