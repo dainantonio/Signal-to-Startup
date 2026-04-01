@@ -26,8 +26,15 @@ export async function GET(request: NextRequest) {
 
   try {
     const db = getAdminDb();
+    console.log('[DIGEST] Firebase initialized');
 
     const usersSnapshot = await db.collection('user_preferences').get();
+    console.log('[DIGEST] Users found:', usersSnapshot.size);
+
+    if (usersSnapshot.empty) {
+      console.log('[DIGEST] No users - returning early');
+    }
+
     let emailsSent = 0;
 
     for (const userDoc of usersSnapshot.docs) {
@@ -38,9 +45,17 @@ export async function GET(request: NextRequest) {
         if (prefs.digestEnabled === false) continue;
 
         const userDataDoc = await db.collection('users').doc(userId).get();
-        if (!userDataDoc.exists) continue;
+        if (!userDataDoc.exists) {
+          console.log('[DIGEST] No users doc for userId:', userId);
+          continue;
+        }
         const email = userDataDoc.data()?.email as string | undefined;
-        if (!email) continue;
+        if (!email) {
+          console.log('[DIGEST] No email for userId:', userId);
+          continue;
+        }
+
+        console.log('[DIGEST] Processing:', email);
 
         const signalsSnapshot = await db
           .collection('agent_signals')
@@ -49,7 +64,7 @@ export async function GET(request: NextRequest) {
           .limit(5)
           .get();
 
-        console.log('[DIGEST] Signals found:', signalsSnapshot.size, 'for user:', userId);
+        console.log('[DIGEST] Signals for user:', signalsSnapshot.size);
 
         if (signalsSnapshot.empty) continue;
 
