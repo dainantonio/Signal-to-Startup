@@ -265,8 +265,19 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(DEMO_SIGNALS);
     }
 
+    // Deduplicate by normalized URL — same article can appear in multiple sector queries
+    const seenUrls = new Set<string>();
+    const deduped = allSignals.filter(a => {
+      if (!a.url) return true;
+      const key = a.url.toLowerCase().split('?')[0].split('#')[0]
+        .replace(/\/$/, '').replace(/^https?:\/\//, '').replace(/^www\./, '');
+      if (seenUrls.has(key)) return false;
+      seenUrls.add(key);
+      return true;
+    });
+
     // Sort by strength desc, then recency — surface best signals first
-    const sorted = allSignals
+    const sorted = deduped
       .sort((a, b) => {
         if (b.strength !== a.strength) return b.strength - a.strength;
         return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();

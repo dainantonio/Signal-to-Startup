@@ -114,7 +114,13 @@ function calculateSignalScore(item: RSSFeedItem): number {
 
 function normalizeUrl(url: string): string {
   try {
-    return url.split('?')[0].split('#')[0].replace(/\/$/, '').toLowerCase();
+    return url
+      .toLowerCase()
+      .split('?')[0]
+      .split('#')[0]
+      .replace(/\/$/, '')
+      .replace(/^https?:\/\//, '')
+      .replace(/^www\./, '');
   } catch {
     return url.toLowerCase();
   }
