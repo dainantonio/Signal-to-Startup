@@ -2,8 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const NEWS_API_KEY = process.env.NEWS_API_KEY;
 
-const BLOCKED_SPORTS_DOMAINS = ['on3.com', 'si.com', 'espn.com', 'bleacherreport.com', 'theathletic.com'];
+const BLOCKED_SPORTS_DOMAINS = ['on3.com', 'si.com', 'espn.com', 'bleacherreport.com', 'theathletic.com', 'whatjapanthinks.com'];
 const BLOCKED_SPORTS_SOURCES = ['on3', 'espn', 'sports illustrated', 'bleacher report', 'the athletic'];
+
+const SPAM_TITLE_PATTERNS = [
+  'review:', 'scam?', 'facts uncovered', 'claims vs reality',
+  'real or fake', 'legit or scam', 'is it legit', 'unveiled', 'exposed',
+];
 
 function isBlockedSource(url: string, sourceName: string): boolean {
   const urlLower = (url || '').toLowerCase();
@@ -237,6 +242,7 @@ export async function GET(req: NextRequest) {
         return articles
           .filter(a => a.title && a.title !== '[Removed]' && a.description)
           .filter(a => !isBlockedSource(a.url || '', a.source?.name || ''))
+          .filter(a => !SPAM_TITLE_PATTERNS.some(p => (a.title as string).toLowerCase().includes(p)))
           .map(a => ({
             title: a.title as string,
             source: (a.source?.name || 'Unknown') as string,

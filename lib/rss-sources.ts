@@ -82,13 +82,14 @@ export const PAYWALL_DOMAINS = [
   'newyorker.com',
 ];
 
-// Sports and off-topic domains — filtered out regardless of content
+// Sports, spam, and off-topic domains — filtered out regardless of content
 export const BLOCKED_DOMAINS = [
   'on3.com',
   'si.com',
   'espn.com',
   'bleacherreport.com',
   'theathletic.com',
+  'whatjapanthinks.com',
 ];
 
 export const RSS_SOURCES: RSSSource[] = [

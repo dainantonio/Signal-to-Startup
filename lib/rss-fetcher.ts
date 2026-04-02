@@ -88,8 +88,29 @@ const OPPORTUNITY_KEYWORDS = [
   'startup', 'opportunity', 'growth', 'emerging', 'launch',
 ];
 
-const TIER1_SOURCES = ['Reuters', 'TechCrunch', 'CNBC', 'BBC', 'Guardian', 'Wired'];
-const TIER2_SOURCES = ['Fast Company', 'Inc Magazine', 'Entrepreneur', 'VentureBeat', 'The Verge'];
+const TIER1_SOURCES = [
+  'techcrunch', 'reuters', 'cnbc', 'bbc', 'guardian', 'wired', 'bloomberg',
+  'wsj', 'forbes', 'inc ', 'inc.', 'entrepreneur', 'fastcompany', 'fast company',
+  'venturebeat', 'jamaica observer', 'gleaner', 'techcabal', 'disrupt africa', 'contxto',
+  'the verge', 'mit tech', 'ft.com', 'financial times',
+];
+const TIER2_SOURCES = [
+  'nature.com', 'mit', 'harvard', 'stanford', 'hackernoon', 'medium', 'substack',
+  'hacker noon', 'techxplore', 'greenbiz', 'fierce healthcare', 'inman',
+  'caribbean business', 'trinidad express', 'loop jamaica', 'infobae', 'folha',
+  'africa business', 'how we made it', 'startup brasil', 'la vanguardia', 'sba',
+  'business wire', 'contxto', 'disrupt africa',
+];
+
+const SPAM_TITLE_PATTERNS = [
+  'review:', 'scam?', 'facts uncovered', 'claims vs reality',
+  'real or fake', 'legit or scam', 'is it legit', 'unveiled', 'exposed',
+];
+
+function isSpamTitle(title: string): boolean {
+  const lower = title.toLowerCase();
+  return SPAM_TITLE_PATTERNS.some(p => lower.includes(p));
+}
 
 function calculateSignalScore(item: RSSFeedItem): number {
   let score = 40;
@@ -99,8 +120,9 @@ function calculateSignalScore(item: RSSFeedItem): number {
   else if (hoursAgo < 6) score += 10;
   else if (hoursAgo < 24) score += 5;
 
-  if (TIER1_SOURCES.some(s => item.source.includes(s))) score += 10;
-  else if (TIER2_SOURCES.some(s => item.source.includes(s))) score += 5;
+  const srcLower = item.source.toLowerCase();
+  if (TIER1_SOURCES.some(s => srcLower.includes(s))) score += 10;
+  else if (TIER2_SOURCES.some(s => srcLower.includes(s))) score += 5;
 
   const text = `${item.title} ${item.snippet}`.toLowerCase();
   const hits = OPPORTUNITY_KEYWORDS.filter(k => text.includes(k)).length;
@@ -108,6 +130,12 @@ function calculateSignalScore(item: RSSFeedItem): number {
 
   if (item.sector === 'funding') score += 8;
   if (item.sector === 'policy') score += 5;
+
+  // Cap unknown sources at 50
+  const isKnownSource =
+    TIER1_SOURCES.some(s => srcLower.includes(s)) ||
+    TIER2_SOURCES.some(s => srcLower.includes(s));
+  if (!isKnownSource) score = Math.min(score, 50);
 
   return Math.min(Math.max(score, 10), 99);
 }
@@ -353,8 +381,11 @@ export async function fetchRSSFeeds(options: FetchRSSOptions): Promise<FetchRSSR
     });
   });
 
+  // Filter out spam/SEO titles
+  const noSpam = noBlocked.filter(item => !isSpamTitle(item.title));
+
   // Filter out non-business lifestyle/entertainment articles
-  const businessOnly = noBlocked.filter(isBusinessRelevant);
+  const businessOnly = noSpam.filter(isBusinessRelevant);
 
   // Filter by recency window
   const recent = businessOnly.filter(item => {
