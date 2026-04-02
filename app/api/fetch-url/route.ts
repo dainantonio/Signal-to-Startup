@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as cheerio from 'cheerio';
-import { PAYWALL_DOMAINS } from '@/lib/rss-sources';
+import { BLOCKED_DOMAINS } from '@/lib/rss-sources';
 import { cleanText, cleanArticleBody } from '@/lib/text-cleaner';
 
 // ---------------------------------------------------------------------------
@@ -31,7 +31,7 @@ function isPaywalled(status: number, html: string, extractedText: string): boole
 function isDomainPaywalled(url: string): boolean {
   try {
     const hostname = new URL(url).hostname.replace(/^www\./, '');
-    return PAYWALL_DOMAINS.some(d => hostname === d || hostname.endsWith(`.${d}`));
+    return BLOCKED_DOMAINS.some(d => hostname === d || hostname.endsWith(`.${d}`));
   } catch {
     return false;
   }
