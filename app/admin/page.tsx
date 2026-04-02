@@ -4,8 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   auth, db, onAuthStateChanged,
-  collection, getDocs, query,
-  orderBy, limit,
+  collection, getDocs, query, limit,
   FirebaseUser,
 } from '@/firebase';
 
@@ -39,36 +38,36 @@ export default function AdminPage() {
   const loadAdminData = async () => {
     try {
       const waitlistSnap = await getDocs(
-        query(collection(db, 'waitlist'), orderBy('joinedAt', 'desc'))
+        query(collection(db, 'waitlist'), limit(200))
       );
-      const waitlistData = waitlistSnap.docs.map(d => ({ id: d.id, ...d.data() })) as Array<{
+      const waitlistData = (waitlistSnap.docs.map(d => ({ id: d.id, ...d.data() })) as Array<{
         id: string; email: string; joinedAt?: string; source?: string;
-      }>;
+      }>).sort((a, b) => (b.joinedAt || '').localeCompare(a.joinedAt || ''));
       setWaitlist(waitlistData);
 
       const usageSnap = await getDocs(
-        query(collection(db, 'usage_logs'), orderBy('timestamp', 'desc'), limit(50))
+        query(collection(db, 'usage_logs'), limit(50))
       );
-      const usageData = usageSnap.docs.map(d => ({ id: d.id, ...d.data() })) as Array<{
+      const usageData = (usageSnap.docs.map(d => ({ id: d.id, ...d.data() })) as Array<{
         id: string; type: string; userId: string; marketMode?: string; countryTag?: string; timestamp?: string;
-      }>;
+      }>).sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''));
       setUsageLogs(usageData);
 
       const signalsSnap = await getDocs(
-        query(collection(db, 'agent_signals'), orderBy('createdAt', 'desc'), limit(20))
+        query(collection(db, 'agent_signals'), limit(20))
       );
-      const signalsData = signalsSnap.docs.map(d => ({ id: d.id, ...d.data() })) as Array<{
+      const signalsData = (signalsSnap.docs.map(d => ({ id: d.id, ...d.data() })) as Array<{
         id: string; title?: string; userScore?: number; analyzed?: boolean; createdAt?: string; opportunityId?: string;
-      }>;
+      }>).sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
       setRecentSignals(signalsData);
 
       const oppsSnap = await getDocs(
-        query(collection(db, 'agent_opportunities'), orderBy('createdAt', 'desc'), limit(20))
+        query(collection(db, 'agent_opportunities'), limit(20))
       );
-      const oppsData = oppsSnap.docs.map(d => ({ id: d.id, ...d.data() })) as Array<{
+      const oppsData = (oppsSnap.docs.map(d => ({ id: d.id, ...d.data() })) as Array<{
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         id: string; result?: any; signalTitle?: string; marketMode?: string; countryTag?: string; createdAt?: string;
-      }>;
+      }>).sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
       setRecentOpportunities(oppsData);
 
       setStats({
