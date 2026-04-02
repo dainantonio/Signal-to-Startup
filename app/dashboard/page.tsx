@@ -120,7 +120,6 @@ export default function DashboardPage() {
   }, []);
 
   const loadSavedOpportunities = async (uid: string) => {
-    console.log('[DASHBOARD] Loading data for user:', uid);
     try {
       // agent_signals: no orderBy to avoid composite index requirement — sort in code
       const [oppSnap, valSnap, artSnap, signalsSnap] = await Promise.all([
@@ -129,7 +128,6 @@ export default function DashboardPage() {
         getDocs(query(collection(db, 'saved_articles'), where('userId', '==', uid), orderBy('savedAt', 'desc'))),
         getDocs(query(collection(db, 'agent_signals'), where('userId', '==', uid))),
       ]);
-      console.log('[DASHBOARD] Agent signals found:', signalsSnap.docs.length);
       setSavedOpportunities(
         oppSnap.docs.map(d => ({ id: d.id, ...d.data() })) as (SavedOpportunity & { id: string })[]
       );
@@ -265,13 +263,10 @@ export default function DashboardPage() {
             signals={agentSignals}
             loading={loading}
             onView={async (signal) => {
-              console.log('[DASHBOARD] onView called for:', signal.title?.substring(0, 40));
               if (signal.analyzed && signal.opportunityId) {
                 try {
                   const oppDoc = await getDoc(doc(db, 'agent_opportunities', signal.opportunityId));
                   if (oppDoc.exists()) {
-                    const data = oppDoc.data();
-                    console.log('[DASHBOARD] Storing agentOpportunityId:', signal.opportunityId);
                     sessionStorage.setItem('agentOpportunityId', signal.opportunityId);
                     sessionStorage.setItem('agentSignalTitle', signal.title || '');
                     window.location.href = '/';
@@ -761,7 +756,7 @@ function AgentSignalsList({
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={(e) => { e.stopPropagation(); console.log('[DASHBOARD] Button clicked'); onView(signal); }}
+              onClick={(e) => { e.stopPropagation(); onView(signal); }}
               className="flex-1 py-2 bg-foreground text-background rounded-xl text-[10px] font-mono uppercase tracking-widest font-bold hover:bg-foreground/90 transition-all flex items-center justify-center gap-1.5"
             >
               {signal.analyzed && signal.opportunityId ? '🤖 View Opportunity' : '⚡ Analyze'}

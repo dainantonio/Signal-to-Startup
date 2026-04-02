@@ -171,7 +171,6 @@ export default function TrendIntelligenceAgent() {
   React.useEffect(() => {
     const oppId = sessionStorage.getItem('agentOpportunityId');
     const signalTitle = sessionStorage.getItem('agentSignalTitle');
-    console.log('[AGENT] Checking for agent opportunity:', oppId);
     if (!oppId) return;
     sessionStorage.removeItem('agentOpportunityId');
     sessionStorage.removeItem('agentSignalTitle');
@@ -181,7 +180,6 @@ export default function TrendIntelligenceAgent() {
         const oppDoc = await getDoc(doc(db, 'agent_opportunities', oppId));
         if (oppDoc.exists()) {
           const data = oppDoc.data();
-          console.log('[AGENT] Opportunity loaded:', data.result?.best_idea?.name);
           analysis.setResult(data.result);
           setIsAgentResult(true);
         } else {
