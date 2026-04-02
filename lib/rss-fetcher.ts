@@ -1,5 +1,5 @@
 import { XMLParser } from 'fast-xml-parser';
-import { RSS_SOURCES, PAYWALL_DOMAINS, BLOCKED_DOMAINS } from './rss-sources';
+import { RSS_SOURCES, BLOCKED_DOMAINS, SPAM_TITLE_PATTERNS } from './rss-sources';
 import { cleanText } from './text-cleaner';
 import type { SectorKey } from '@/components/types';
 
@@ -24,7 +24,7 @@ export interface RSSFeedItem {
 }
 
 export interface FetchRSSOptions {
-  markets: string[];
+  market: string;   // single market — 'global' | 'caribbean' | 'africa' | 'uk' | 'latam'
   sectors: string[];
   recency: string;
 }
@@ -48,7 +48,8 @@ function stripHtml(raw: string): string {
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'")
-    .replace(/&nbsp;/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&#160;/g, ' ')
     .replace(/&[a-z]{2,6};/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
@@ -64,21 +65,11 @@ function safeIso(dateStr: string | undefined): string {
   }
 }
 
-function tierBaseScore(tier: 1 | 2 | 3): number {
-  if (tier === 1) return 8;
-  if (tier === 2) return 6;
-  return 4;
-}
-
-function recencyBonus(publishedAt: string): number {
-  const ageHours = (Date.now() - new Date(publishedAt).getTime()) / 3_600_000;
-  if (ageHours < 6) return 2;
-  if (ageHours < 24) return 1;
-  return 0;
-}
-
 function strengthScore(tier: 1 | 2 | 3, publishedAt: string): number {
-  return Math.min(10, tierBaseScore(tier) + recencyBonus(publishedAt));
+  const ageHours = (Date.now() - new Date(publishedAt).getTime()) / 3_600_000;
+  const tierBase = tier === 1 ? 8 : tier === 2 ? 6 : 4;
+  const recency = ageHours < 6 ? 2 : ageHours < 24 ? 1 : 0;
+  return Math.min(10, tierBase + recency);
 }
 
 const OPPORTUNITY_KEYWORDS = [
@@ -88,31 +79,16 @@ const OPPORTUNITY_KEYWORDS = [
   'startup', 'opportunity', 'growth', 'emerging', 'launch',
 ];
 
-const TIER1_SOURCES = [
-  'techcrunch', 'reuters', 'cnbc', 'bbc', 'guardian', 'wired', 'bloomberg',
-  'wsj', 'forbes', 'inc ', 'inc.', 'entrepreneur', 'fastcompany', 'fast company',
-  'venturebeat', 'jamaica observer', 'gleaner', 'techcabal', 'disrupt africa', 'contxto',
-  'the verge', 'mit tech', 'ft.com', 'financial times',
-];
-const TIER2_SOURCES = [
-  'nature.com', 'mit', 'harvard', 'stanford', 'hackernoon', 'medium', 'substack',
-  'hacker noon', 'techxplore', 'greenbiz', 'fierce healthcare', 'inman',
-  'caribbean business', 'trinidad express', 'loop jamaica', 'infobae', 'folha',
-  'africa business', 'how we made it', 'startup brasil', 'la vanguardia', 'sba',
-  'business wire', 'contxto', 'disrupt africa',
+const BUSINESS_KEYWORDS = [
+  'business', 'startup', 'entrepreneur', 'market', 'investment',
+  'funding', 'revenue', 'growth', 'launch', 'tech', 'company',
+  'industry', 'economy', 'policy', 'regulation', 'innovation',
+  'grant', 'loan', 'capital', 'venture', 'founder', 'product',
+  'service', 'consumer', 'demand', 'supply', 'trade', 'export',
+  'import',
 ];
 
-const SPAM_TITLE_PATTERNS = [
-  'review:', 'scam?', 'facts uncovered', 'claims vs reality',
-  'real or fake', 'legit or scam', 'is it legit', 'unveiled', 'exposed',
-];
-
-function isSpamTitle(title: string): boolean {
-  const lower = title.toLowerCase();
-  return SPAM_TITLE_PATTERNS.some(p => lower.includes(p));
-}
-
-function calculateSignalScore(item: RSSFeedItem): number {
+function calculateSignalScore(item: RSSFeedItem, sourceTier: 1 | 2 | 3): number {
   let score = 40;
 
   const hoursAgo = (Date.now() - new Date(item.publishedAt).getTime()) / 3_600_000;
@@ -120,9 +96,9 @@ function calculateSignalScore(item: RSSFeedItem): number {
   else if (hoursAgo < 6) score += 10;
   else if (hoursAgo < 24) score += 5;
 
-  const srcLower = item.source.toLowerCase();
-  if (TIER1_SOURCES.some(s => srcLower.includes(s))) score += 10;
-  else if (TIER2_SOURCES.some(s => srcLower.includes(s))) score += 5;
+  // Tier boost — tier 1 sources get +10
+  if (sourceTier === 1) score += 10;
+  else if (sourceTier === 2) score += 5;
 
   const text = `${item.title} ${item.snippet}`.toLowerCase();
   const hits = OPPORTUNITY_KEYWORDS.filter(k => text.includes(k)).length;
@@ -130,12 +106,6 @@ function calculateSignalScore(item: RSSFeedItem): number {
 
   if (item.sector === 'funding') score += 8;
   if (item.sector === 'policy') score += 5;
-
-  // Cap unknown sources at 50
-  const isKnownSource =
-    TIER1_SOURCES.some(s => srcLower.includes(s)) ||
-    TIER2_SOURCES.some(s => srcLower.includes(s));
-  if (!isKnownSource) score = Math.min(score, 50);
 
   return Math.min(Math.max(score, 10), 99);
 }
@@ -192,30 +162,6 @@ function deduplicateArticles(items: RSSFeedItem[]): { deduped: RSSFeedItem[]; re
   return { deduped, removed: items.length - deduped.length };
 }
 
-const NOISE_TOPICS = [
-  'dating', 'love life', 'relationship', 'celebrity', 'celebrities',
-  'fashion', 'beauty tips', 'gossip', 'entertainment news',
-  'sports scores', 'sports highlights', 'nfl', 'nba', 'mlb', 'nhl', 'fifa',
-  'college football', 'college basketball', 'recruiting class', 'transfer portal',
-  'on3', 'rivals.com', 'scout.com', '247sports',
-  'touchdown', 'quarterback', 'slam dunk', 'home run', 'hat trick',
-  'music review', 'movie review', 'film review',
-  'recipe', 'horoscope', 'zodiac', 'viral', 'meme',
-  'influencer', 'reality tv', 'red carpet', 'award show',
-];
-
-const BUSINESS_OVERRIDE_SIGNALS = [
-  'raises', 'funding', 'revenue', 'startup', 'billion', 'million',
-  'acquisition', 'ipo', 'launches', 'growth', 'market', 'investment',
-];
-
-function isBusinessRelevant(item: RSSFeedItem): boolean {
-  const text = `${item.title} ${item.snippet}`.toLowerCase();
-  const isNoise = NOISE_TOPICS.some(t => text.includes(t));
-  if (!isNoise) return true;
-  return BUSINESS_OVERRIDE_SIGNALS.some(s => text.includes(s));
-}
-
 function recencyCutoff(recency: string): Date {
   const now = Date.now();
   if (recency === '24h') return new Date(now - 24 * 3_600_000);
@@ -268,7 +214,6 @@ async function fetchOneFeed(source: typeof RSS_SOURCES[0]): Promise<RSSFeedItem[
     const title = cleanText(stripHtml(extractText(item.title)));
     if (!title) continue;
 
-    // link can be a string or an object
     let url = '';
     if (typeof item.link === 'string') url = item.link;
     else if (Array.isArray(item.link) && item.link.length > 0) url = String(item.link[0]);
@@ -285,7 +230,7 @@ async function fetchOneFeed(source: typeof RSS_SOURCES[0]): Promise<RSSFeedItem[
       strength: strengthScore(source.tier, publishedAt),
       category: source.sector, color: '',
     };
-    rssItem.signalScore = calculateSignalScore(rssItem);
+    rssItem.signalScore = calculateSignalScore(rssItem, source.tier);
     items.push(rssItem);
   }
 
@@ -318,7 +263,7 @@ async function fetchOneFeed(source: typeof RSS_SOURCES[0]): Promise<RSSFeedItem[
       strength: strengthScore(source.tier, publishedAt),
       category: source.sector, color: '',
     };
-    atomItem.signalScore = calculateSignalScore(atomItem);
+    atomItem.signalScore = calculateSignalScore(atomItem, source.tier);
     items.push(atomItem);
   }
 
@@ -330,76 +275,79 @@ async function fetchOneFeed(source: typeof RSS_SOURCES[0]): Promise<RSSFeedItem[
 // ---------------------------------------------------------------------------
 
 export async function fetchRSSFeeds(options: FetchRSSOptions): Promise<FetchRSSResult> {
-  const { markets, sectors, recency } = options;
+  const { market, sectors, recency } = options;
 
-  // Match sources that belong to any of the requested markets AND sectors.
-  // Always include 'global' as a fallback market.
-  const effectiveMarkets = [...new Set([...markets, 'global'])];
-  const sources = RSS_SOURCES.filter(
-    s => effectiveMarkets.includes(s.market) && sectors.includes(s.sector)
+  // Market isolation: requested market + global sources only
+  const sourcesToFetch = RSS_SOURCES.filter(
+    s => (s.market === market || s.market === 'global') && sectors.includes(s.sector)
   );
 
-  // If nothing matches (e.g. no africa+health sources), fall back to global only
-  const activeSources = sources.length > 0
-    ? sources
-    : RSS_SOURCES.filter(s => sectors.includes(s.sector));
+  // Fallback: if nothing matches (e.g. africa+realestate), use global only
+  const activeSources = sourcesToFetch.length > 0
+    ? sourcesToFetch
+    : RSS_SOURCES.filter(s => s.market === 'global' && sectors.includes(s.sector));
 
   const cutoff = recencyCutoff(recency);
 
   // Fetch all feeds in parallel — one failure never blocks the rest
   const results = await Promise.allSettled(activeSources.map(fetchOneFeed));
 
-  const allItems: RSSFeedItem[] = [];
+  let allItems: RSSFeedItem[] = [];
   for (const result of results) {
-    if (result.status === 'fulfilled') {
-      allItems.push(...result.value);
-    }
-    // Rejected feeds are silently skipped
+    if (result.status === 'fulfilled') allItems.push(...result.value);
   }
 
-  // Filter out paywalled articles by domain
-  const beforePaywallFilter = allItems.length;
-  const noPaywall = allItems.filter(item => {
-    if (!item.url) return true;
-    try {
-      const hostname = new URL(item.url).hostname.replace(/^www\./, '');
-      return !PAYWALL_DOMAINS.some(d => hostname === d || hostname.endsWith(`.${d}`));
-    } catch {
-      return true;
-    }
-  });
-  const removed = beforePaywallFilter - noPaywall.length;
-  if (removed > 0) console.log(`[PAYWALL FILTER] removed ${removed} paywalled articles`);
-
-  // Filter out blocked sports/off-topic domains
-  const noBlocked = noPaywall.filter(item => {
-    const url = item.url?.toLowerCase() ?? '';
-    const source = item.source.toLowerCase();
-    return !BLOCKED_DOMAINS.some(d => {
-      const base = d.replace('.com', '');
-      return url.includes(d) || source.includes(base);
-    });
+  // 1. Block by domain
+  allItems = allItems.filter(item => {
+    const url = (item.url || '').toLowerCase();
+    return !BLOCKED_DOMAINS.some(d => url.includes(d));
   });
 
-  // Filter out spam/SEO titles
-  const noSpam = noBlocked.filter(item => !isSpamTitle(item.title));
+  // 2. Block spam titles
+  allItems = allItems.filter(item => {
+    const title = item.title.toLowerCase();
+    return !SPAM_TITLE_PATTERNS.some(p => title.includes(p));
+  });
 
-  // Filter out non-business lifestyle/entertainment articles
-  const businessOnly = noSpam.filter(isBusinessRelevant);
+  // 3. Business relevance — must have at least one keyword
+  allItems = allItems.filter(item => {
+    const text = `${item.title} ${item.snippet}`.toLowerCase();
+    return BUSINESS_KEYWORDS.some(k => text.includes(k));
+  });
 
-  // Filter by recency window
-  const recent = businessOnly.filter(item => {
+  // 4. Recency window
+  allItems = allItems.filter(item => {
     try { return new Date(item.publishedAt) >= cutoff; } catch { return false; }
   });
 
-  // Deduplicate: normalized URL + 70% title-word overlap
-  const { deduped, removed: dedupRemoved } = deduplicateArticles(recent);
-  if (dedupRemoved > 0) console.log(`[DEDUP] removed ${dedupRemoved} duplicate articles`);
+  // 5. Deduplicate
+  const { deduped, removed: dedupRemoved } = deduplicateArticles(allItems);
 
-  // Sort newest first
-  const sorted = deduped.sort(
-    (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
-  );
+  // 6. Sort by signalScore descending, cap at 30
+  const sorted = deduped
+    .sort((a, b) => (b.signalScore ?? 0) - (a.signalScore ?? 0))
+    .slice(0, 30);
 
   return { items: sorted, duplicatesRemoved: dedupRemoved };
+}
+
+// Convenience: fetch all markets at once (used by the monitor agent)
+export async function fetchAllMarkets(options: Omit<FetchRSSOptions, 'market'>): Promise<FetchRSSResult> {
+  const markets = ['global', 'caribbean', 'africa', 'uk', 'latam'] as const;
+  const results = await Promise.allSettled(
+    markets.map(m => fetchRSSFeeds({ ...options, market: m }))
+  );
+
+  const allItems: RSSFeedItem[] = [];
+  let totalDups = 0;
+  for (const r of results) {
+    if (r.status === 'fulfilled') {
+      allItems.push(...r.value.items);
+      totalDups += r.value.duplicatesRemoved;
+    }
+  }
+
+  // Final dedup across markets
+  const { deduped, removed } = deduplicateArticles(allItems);
+  return { items: deduped, duplicatesRemoved: totalDups + removed };
 }

@@ -1,132 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { fetchRSSFeeds } from '@/lib/rss-fetcher';
 
-const NEWS_API_KEY = process.env.NEWS_API_KEY;
+// ─── Sector key type ──────────────────────────────────────────────────────
+type SectorKey = 'ai' | 'policy' | 'markets' | 'funding' | 'sustainability' | 'realestate' | 'health';
 
-const BLOCKED_SPORTS_DOMAINS = ['on3.com', 'si.com', 'espn.com', 'bleacherreport.com', 'theathletic.com', 'whatjapanthinks.com'];
-const BLOCKED_SPORTS_SOURCES = ['on3', 'espn', 'sports illustrated', 'bleacher report', 'the athletic'];
-
-const SPAM_TITLE_PATTERNS = [
-  'review:', 'scam?', 'facts uncovered', 'claims vs reality',
-  'real or fake', 'legit or scam', 'is it legit', 'unveiled', 'exposed',
-];
-
-function isBlockedSource(url: string, sourceName: string): boolean {
-  const urlLower = (url || '').toLowerCase();
-  const srcLower = (sourceName || '').toLowerCase();
-  return (
-    BLOCKED_SPORTS_DOMAINS.some(d => urlLower.includes(d)) ||
-    BLOCKED_SPORTS_SOURCES.some(s => srcLower === s)
-  );
-}
-
-function cleanSnippet(raw: string): string {
-  if (!raw) return '';
-  return raw
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/&#160;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&[a-z]{2,8};/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .substring(0, 220);
-}
-
-// ─── Sector definitions ───────────────────────────────────────────────────
-// Each sector has a targeted query, a label, and a color identity
-const SECTORS = {
-  ai: {
-    label: 'AI & Tech',
-    color: 'indigo',
-    query: '(artificial intelligence OR "machine learning" OR "AI startup" OR "tech regulation" OR "generative AI") AND (business OR startup OR entrepreneur OR market)',
-  },
-  policy: {
-    label: 'Policy',
-    color: 'amber',
-    query: '(government policy OR regulation OR "new law" OR legislation OR compliance) AND (small business OR entrepreneur OR startup OR market)',
-  },
-  markets: {
-    label: 'Market Shifts',
-    color: 'emerald',
-    query: '(market disruption OR "consumer trend" OR "industry shift" OR "market opportunity" OR "emerging market") AND business',
-  },
-  funding: {
-    label: 'Funding & Grants',
-    color: 'green',
-    query: '(startup grant OR "small business funding" OR "government grant" OR venture capital OR "angel investment" OR accelerator)',
-  },
-  sustainability: {
-    label: 'Sustainability',
-    color: 'teal',
-    query: '(green energy OR sustainability regulation OR "carbon policy" OR "clean energy" OR "net zero") AND (business OR startup OR opportunity)',
-  },
-  realestate: {
-    label: 'Real Estate',
-    color: 'orange',
-    query: '(real estate regulation OR "housing policy" OR "construction permit" OR "infrastructure spending" OR "property market") AND business',
-  },
-  health: {
-    label: 'Health & Wellness',
-    color: 'pink',
-    query: '(health regulation OR "telehealth" OR "wellness market" OR "healthcare startup" OR "medical technology") AND (business OR opportunity)',
-  },
-} as const;
-
-export type SectorKey = keyof typeof SECTORS;
-
-// ─── Region boosting ──────────────────────────────────────────────────────
-const REGION_BOOST: Record<string, string> = {
-  caribbean: '(Jamaica OR Trinidad OR Barbados OR Guyana OR Caribbean OR CARICOM OR "West Indies")',
-  uk:        '(UK OR Britain OR "United Kingdom" OR England OR Scotland OR Wales OR HMRC OR "Companies House")',
-  africa:    '(Africa OR Nigeria OR Kenya OR Ghana OR "South Africa" OR Ethiopia OR "Sub-Saharan")',
-  latam:     '(Mexico OR Brazil OR Colombia OR Argentina OR Chile OR Peru OR "Latin America" OR LatAm OR CDMX OR "São Paulo")',
-  global:    '', // no boost — global = everything
-};
-
-// ─── Signal strength heuristic (0–5) ─────────────────────────────────────
-const HIGH_CREDIBILITY_SOURCES = [
-  'reuters', 'bloomberg', 'financial times', 'bbc', 'wall street journal',
-  'wsj', 'economist', 'ap', 'associated press', 'techcrunch', 'wired',
-  'the guardian', 'forbes', 'harvard business review', 'ft',
-];
-
-const OPPORTUNITY_KEYWORDS = [
-  'opportunity', 'startup', 'entrepreneur', 'business', 'market',
-  'launch', 'disrupt', 'revenue', 'growth', 'investment', 'billion',
-  'mandate', 'regulation', 'policy', 'grant', 'fund', 'subsidy',
-];
-
-function scoreSignal(article: {
-  title: string;
-  snippet: string;
-  source: string;
-  publishedAt: string;
-}): number {
-  let score = 0;
-
-  // Recency: up to 2 points
-  const hoursAgo = (Date.now() - new Date(article.publishedAt).getTime()) / 3600000;
-  if (hoursAgo < 6)  score += 2;
-  else if (hoursAgo < 24) score += 1.5;
-  else if (hoursAgo < 72) score += 1;
-  else score += 0.5;
-
-  // Source credibility: up to 1.5 points
-  const srcLower = article.source.toLowerCase();
-  if (HIGH_CREDIBILITY_SOURCES.some(s => srcLower.includes(s))) score += 1.5;
-  else score += 0.5;
-
-  // Opportunity keyword density: up to 1.5 points
-  const text = `${article.title} ${article.snippet}`.toLowerCase();
-  const hits = OPPORTUNITY_KEYWORDS.filter(kw => text.includes(kw)).length;
-  score += Math.min(hits * 0.3, 1.5);
-
-  return Math.min(Math.round(score), 5);
-}
+const ALL_SECTORS: SectorKey[] = ['ai', 'policy', 'markets', 'funding', 'sustainability', 'realestate', 'health'];
 
 // ─── Demo fallback signals ─────────────────────────────────────────────────
 const DEMO_SIGNALS = [
@@ -180,117 +58,40 @@ const DEMO_SIGNALS = [
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
 
-  // Parse params from client
-  const sectorsParam = searchParams.get('sectors'); // e.g. "ai,policy,markets"
-  const region = searchParams.get('region') || 'global'; // market mode id
-  const niche = searchParams.get('niche') || ''; // user's focus/niche field
-  const recency = searchParams.get('recency') || '3d'; // '24h' | '3d' | '7d'
+  const sectorsParam = searchParams.get('sectors');
+  const region = searchParams.get('region') || 'global';
+  const recency = searchParams.get('recency') || '3d';
 
-  // Determine which sectors to fetch
   const requestedSectors: SectorKey[] = sectorsParam
-    ? (sectorsParam.split(',').filter(s => s in SECTORS) as SectorKey[])
-    : (Object.keys(SECTORS) as SectorKey[]);
-
-  // No API key — return smart demo signals filtered by requested sectors
-  if (!NEWS_API_KEY) {
-    console.warn('NEWS_API_KEY missing — returning demo signals');
-    const filtered = DEMO_SIGNALS.filter(s => requestedSectors.includes(s.sector));
-    return NextResponse.json(filtered.length > 0 ? filtered : DEMO_SIGNALS);
-  }
-
-  // Build recency date param
-  const fromDate = new Date();
-  if (recency === '24h') fromDate.setHours(fromDate.getHours() - 24);
-  else if (recency === '7d') fromDate.setDate(fromDate.getDate() - 7);
-  else fromDate.setDate(fromDate.getDate() - 3); // default 3d
-  const fromStr = fromDate.toISOString().split('T')[0];
-
-  // Region boost string
-  const regionBoost = REGION_BOOST[region] || '';
-
-  // Niche boost — if user has a niche, weave it into queries
-  const nicheBoost = niche.trim() ? `OR "${niche.trim()}"` : '';
+    ? (sectorsParam.split(',').filter(s => ALL_SECTORS.includes(s as SectorKey)) as SectorKey[])
+    : ALL_SECTORS;
 
   try {
-    const results = await Promise.allSettled(
-      requestedSectors.map(async (sectorKey) => {
-        const sector = SECTORS[sectorKey];
+    const feedResult = await fetchRSSFeeds({
+      market: region,
+      sectors: requestedSectors,
+      recency,
+    });
 
-        // Build final query: sector query + region boost + niche boost
-        let q: string = sector.query;
-        if (regionBoost) q = `(${q}) AND ${regionBoost}`;
-        if (nicheBoost) q = `(${q}) ${nicheBoost}`;
-
-        const url = new URL('https://newsapi.org/v2/everything');
-        url.searchParams.set('q', q);
-        url.searchParams.set('from', fromStr);
-        url.searchParams.set('pageSize', '6');
-        url.searchParams.set('sortBy', 'publishedAt');
-        url.searchParams.set('language', 'en');
-        url.searchParams.set('apiKey', NEWS_API_KEY);
-
-        // Cache 30 mins on server — don't hammer the API
-        const res = await fetch(url.toString(), { next: { revalidate: 1800 } });
-
-        if (!res.ok) {
-          throw new Error(`NewsAPI ${res.status} for sector ${sectorKey}`);
-        }
-
-        const data = await res.json();
-        const articles = (data.articles || []) as any[];
-
-        return articles
-          .filter(a => a.title && a.title !== '[Removed]' && a.description)
-          .filter(a => !isBlockedSource(a.url || '', a.source?.name || ''))
-          .filter(a => !SPAM_TITLE_PATTERNS.some(p => (a.title as string).toLowerCase().includes(p)))
-          .map(a => ({
-            title: a.title as string,
-            source: (a.source?.name || 'Unknown') as string,
-            publishedAt: a.publishedAt as string,
-            url: a.url as string,
-            sector: sectorKey,
-            category: sector.label,
-            color: sector.color,
-            snippet: cleanSnippet(a.description || a.content || ''),
-            strength: scoreSignal({
-              title: a.title,
-              snippet: a.description || '',
-              source: a.source?.name || '',
-              publishedAt: a.publishedAt,
-            }),
-          }));
-      })
-    );
-
-    // Collect successful results
-    const allSignals = results
-      .filter(r => r.status === 'fulfilled')
-      .flatMap(r => (r as PromiseFulfilledResult<any[]>).value);
-
-    if (allSignals.length === 0) {
+    if (feedResult.items.length === 0) {
       return NextResponse.json(DEMO_SIGNALS);
     }
 
-    // Deduplicate by normalized URL — same article can appear in multiple sector queries
-    const seenUrls = new Set<string>();
-    const deduped = allSignals.filter(a => {
-      if (!a.url) return true;
-      const key = a.url.toLowerCase().split('?')[0].split('#')[0]
-        .replace(/\/$/, '').replace(/^https?:\/\//, '').replace(/^www\./, '');
-      if (seenUrls.has(key)) return false;
-      seenUrls.add(key);
-      return true;
-    });
+    // Shape items to match the FeedSignal interface expected by the client
+    const signals = feedResult.items.map(item => ({
+      title: item.title,
+      source: item.source,
+      publishedAt: item.publishedAt,
+      url: item.url,
+      sector: item.sector,
+      category: item.category,
+      color: item.color || '',
+      snippet: item.snippet,
+      strength: item.strength,
+      signalScore: item.signalScore,
+    }));
 
-    // Sort by strength desc, then recency — surface best signals first
-    const sorted = deduped
-      .sort((a, b) => {
-        if (b.strength !== a.strength) return b.strength - a.strength;
-        return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
-      })
-      .slice(0, 16); // max 16 cards
-
-    return NextResponse.json(sorted);
+    return NextResponse.json(signals);
   } catch (error) {
     console.error('Live feed error:', error);
     return NextResponse.json(DEMO_SIGNALS);

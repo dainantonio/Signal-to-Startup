@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebase-admin';
-import { fetchRSSFeeds } from '@/lib/rss-fetcher';
+import { fetchAllMarkets } from '@/lib/rss-fetcher';
 import { COUNTRY_CONTEXT } from '@/lib/rss-sources';
 
 export async function GET(request: NextRequest) {
@@ -31,8 +31,7 @@ export async function GET(request: NextRequest) {
     // STEP 2: Fetch all RSS feeds across all markets
     let allArticles: ReturnType<typeof Array.prototype.slice> = [];
     try {
-      const feedResult = await fetchRSSFeeds({
-        markets: ['global', 'caribbean', 'africa', 'uk', 'latam'],
+      const feedResult = await fetchAllMarkets({
         sectors: ['ai', 'policy', 'markets', 'funding', 'sustainability', 'realestate', 'health'],
         recency: '24h',
       });
