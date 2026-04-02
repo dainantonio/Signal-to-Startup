@@ -249,6 +249,7 @@ export default function DashboardPage() {
             signals={agentSignals}
             loading={loading}
             onView={async (signal) => {
+              console.log('[DASHBOARD] onView called for:', signal.title?.substring(0, 40));
               if (signal.analyzed && signal.opportunityId) {
                 try {
                   const oppDoc = await getDoc(doc(db, 'agent_opportunities', signal.opportunityId));
@@ -744,7 +745,7 @@ function AgentSignalsList({
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={() => onView(signal)}
+              onClick={(e) => { e.stopPropagation(); console.log('[DASHBOARD] Button clicked'); onView(signal); }}
               className="flex-1 py-2 bg-foreground text-background rounded-xl text-[10px] font-mono uppercase tracking-widest font-bold hover:bg-foreground/90 transition-all flex items-center justify-center gap-1.5"
             >
               {signal.analyzed && signal.opportunityId ? '🤖 View Opportunity' : '⚡ Analyze'}
