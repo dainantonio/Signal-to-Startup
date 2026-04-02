@@ -114,40 +114,58 @@ Be specific and actionable. Think like a lean startup founder who can launch thi
 
         let parsed: Record<string, unknown> | null = null;
 
-        // Clean the text first
+        // Aggressive cleaning before any parse attempt
         const cleanedText = rawText
           .replace(/```json/gi, '')
           .replace(/```/g, '')
+          // Replace smart quotes with straight quotes
+          .replace(/[\u2018\u2019]/g, "'")
+          .replace(/[\u201C\u201D]/g, '"')
+          // Remove control characters
+          .replace(/[\u0000-\u001F\u007F-\u009F]/g, ' ')
+          // Remove zero-width characters
+          .replace(/[\u200B-\u200D\uFEFF]/g, '')
+          // Collapse newlines and excess whitespace
+          .replace(/\n/g, ' ')
+          .replace(/\r/g, ' ')
+          .replace(/\s+/g, ' ')
           .trim();
 
         // Try 1 — direct parse
         try {
           parsed = JSON.parse(cleanedText);
           console.log('[SCOUT] Parsed via try 1');
-        } catch {}
+        } catch (e1) {
+          console.log('[SCOUT] Try 1 failed:', e1 instanceof Error ? e1.message : String(e1));
+        }
 
-        // Try 2 — find JSON object
+        // Try 2 — extract first {...} block
         if (!parsed) {
           const match = cleanedText.match(/\{[\s\S]*\}/);
           if (match) {
             try {
               parsed = JSON.parse(match[0]);
               console.log('[SCOUT] Parsed via try 2');
-            } catch {}
+            } catch (e2) {
+              console.log('[SCOUT] Try 2 failed:', e2 instanceof Error ? e2.message : String(e2));
+            }
           }
         }
 
-        // Try 3 — fix trailing commas
+        // Try 3 — fix trailing commas then parse
         if (!parsed) {
           try {
             const fixed = cleanedText.replace(/,(\s*[}\]])/g, '$1');
             parsed = JSON.parse(fixed);
             console.log('[SCOUT] Parsed via try 3');
-          } catch {}
+          } catch (e3) {
+            console.log('[SCOUT] Try 3 failed:', e3 instanceof Error ? e3.message : String(e3));
+          }
         }
 
         if (!parsed) {
-          console.error('[SCOUT] Parse failed for:', signal.title);
+          console.error('[SCOUT] All parse attempts failed for:', signal.title);
+          console.error('[SCOUT] Cleaned text sample:', cleanedText.substring(0, 300));
           continue;
         }
 
