@@ -82,61 +82,35 @@ export async function GET(request: NextRequest) {
         const marketContext = MARKET_CONTEXT[marketMode] || '';
         const countryContext = countryTag ? `TARGET COUNTRY: ${countryTag}` : '';
 
-        const prompt = `Analyze this market signal and find exactly 3 startup opportunities.
+        const prompt = `You are a startup opportunity analyst. Analyze this market signal and identify exactly 3 actionable startup opportunities for small business founders.
 
 SIGNAL: "${signal.title}: ${signal.snippet}"
 
 ${marketContext}
 ${countryContext}
 
-Return ONLY valid JSON:
-{
-  "summary": "2 sentence summary",
-  "trend": "one sentence trend",
-  "affected_groups": ["group1", "group2"],
-  "problems": ["problem1", "problem2"],
-  "opportunities": [
-    {
-      "name": "opportunity name",
-      "description": "2 sentences",
-      "target_customer": "who to sell to",
-      "why_now": "1 sentence",
-      "monetization": "how to make money",
-      "pricing_model": "specific pricing",
-      "status": "New",
-      "priority": "High",
-      "startup_cost": 500,
-      "grant_eligible": false,
-      "speed_to_launch": 8,
-      "difficulty": 4,
-      "roi_potential": 8,
-      "urgency": 7,
-      "local_fit": 7,
-      "competition_gap": 6,
-      "money_score": 75
-    }
-  ],
-  "best_idea": {
-    "name": "best opportunity name",
-    "reason": "why this is best",
-    "who_should_build": "who should do this",
-    "cost_estimate": "$500 - $1,000",
-    "speed_rating": "Fast",
-    "first_steps": ["step1", "step2", "step3"]
-  }
-}`;
+Respond with a JSON object containing these fields:
+- summary: string (2 sentences about the signal)
+- trend: string (1 sentence trend)
+- affected_groups: array of strings
+- problems: array of strings (2-3 problems this creates)
+- opportunities: array of exactly 3 objects, each with: name, description, target_customer, why_now, monetization, pricing_model, status ("New"), priority ("High"/"Medium"/"Low"), startup_cost (number in USD), grant_eligible (boolean), speed_to_launch (1-10), difficulty (1-10), roi_potential (1-10), urgency (1-10), local_fit (1-10), competition_gap (1-10), money_score (1-100)
+- best_idea: object with: name, reason, who_should_build, cost_estimate, speed_rating ("Fast"/"Medium"/"Slow"), first_steps (array of 3 strings)
+
+Be specific and actionable. Think like a lean startup founder who can launch this week.`;
 
         const response = await ai.models.generateContent({
           model: 'gemini-2.5-flash',
           contents: prompt,
           config: {
             responseMimeType: 'application/json',
-            maxOutputTokens: 1200,
+            maxOutputTokens: 4096,
           },
         });
 
         const rawText = response.text ?? '';
         console.log('[SCOUT] Raw response length:', rawText.length);
+        console.log('[SCOUT] Raw response:', rawText.substring(0, 500));
 
         let parsed: Record<string, unknown> | null = null;
 
