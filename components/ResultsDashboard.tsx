@@ -158,18 +158,50 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
 
       {/* Analysis Summary */}
       <section id="step-2" className="scroll-mt-24">
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-primary font-bold">Signal Desk · Lead Story</span>
+          <span className="text-[10px] font-mono uppercase tracking-widest text-muted">Edition: Live Analysis</span>
+        </div>
+
         {/* Trend headline */}
         <div className="bg-white border border-border/10 p-4 md:p-8 rounded-3xl shadow-sm mb-4 md:mb-6">
-          <div className="w-full">
-            <div className="flex items-center gap-2 text-primary mb-4">
-              <Sparkles className="w-4 h-4" />
-              <span className="text-xs font-mono uppercase font-bold tracking-wide">Emerging Trend Identified</span>
+          <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+            <div className="lg:col-span-8">
+              <div className="flex items-center gap-2 text-primary mb-4">
+                <Sparkles className="w-4 h-4" />
+                <span className="text-xs font-mono uppercase font-bold tracking-wide">Emerging Trend Identified</span>
+              </div>
+              <h3 className="text-base md:text-xl font-sans font-semibold leading-snug mb-3 text-foreground w-full">
+                {result.trend}
+              </h3>
+              <p className="text-sm md:text-base text-muted leading-relaxed w-full">{result.summary}</p>
             </div>
-            <h3 className="text-base md:text-xl font-sans font-semibold leading-snug mb-3 text-foreground w-full">
-              {result.trend}
-            </h3>
-            <p className="text-sm md:text-base text-muted leading-relaxed w-full">{result.summary}</p>
+
+            <div className="lg:col-span-4 border-t lg:border-t-0 lg:border-l border-border/10 pt-4 lg:pt-0 lg:pl-6">
+              <p className="text-[10px] font-mono uppercase tracking-widest text-muted mb-3">At a glance</p>
+              <ul className="space-y-2.5 text-sm text-muted">
+                <li className="flex items-start gap-2">
+                  <span className="mt-1 w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+                  {result.affected_groups.length} impacted groups detected
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="mt-1 w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+                  {result.problems.length} friction points identified
+                </li>
+                {result.problems.slice(0, 1).map((problem, i) => (
+                  <li key={i} className="flex items-start gap-2">
+                    <span className="mt-1 w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+                    {problem}
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
+        </div>
+
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-primary font-bold">Briefing Columns</span>
+          <span className="text-[10px] font-mono uppercase tracking-widest text-muted">Who + Why Now</span>
         </div>
 
         {/* Affected groups + Problems */}
@@ -205,6 +237,10 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
 
       {/* Opportunity Matrix */}
       <section id="step-3" className="scroll-mt-24">
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-primary font-bold">Opportunity Pages</span>
+          <span className="text-[10px] font-mono uppercase tracking-widest text-muted">Ranked for action</span>
+        </div>
         <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
           <span className="text-xs font-mono text-muted uppercase tracking-widest">{filteredOpportunities.length} opportunities</span>
           {/* Filters */}
