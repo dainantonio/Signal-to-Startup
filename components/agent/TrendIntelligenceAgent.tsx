@@ -169,17 +169,22 @@ export default function TrendIntelligenceAgent() {
 
   // Pick up pre-analyzed opportunity from agent (via dashboard "View Opportunity")
   React.useEffect(() => {
-    console.log('[AGENT] Mount check - agentOpportunity in sessionStorage:', !!sessionStorage.getItem('agentOpportunity'));
+    console.log('[AGENT] Mount useEffect fired');
+    const stored = sessionStorage.getItem('agentOpportunity');
+    console.log('[AGENT] sessionStorage check:', stored ? 'FOUND' : 'NOT FOUND');
+    if (!stored) return;
     try {
-      const raw = sessionStorage.getItem('agentOpportunity');
-      if (!raw) return;
       sessionStorage.removeItem('agentOpportunity');
-      const result = JSON.parse(raw);
+      const result = JSON.parse(stored);
+      console.log('[AGENT] Parsed result keys:', Object.keys(result));
       setTimeout(() => {
         analysis.setResult(result);
         setIsAgentResult(true);
+        console.log('[AGENT] Results loaded from agent');
       }, 300);
-    } catch {}
+    } catch (e) {
+      console.error('[AGENT] Parse/set error:', e);
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
