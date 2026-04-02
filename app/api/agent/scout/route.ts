@@ -82,29 +82,28 @@ export async function GET(request: NextRequest) {
         const marketContext = MARKET_CONTEXT[marketMode] || '';
         const countryContext = countryTag ? `TARGET COUNTRY: ${countryTag}` : '';
 
-        const prompt = `You are a startup opportunity analyst. Analyze this market signal and identify exactly 3 actionable startup opportunities for small business founders.
+        const prompt = `You are a startup opportunity analyst. Analyze this market signal and return a JSON object. Keep ALL string values under 100 characters. Be extremely concise.
 
 SIGNAL: "${signal.title}: ${signal.snippet}"
 
 ${marketContext}
 ${countryContext}
 
-Respond with a JSON object containing these fields:
-- summary: string (2 sentences about the signal)
-- trend: string (1 sentence trend)
-- affected_groups: array of strings
-- problems: array of strings (2-3 problems this creates)
-- opportunities: array of exactly 3 objects, each with: name, description, target_customer, why_now, monetization, pricing_model, status ("New"), priority ("High"/"Medium"/"Low"), startup_cost (number in USD), grant_eligible (boolean), speed_to_launch (1-10), difficulty (1-10), roi_potential (1-10), urgency (1-10), local_fit (1-10), competition_gap (1-10), money_score (1-100)
-- best_idea: object with: name, reason, who_should_build, cost_estimate, speed_rating ("Fast"/"Medium"/"Slow"), first_steps (array of 3 strings)
-
-Be specific and actionable. Think like a lean startup founder who can launch this week.`;
+Return a JSON object with exactly these fields and strict length limits:
+- summary: max 100 chars
+- trend: max 80 chars
+- affected_groups: max 3 items, each max 30 chars
+- problems: max 2 items, each max 60 chars
+- opportunities: exactly 3 items, each with: name (max 40 chars), description (max 100 chars), target_customer (max 50 chars), why_now (max 60 chars), monetization (max 50 chars), pricing_model (max 40 chars), status ("New"), priority ("High" or "Medium" or "Low"), startup_cost (number), grant_eligible (boolean), speed_to_launch (1-10), difficulty (1-10), roi_potential (1-10), urgency (1-10), local_fit (1-10), competition_gap (1-10), money_score (0-100)
+- best_idea: name (max 40 chars), reason (max 80 chars), who_should_build (max 60 chars), cost_estimate (max 20 chars), speed_rating ("Fast" or "Medium" or "Slow"), first_steps (exactly 3 items each max 60 chars)`;
 
         const response = await ai.models.generateContent({
           model: 'gemini-2.5-flash',
           contents: prompt,
           config: {
             responseMimeType: 'application/json',
-            maxOutputTokens: 4096,
+            maxOutputTokens: 8192,
+            temperature: 0,
           },
         });
 
