@@ -96,7 +96,7 @@ export const AnalysisResultModal: React.FC<AnalysisResultModalProps> = ({
                           Emerging Trend
                         </h4>
                       </div>
-                      <h5 className="text-base md:text-xl font-serif font-bold text-gray-900 mb-3 md:mb-4 leading-tight break-words">
+                      <h5 className="text-base md:text-lg font-semibold text-gray-900 mb-3 md:mb-4 leading-snug break-words">
                         {result.trend}
                       </h5>
                       <p className="text-sm md:text-base text-gray-700 leading-relaxed break-words">

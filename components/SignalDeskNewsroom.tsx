@@ -518,9 +518,8 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
                         filter: isOtherAnalyzing ? 'blur(1px)' : 'blur(0px)',
                       }}
                       transition={{ duration: 0.2 }}
-                      className={`relative bg-white border rounded-2xl flex flex-col overflow-hidden border-l-4 ${
-                        cfg.borderColor
-                      } ${isOtherAnalyzing ? 'pointer-events-none' : ''} ${
+                      className={`relative bg-white border border-gray-200 rounded-2xl flex flex-col overflow-hidden ${
+                        isOtherAnalyzing ? 'pointer-events-none' : ''} ${
                         isAnalyzing ? 'ring-2 ring-black shadow-xl' : 'shadow-sm hover:shadow-md'
                       } transition-all`}
                     >

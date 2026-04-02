@@ -2,6 +2,35 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const NEWS_API_KEY = process.env.NEWS_API_KEY;
 
+const BLOCKED_SPORTS_DOMAINS = ['on3.com', 'si.com', 'espn.com', 'bleacherreport.com', 'theathletic.com'];
+const BLOCKED_SPORTS_SOURCES = ['on3', 'espn', 'sports illustrated', 'bleacher report', 'the athletic'];
+
+function isBlockedSource(url: string, sourceName: string): boolean {
+  const urlLower = (url || '').toLowerCase();
+  const srcLower = (sourceName || '').toLowerCase();
+  return (
+    BLOCKED_SPORTS_DOMAINS.some(d => urlLower.includes(d)) ||
+    BLOCKED_SPORTS_SOURCES.some(s => srcLower === s)
+  );
+}
+
+function cleanSnippet(raw: string): string {
+  if (!raw) return '';
+  return raw
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&#160;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&[a-z]{2,8};/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .substring(0, 220);
+}
+
 // ─── Sector definitions ───────────────────────────────────────────────────
 // Each sector has a targeted query, a label, and a color identity
 const SECTORS = {
@@ -207,6 +236,7 @@ export async function GET(req: NextRequest) {
 
         return articles
           .filter(a => a.title && a.title !== '[Removed]' && a.description)
+          .filter(a => !isBlockedSource(a.url || '', a.source?.name || ''))
           .map(a => ({
             title: a.title as string,
             source: (a.source?.name || 'Unknown') as string,
@@ -215,7 +245,7 @@ export async function GET(req: NextRequest) {
             sector: sectorKey,
             category: sector.label,
             color: sector.color,
-            snippet: (a.description || a.content || '') as string,
+            snippet: cleanSnippet(a.description || a.content || ''),
             strength: scoreSignal({
               title: a.title,
               snippet: a.description || '',
