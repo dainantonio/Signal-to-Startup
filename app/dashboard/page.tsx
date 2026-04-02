@@ -254,8 +254,10 @@ export default function DashboardPage() {
                   const oppDoc = await getDoc(doc(db, 'agent_opportunities', signal.opportunityId));
                   if (oppDoc.exists()) {
                     const data = oppDoc.data();
+                    console.log('[DASHBOARD] Storing agentOpportunity in sessionStorage');
                     sessionStorage.setItem('agentOpportunity', JSON.stringify(data.result));
-                    router.push('/');
+                    console.log('[DASHBOARD] Set in sessionStorage:', !!sessionStorage.getItem('agentOpportunity'));
+                    window.location.href = '/';
                     return;
                   }
                 } catch (err) {
@@ -271,7 +273,7 @@ export default function DashboardPage() {
                   source: signal.source,
                 }));
               } catch {}
-              router.push('/');
+              window.location.href = '/';
             }}
             onDismiss={async (id) => {
               try {

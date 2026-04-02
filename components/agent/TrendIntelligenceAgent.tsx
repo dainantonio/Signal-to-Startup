@@ -169,6 +169,7 @@ export default function TrendIntelligenceAgent() {
 
   // Pick up pre-analyzed opportunity from agent (via dashboard "View Opportunity")
   React.useEffect(() => {
+    console.log('[AGENT] Mount check - agentOpportunity in sessionStorage:', !!sessionStorage.getItem('agentOpportunity'));
     try {
       const raw = sessionStorage.getItem('agentOpportunity');
       if (!raw) return;
