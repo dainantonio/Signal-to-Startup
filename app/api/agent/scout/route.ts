@@ -114,7 +114,7 @@ Return a JSON object with exactly these fields and strict length limits:
         let parsed: Record<string, unknown> | null = null;
 
         // Aggressive cleaning before any parse attempt
-        const cleanedText = rawText
+        let cleanedText = rawText
           .replace(/```json/gi, '')
           .replace(/```/g, '')
           // Replace smart quotes with straight quotes
@@ -128,6 +128,10 @@ Return a JSON object with exactly these fields and strict length limits:
           .replace(/\n/g, ' ')
           .replace(/\r/g, ' ')
           .replace(/\s+/g, ' ')
+          // Problematic HTML/XML characters
+          .replace(/&/g, 'and')
+          .replace(/</g, '')
+          .replace(/>/g, '')
           .trim();
 
         // Try 1 — direct parse
@@ -159,6 +163,25 @@ Return a JSON object with exactly these fields and strict length limits:
             console.log('[SCOUT] Parsed via try 3');
           } catch (e3) {
             console.log('[SCOUT] Try 3 failed:', e3 instanceof Error ? e3.message : String(e3));
+          }
+        }
+
+        // Try 4 — repair truncated JSON by closing open braces
+        if (!parsed && !cleanedText.trim().endsWith('}')) {
+          console.log('[SCOUT] Response truncated — attempting to close JSON');
+          const lastBrace = cleanedText.lastIndexOf('}');
+          if (lastBrace > 0) {
+            const truncated = cleanedText.substring(0, lastBrace + 1);
+            const opens = (truncated.match(/\{/g) || []).length;
+            const closes = (truncated.match(/\}/g) || []).length;
+            const needed = opens - closes;
+            const repaired = truncated + '}'.repeat(Math.max(0, needed));
+            try {
+              parsed = JSON.parse(repaired);
+              console.log('[SCOUT] Repaired truncated JSON');
+            } catch {
+              console.log('[SCOUT] Repair failed');
+            }
           }
         }
 
