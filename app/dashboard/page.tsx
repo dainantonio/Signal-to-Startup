@@ -104,13 +104,16 @@ export default function DashboardPage() {
   }, []);
 
   const loadSavedOpportunities = async (uid: string) => {
+    console.log('[DASHBOARD] Loading data for user:', uid);
     try {
+      // agent_signals: no orderBy to avoid composite index requirement — sort in code
       const [oppSnap, valSnap, artSnap, signalsSnap] = await Promise.all([
         getDocs(query(collection(db, 'saved_opportunities'), where('userId', '==', uid), orderBy('savedAt', 'desc'))),
         getDocs(query(collection(db, 'idea_validations'), where('userId', '==', uid), orderBy('createdAt', 'desc'))),
         getDocs(query(collection(db, 'saved_articles'), where('userId', '==', uid), orderBy('savedAt', 'desc'))),
-        getDocs(query(collection(db, 'agent_signals'), where('userId', '==', uid), orderBy('createdAt', 'desc'), limit(20))),
+        getDocs(query(collection(db, 'agent_signals'), where('userId', '==', uid))),
       ]);
+      console.log('[DASHBOARD] Agent signals found:', signalsSnap.docs.length);
       setSavedOpportunities(
         oppSnap.docs.map(d => ({ id: d.id, ...d.data() })) as (SavedOpportunity & { id: string })[]
       );
@@ -120,11 +123,14 @@ export default function DashboardPage() {
       setSavedArticles(
         artSnap.docs.map(d => ({ id: d.id, ...d.data() })) as SavedArticle[]
       );
-      setAgentSignals(
-        signalsSnap.docs.map(d => ({ id: d.id, ...d.data() })) as AgentSignal[]
-      );
+      // Sort by createdAt descending in code, cap at 20
+      const signals = signalsSnap.docs
+        .map(d => ({ id: d.id, ...d.data() }) as AgentSignal)
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, 20);
+      setAgentSignals(signals);
     } catch (err) {
-      console.error('Failed to load pipeline:', err);
+      console.error('[DASHBOARD] Failed to load pipeline:', err);
     } finally {
       setLoading(false);
     }
@@ -664,7 +670,7 @@ function AgentSignalsList({
         <div className="text-6xl mb-6">🤖</div>
         <p className="text-lg font-serif italic font-bold mb-2">No agent signals yet</p>
         <p className="text-sm text-muted font-medium mb-2">
-          The Signal Monitor runs every 2 hours and discovers opportunities matched to your profile.
+          The Signal Monitor runs daily and discovers opportunities matched to your profile.
         </p>
         <p className="text-xs text-muted">Make sure you have completed onboarding so the agent knows your preferences.</p>
       </div>
