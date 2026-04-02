@@ -541,6 +541,18 @@ Return ONLY this JSON:
         TONE: Clear, sharp, execution-focused. Think: "What can someone start THIS WEEK?"
 
         ${buildCountryPrompt(countryTags)}
+
+        ${trimmedForGemini.toLowerCase().includes('ai') || trimmedForGemini.toLowerCase().includes('artificial intelligence') ? `
+        For this AI-focused signal, explicitly assess:
+        1. Is this a PROVEN trend with documented ROI and real adoption data? (AI Truth)
+        2. Or is this an EARLY SIGNAL that needs validation? (Emerging)
+        3. Or is this primarily HYPE with little real-world traction? (Fad)
+
+        Add to the JSON response:
+        'ai_verdict': 'Truth' | 'Emerging' | 'Fad',
+        'ai_evidence': 'One sentence explaining the verdict',
+        'real_world_roi': 'Any documented ROI examples or null'
+        ` : ''}
       `;
 
       const responseStream = await genAI.models.generateContentStream({
