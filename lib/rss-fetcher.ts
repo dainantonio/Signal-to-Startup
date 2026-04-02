@@ -92,22 +92,22 @@ const TIER1_SOURCES = ['Reuters', 'TechCrunch', 'CNBC', 'BBC', 'Guardian', 'Wire
 const TIER2_SOURCES = ['Fast Company', 'Inc Magazine', 'Entrepreneur', 'VentureBeat', 'The Verge'];
 
 function calculateSignalScore(item: RSSFeedItem): number {
-  let score = 50;
+  let score = 40;
 
   const hoursAgo = (Date.now() - new Date(item.publishedAt).getTime()) / 3_600_000;
-  if (hoursAgo < 2) score += 20;
-  else if (hoursAgo < 6) score += 15;
-  else if (hoursAgo < 24) score += 8;
+  if (hoursAgo < 2) score += 15;
+  else if (hoursAgo < 6) score += 10;
+  else if (hoursAgo < 24) score += 5;
 
-  if (TIER1_SOURCES.some(s => item.source.includes(s))) score += 15;
-  else if (TIER2_SOURCES.some(s => item.source.includes(s))) score += 8;
+  if (TIER1_SOURCES.some(s => item.source.includes(s))) score += 10;
+  else if (TIER2_SOURCES.some(s => item.source.includes(s))) score += 5;
 
   const text = `${item.title} ${item.snippet}`.toLowerCase();
   const hits = OPPORTUNITY_KEYWORDS.filter(k => text.includes(k)).length;
-  score += Math.min(hits * 5, 15);
+  score += Math.min(hits * 3, 10);
 
-  if (item.sector === 'funding') score += 10;
-  if (item.sector === 'policy') score += 8;
+  if (item.sector === 'funding') score += 8;
+  if (item.sector === 'policy') score += 5;
 
   return Math.min(Math.max(score, 10), 99);
 }
@@ -161,7 +161,11 @@ function deduplicateArticles(items: RSSFeedItem[]): { deduped: RSSFeedItem[]; re
 const NOISE_TOPICS = [
   'dating', 'love life', 'relationship', 'celebrity', 'celebrities',
   'fashion', 'beauty tips', 'gossip', 'entertainment news',
-  'sports scores', 'music review', 'movie review', 'film review',
+  'sports scores', 'sports highlights', 'nfl', 'nba', 'mlb', 'nhl', 'fifa',
+  'college football', 'college basketball', 'recruiting class', 'transfer portal',
+  'on3', 'rivals.com', 'scout.com', '247sports',
+  'touchdown', 'quarterback', 'slam dunk', 'home run', 'hat trick',
+  'music review', 'movie review', 'film review',
   'recipe', 'horoscope', 'zodiac', 'viral', 'meme',
   'influencer', 'reality tv', 'red carpet', 'award show',
 ];

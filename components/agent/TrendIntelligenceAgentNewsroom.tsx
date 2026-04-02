@@ -222,9 +222,6 @@ export default function TrendIntelligenceAgentNewsroom() {
           <div className="flex flex-col lg:flex-row items-start lg:items-end justify-between gap-4 lg:gap-6">
             <div className="w-full lg:w-auto">
               <Logo size="lg" showWordmark showSubbrand theme="light" />
-              <p className="text-sm text-gray-600 mt-3 max-w-2xl">
-                Turn news, policy, and market signals into actionable business opportunities
-              </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-2 md:gap-3 w-full lg:w-auto">
@@ -303,18 +300,6 @@ export default function TrendIntelligenceAgentNewsroom() {
         {/* Workflow Stepper - Always visible when result exists */}
         {analysis.result && <WorkflowStepper currentStep={currentStep} />}
 
-        {/* Back to Feed Button */}
-        {analysis.result && (
-          <div className="mb-8">
-            <button
-              onClick={handleBackToFeed}
-              className="flex items-center gap-2 px-5 py-3 bg-white border border-gray-200 hover:border-gray-300 rounded-xl shadow-sm text-sm font-medium text-gray-700 hover:text-black transition-all"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back to Signal Desk
-            </button>
-          </div>
-        )}
 
         {/* Signal Desk */}
         <SignalDeskNewsroom

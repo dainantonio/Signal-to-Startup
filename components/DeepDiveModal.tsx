@@ -471,10 +471,6 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
                 >
                   {activeDeepDiveTab === 'plan' && (
                     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                      <div className="flex items-center gap-3 text-primary bg-primary/5 px-4 py-2 rounded-full w-fit">
-                        <FileText className="w-4 h-4" />
-                        <span className="text-[10px] font-mono uppercase font-bold tracking-widest">Strategic Business Plan</span>
-                      </div>
                       <div className="prose prose-slate prose-headings:font-sans prose-headings:font-semibold prose-headings:not-italic prose-sm prose-p:leading-relaxed prose-p:text-gray-600 max-w-none">
                         <Markdown>{deepDiveResult.business_plan}</Markdown>
                       </div>

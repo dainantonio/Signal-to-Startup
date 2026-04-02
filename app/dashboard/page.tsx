@@ -215,7 +215,7 @@ export default function DashboardPage() {
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 text-[10px] font-mono uppercase font-bold text-muted hover:text-foreground transition-colors group">
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-            Back to Analysis
+            ← Back
           </Link>
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
@@ -328,51 +328,13 @@ export default function DashboardPage() {
           />
         ) : (<>
 
-        {/* Metrics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white border border-border/10 p-8 rounded-3xl shadow-sm hover:shadow-md transition-all duration-300"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-[10px] font-mono uppercase font-bold tracking-widest text-muted">Total Saved</span>
-              <div className="w-8 h-8 bg-gray-50 rounded-lg flex items-center justify-center text-muted">
-                <Bookmark className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="text-4xl font-bold font-serif italic">{totalSaved}</div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="bg-white border border-border/10 p-8 rounded-3xl shadow-sm hover:shadow-md transition-all duration-300"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-[10px] font-mono uppercase font-bold tracking-widest text-muted">In Progress</span>
-              <div className="w-8 h-8 bg-primary/5 rounded-lg flex items-center justify-center text-primary">
-                <Clock className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="text-4xl font-bold font-serif italic text-primary">{inProgress}</div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="bg-white border border-border/10 p-8 rounded-3xl shadow-sm hover:shadow-md transition-all duration-300"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-[10px] font-mono uppercase font-bold tracking-widest text-muted">Launched</span>
-              <div className="w-8 h-8 bg-secondary/5 rounded-lg flex items-center justify-center text-secondary">
-                <CheckCircle className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="text-4xl font-bold font-serif italic text-secondary">{launched}</div>
-          </motion.div>
+        {/* Metrics Summary Bar */}
+        <div className="flex items-center gap-6 mb-10 px-1 text-sm text-muted">
+          <span><span className="font-bold text-foreground">{totalSaved}</span> saved</span>
+          <span className="text-border/40">·</span>
+          <span><span className="font-bold text-primary">{inProgress}</span> in progress</span>
+          <span className="text-border/40">·</span>
+          <span><span className="font-bold text-secondary">{launched}</span> launched</span>
         </div>
 
         {/* Loading State */}
@@ -386,7 +348,7 @@ export default function DashboardPage() {
             <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6 text-muted/20">
               <Bookmark className="w-10 h-10" />
             </div>
-            <p className="text-lg font-serif italic font-bold mb-2">No saved opportunities yet</p>
+            <p className="text-lg font-sans font-bold mb-2">No saved opportunities yet</p>
             <p className="text-sm text-muted font-medium mb-8">Start by analyzing a signal and saving an opportunity to your pipeline.</p>
             <Link href="/" className="inline-flex items-center gap-2 bg-foreground text-background px-8 py-4 rounded-2xl text-[11px] font-mono uppercase tracking-widest font-bold hover:bg-foreground/90 transition-all shadow-xl shadow-foreground/10">
               Analyze New Signal <ArrowRight className="w-4 h-4" />
@@ -450,7 +412,7 @@ function ValidationsList({ validations, loading }: { validations: IdeaValidation
     return (
       <div className="text-center py-32 bg-white border border-dashed border-border/20 rounded-[3rem]">
         <div className="text-6xl mb-6">💡</div>
-        <p className="text-lg font-serif italic font-bold mb-2">No validations yet</p>
+        <p className="text-lg font-sans font-bold mb-2">No validations yet</p>
         <p className="text-sm text-muted font-medium mb-8">
           Head to the Validate tab to test your business ideas against live market signals.
         </p>
@@ -685,7 +647,7 @@ function AgentSignalsList({
     return (
       <div className="text-center py-32 bg-white border border-dashed border-border/20 rounded-[3rem]">
         <div className="text-6xl mb-6">🤖</div>
-        <p className="text-lg font-serif italic font-bold mb-2">No agent signals yet</p>
+        <p className="text-lg font-sans font-bold mb-2">No agent signals yet</p>
         <p className="text-sm text-muted font-medium mb-2">
           The Signal Monitor runs daily and discovers opportunities matched to your profile.
         </p>
@@ -810,7 +772,7 @@ function SavedArticlesList({
     return (
       <div className="text-center py-32 bg-white border border-dashed border-border/20 rounded-[3rem]">
         <div className="text-6xl mb-6">🔖</div>
-        <p className="text-lg font-serif italic font-bold mb-2">No saved articles yet</p>
+        <p className="text-lg font-sans font-bold mb-2">No saved articles yet</p>
         <p className="text-sm text-muted font-medium mb-8">
           On Android, tap Share → Signal to Startup from any article to save it here.
         </p>

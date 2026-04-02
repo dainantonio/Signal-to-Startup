@@ -9,8 +9,7 @@ import {
   FileUp,
   CheckCircle2,
   AlertCircle,
-  ChevronDown,
-  ChevronUp,
+
   Edit3,
   Zap,
   RefreshCw,
@@ -74,7 +73,7 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
   showQuickEdit = false,
 }) => {
   const [inputMode, setInputMode] = useState<'paste' | 'feed'>('paste');
-  const [showSettings, setShowSettings] = useState(false);
+
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pdfStatus, setPdfStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -303,7 +302,7 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
           <div className="border-b border-gray-100 px-8 py-5">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-2xl font-serif font-bold text-gray-900 mb-1">Signal Desk</h2>
+                <h2 className="text-2xl font-sans font-bold text-gray-900 mb-1">Signal Desk</h2>
                 <p className="text-sm text-gray-500">Paste your market signal to extract opportunities</p>
               </div>
               <Sparkles className="w-6 h-6 text-gray-300" />
@@ -408,53 +407,35 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
               </button>
             )}
 
-            <div className="border-t border-gray-100 pt-6">
-              <button
-                type="button"
-                onClick={() => setShowSettings(!showSettings)}
-                className="w-full flex items-center justify-between text-sm font-medium text-gray-600 hover:text-black transition-colors"
-              >
-                <span>Desk Settings</span>
-                {showSettings ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-              </button>
+            <div className="border-t border-gray-100 pt-6 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-2 uppercase tracking-wide">
+                    Location
+                  </label>
+                  <input
+                    type="text"
+                    value={location}
+                    onChange={e => setLocation(e.target.value)}
+                    placeholder="e.g. Kingston, New York"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-black focus:bg-white outline-none transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-2 uppercase tracking-wide">
+                    Focus / Niche
+                  </label>
+                  <input
+                    type="text"
+                    value={focus}
+                    onChange={e => setFocus(e.target.value)}
+                    placeholder="e.g. SaaS, Healthcare"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-black focus:bg-white outline-none transition-all"
+                  />
+                </div>
+              </div>
 
-              {showSettings && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  className="mt-6 space-y-6"
-                >
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-2 uppercase tracking-wide">
-                        Location
-                      </label>
-                      <input
-                        type="text"
-                        value={location}
-                        onChange={e => setLocation(e.target.value)}
-                        placeholder="e.g. Kingston, New York"
-                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-black focus:bg-white outline-none transition-all"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-2 uppercase tracking-wide">
-                        Focus / Niche
-                      </label>
-                      <input
-                        type="text"
-                        value={focus}
-                        onChange={e => setFocus(e.target.value)}
-                        placeholder="e.g. SaaS, Healthcare"
-                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-black focus:bg-white outline-none transition-all"
-                      />
-                    </div>
-                  </div>
-
-                  <MarketModeSelector selectedMode={selectedMode} onModeChange={setSelectedMode} />
-                </motion.div>
-              )}
+              <MarketModeSelector selectedMode={selectedMode} onModeChange={setSelectedMode} />
             </div>
           </div>
         </div>
