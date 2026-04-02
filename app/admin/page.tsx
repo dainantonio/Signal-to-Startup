@@ -16,10 +16,11 @@ export default function AdminPage() {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<Record<string, number> | null>(null);
-  const [waitlist, setWaitlist] = useState<Record<string, unknown>[]>([]);
-  const [recentSignals, setRecentSignals] = useState<Record<string, unknown>[]>([]);
-  const [recentOpportunities, setRecentOpportunities] = useState<Record<string, unknown>[]>([]);
-  const [usageLogs, setUsageLogs] = useState<Record<string, unknown>[]>([]);
+  const [waitlist, setWaitlist] = useState<Array<{ id: string; email: string; joinedAt?: string; source?: string }>>([]);
+  const [recentSignals, setRecentSignals] = useState<Array<{ id: string; title?: string; userScore?: number; analyzed?: boolean; createdAt?: string }>>([]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [recentOpportunities, setRecentOpportunities] = useState<Array<{ id: string; result?: any; signalTitle?: string; marketMode?: string; countryTag?: string; createdAt?: string }>>([]);
+  const [usageLogs, setUsageLogs] = useState<Array<{ id: string; type: string; userId: string; marketMode?: string; countryTag?: string; timestamp?: string }>>([]);
   const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
@@ -40,25 +41,34 @@ export default function AdminPage() {
       const waitlistSnap = await getDocs(
         query(collection(db, 'waitlist'), orderBy('joinedAt', 'desc'))
       );
-      const waitlistData = waitlistSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const waitlistData = waitlistSnap.docs.map(d => ({ id: d.id, ...d.data() })) as Array<{
+        id: string; email: string; joinedAt?: string; source?: string;
+      }>;
       setWaitlist(waitlistData);
 
       const usageSnap = await getDocs(
         query(collection(db, 'usage_logs'), orderBy('timestamp', 'desc'), limit(50))
       );
-      const usageData = usageSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const usageData = usageSnap.docs.map(d => ({ id: d.id, ...d.data() })) as Array<{
+        id: string; type: string; userId: string; marketMode?: string; countryTag?: string; timestamp?: string;
+      }>;
       setUsageLogs(usageData);
 
       const signalsSnap = await getDocs(
         query(collection(db, 'agent_signals'), orderBy('createdAt', 'desc'), limit(20))
       );
-      const signalsData = signalsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const signalsData = signalsSnap.docs.map(d => ({ id: d.id, ...d.data() })) as Array<{
+        id: string; title?: string; userScore?: number; analyzed?: boolean; createdAt?: string; opportunityId?: string;
+      }>;
       setRecentSignals(signalsData);
 
       const oppsSnap = await getDocs(
         query(collection(db, 'agent_opportunities'), orderBy('createdAt', 'desc'), limit(20))
       );
-      const oppsData = oppsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const oppsData = oppsSnap.docs.map(d => ({ id: d.id, ...d.data() })) as Array<{
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        id: string; result?: any; signalTitle?: string; marketMode?: string; countryTag?: string; createdAt?: string;
+      }>;
       setRecentOpportunities(oppsData);
 
       setStats({
