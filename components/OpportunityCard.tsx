@@ -93,7 +93,7 @@ export const OpportunityCard: React.FC<OpportunityCardProps> = ({
           <div className="min-w-0">
             <p className="text-xs text-gray-500 mb-1 font-medium truncate">Cost</p>
             <p className="text-sm md:text-base font-bold text-gray-900 truncate">
-              ${(opp.startup_cost / 1000).toFixed(0)}k
+              ${opp.startup_cost.toLocaleString()}
             </p>
           </div>
           <div className="min-w-0">

@@ -13,6 +13,7 @@ interface AnalysisResultModalProps {
   result: AnalysisResult | null;
   generateDeepDive: (opp: Opportunity) => void;
   sourceTitle?: string;
+  isAgentResult?: boolean;
 }
 
 export const AnalysisResultModal: React.FC<AnalysisResultModalProps> = ({
@@ -21,6 +22,7 @@ export const AnalysisResultModal: React.FC<AnalysisResultModalProps> = ({
   result,
   generateDeepDive,
   sourceTitle,
+  isAgentResult = false,
 }) => {
   if (!result) return null;
 
@@ -68,6 +70,15 @@ export const AnalysisResultModal: React.FC<AnalysisResultModalProps> = ({
 
             {/* Scrollable Content */}
             <div className="flex-1 overflow-y-auto overscroll-contain">
+              {isAgentResult && (
+                <div className="flex items-center gap-2 px-4 py-2.5 bg-purple-50 border-b border-purple-200">
+                  <span className="text-lg">🤖</span>
+                  <div>
+                    <p className="text-xs font-semibold text-purple-800">Discovered by your agent</p>
+                    <p className="text-xs text-purple-600">Pre-analyzed while you were away</p>
+                  </div>
+                </div>
+              )}
               <div className="p-4 md:p-8 space-y-6 md:space-y-12">
                 {/* Briefing Columns - Mobile Stacked */}
                 <section>

@@ -44,6 +44,7 @@ export default function TrendIntelligenceAgentNewsroom() {
   const [currentStep, setCurrentStep] = useState(1);
   const [showAnalysisModal, setShowAnalysisModal] = useState(false);
   const [modalSourceTitle, setModalSourceTitle] = useState<string>('');
+  const [isAgentModal, setIsAgentModal] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(() => {
     try {
       return localStorage.getItem('onboardingComplete') !== 'true';
@@ -122,6 +123,7 @@ export default function TrendIntelligenceAgentNewsroom() {
           const data = oppDoc.data();
           analysis.setResult(data.result);
           setModalSourceTitle(signalTitle || data.signalTitle || 'Agent discovered signal');
+          setIsAgentModal(true);
           setShowAnalysisModal(true);
         } else {
           console.error('[AGENT] Opportunity not found:', oppId);
@@ -138,6 +140,7 @@ export default function TrendIntelligenceAgentNewsroom() {
   const prevResultRef = React.useRef(analysis.result);
   useEffect(() => {
     if (!prevResultRef.current && analysis.result && modalSourceTitle) {
+      setIsAgentModal(false);
       setShowAnalysisModal(true);
     }
     prevResultRef.current = analysis.result;
@@ -349,10 +352,12 @@ export default function TrendIntelligenceAgentNewsroom() {
           onClose={() => {
             setShowAnalysisModal(false);
             setModalSourceTitle('');
+            setIsAgentModal(false);
           }}
           result={analysis.result}
           generateDeepDive={analysis.generateDeepDive}
           sourceTitle={modalSourceTitle}
+          isAgentResult={isAgentModal}
         />
 
         {/* Daily Brief - Controlled from header */}

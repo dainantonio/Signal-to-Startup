@@ -134,9 +134,12 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
     >
       {/* Agent-discovered badge */}
       {isAgentResult && (
-        <div className="flex items-center gap-3 px-5 py-3 bg-black text-white rounded-2xl text-sm font-medium">
-          <span className="w-2 h-2 bg-white rounded-full animate-pulse flex-shrink-0" />
-          🤖 Discovered by your agent while you were away
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-purple-50 rounded-xl border border-purple-200">
+          <span className="text-lg">🤖</span>
+          <div>
+            <p className="text-xs font-semibold text-purple-800">Discovered by your agent</p>
+            <p className="text-xs text-purple-600">Pre-analyzed while you were away</p>
+          </div>
         </div>
       )}
 
