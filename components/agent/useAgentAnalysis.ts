@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { GoogleGenAI, Type } from '@google/genai';
-import { Opportunity, AnalysisResult, DeepDiveResult, MarketMode } from '../types';
+import { Opportunity, AnalysisResult, DeepDiveResult, MarketMode, FeedSignal } from '../types';
 import { marketModeConfigs } from '../MarketModeSelector';
 import { COUNTRY_CONTEXT } from '../../lib/rss-sources';
 import {
@@ -248,6 +248,7 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
   const [selectedOpportunity, setSelectedOpportunity] = useState<Opportunity | null>(null);
   const [deepDiveResult, setDeepDiveResult] = useState<DeepDiveResult | null>(null);
   const [deepDiveLoading, setDeepDiveLoading] = useState(false);
+  const [isAgentResult, setIsAgentResult] = useState(false);
   const [activeDeepDiveTab, setActiveDeepDiveTab] = useState<'plan' | 'costs' | 'grants' | 'checklist' | 'investors'>('plan');
   const deepDiveCache = useRef<Map<string, DeepDiveResult>>(new Map());
   // Ref-based cancellation flag — avoids async state race after modal close

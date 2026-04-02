@@ -28,7 +28,7 @@ interface OnboardingProps {
 
 const ALL_SECTORS: SectorKey[] = [
   'ai', 'policy', 'markets', 'funding',
-  'sustainability', 'realestate', 'health',
+  'sustainability', 'realestate', 'health', 'ai_intelligence'
 ];
 
 const SECTOR_LABELS: Record<SectorKey, string> = {
@@ -39,6 +39,7 @@ const SECTOR_LABELS: Record<SectorKey, string> = {
   sustainability: 'Sustainability',
   realestate: 'Real Estate',
   health: 'Health',
+  ai_intelligence: 'AI Intelligence',
 };
 
 const SECTOR_ICONS: Record<SectorKey, string> = {
@@ -49,6 +50,7 @@ const SECTOR_ICONS: Record<SectorKey, string> = {
   sustainability: '🌱',
   realestate: '🏠',
   health: '❤️',
+  ai_intelligence: '🧠',
 };
 
 const BUSINESS_TYPES = [

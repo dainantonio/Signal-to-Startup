@@ -792,7 +792,8 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                           {/* Title */}
                           <p className="text-sm font-semibold leading-snug line-clamp-2">{sig.title}</p>
                           {/* Snippet */}
-                          <p className="text-xs text-muted leading-relaxed line-clamp-2 flex-1">{sig.snippet}<                          {/* Analyze button */}
+                          <p className="text-xs text-muted leading-relaxed line-clamp-2 flex-1">{sig.snippet}</p>
+                          {/* Analyze button */}
                           {!multiSelectMode && (
                             <button
                               type="button"
@@ -804,7 +805,9 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                               <Zap className="w-3.5 h-3.5 fill-current" />
                               Analyze signal
                             </button>
-                          )}                   )}
+                          )}
+                        </div>
+                      )}
 
                       {/* Bottom-edge progress strip */}
                       <AnimatePresence>
