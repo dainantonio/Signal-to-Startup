@@ -185,9 +185,77 @@ Return a JSON object with exactly these fields and strict length limits:
           }
         }
 
+        // Try 5 — retry with a minimal prompt
         if (!parsed) {
-          console.error('[SCOUT] All parse attempts failed for:', signal.title);
-          console.error('[SCOUT] Cleaned text sample:', cleanedText.substring(0, 300));
+          console.log('[SCOUT] Retrying with minimal prompt');
+          try {
+            const retryPrompt = `Give me 1 startup opportunity from this signal as JSON. Signal: "${signal.title}" Return only: {"name":"x","description":"x","startup_cost":500,"money_score":70,"first_step":"x"}`;
+            const retryResponse = await ai.models.generateContent({
+              model: 'gemini-2.5-flash',
+              contents: retryPrompt,
+              config: {
+                responseMimeType: 'application/json',
+                maxOutputTokens: 512,
+                temperature: 0,
+              },
+            });
+            const retryText = retryResponse.text ?? '';
+            console.log('[SCOUT] Retry response:', retryText.substring(0, 200));
+            const retryMatch = retryText.match(/\{[\s\S]*\}/);
+            if (retryMatch) {
+              const minimal = JSON.parse(retryMatch[0]);
+              parsed = {
+                summary: signal.snippet || signal.title,
+                trend: signal.title,
+                affected_groups: ['Entrepreneurs'],
+                problems: ['Market opportunity identified'],
+                opportunities: [{
+                  name: minimal.name || 'Service Opportunity',
+                  description: minimal.description || 'A business opportunity from this signal.',
+                  target_customer: 'Small business owners',
+                  why_now: 'Current market conditions.',
+                  monetization: 'Service fees',
+                  pricing_model: 'Monthly retainer',
+                  status: 'New',
+                  priority: 'Medium',
+                  startup_cost: minimal.startup_cost || 500,
+                  grant_eligible: false,
+                  speed_to_launch: 7,
+                  difficulty: 4,
+                  roi_potential: 6,
+                  urgency: 6,
+                  local_fit: 6,
+                  competition_gap: 5,
+                  money_score: minimal.money_score || 65,
+                }],
+                best_idea: {
+                  name: minimal.name || 'Service Opportunity',
+                  reason: 'Based on current market signal.',
+                  who_should_build: 'Entrepreneurs',
+                  cost_estimate: '$300 - $800',
+                  speed_rating: 'Fast',
+                  first_steps: [
+                    minimal.first_step || 'Research the local market',
+                    'Identify first 10 customers',
+                    'Launch minimum viable service',
+                  ],
+                },
+              };
+              console.log('[SCOUT] Retry parsed successfully');
+            }
+          } catch (retryError) {
+            console.log('[SCOUT] Retry failed:', String(retryError));
+          }
+        }
+
+        // FIX 1 — mark signal so it never blocks the queue again
+        if (!parsed) {
+          console.log('[SCOUT] Skipping signal after all parse attempts failed:', signal.title?.substring(0, 50));
+          await signalDoc.ref.update({
+            analyzed: true,
+            analyzedAt: new Date().toISOString(),
+            parseError: true,
+          });
           continue;
         }
 
