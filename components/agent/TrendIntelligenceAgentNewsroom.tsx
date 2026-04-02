@@ -106,6 +106,26 @@ export default function TrendIntelligenceAgentNewsroom() {
 
   const analysis = useAgentAnalysis(user, selectedMode, countryTags);
 
+  // Pick up pre-analyzed opportunity from agent (via dashboard "View Opportunity")
+  useEffect(() => {
+    if (!user) return;
+    console.log('[AGENT] Auth confirmed, checking sessionStorage');
+    const stored = sessionStorage.getItem('agentOpportunity');
+    console.log('[AGENT] sessionStorage:', stored ? 'FOUND' : 'NOT FOUND');
+    if (!stored) return;
+    try {
+      sessionStorage.removeItem('agentOpportunity');
+      const { result, signalTitle } = JSON.parse(stored);
+      analysis.setResult(result);
+      setModalSourceTitle(signalTitle || 'Agent Discovery');
+      setShowAnalysisModal(true);
+      console.log('[AGENT] Loaded agent opportunity:', signalTitle);
+    } catch (e) {
+      console.error('[AGENT] Error loading agent opportunity:', e);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
   // Auto-open modal when analysis completes from feed
   const prevResultRef = React.useRef(analysis.result);
   useEffect(() => {

@@ -256,7 +256,10 @@ export default function DashboardPage() {
                   if (oppDoc.exists()) {
                     const data = oppDoc.data();
                     console.log('[DASHBOARD] Storing agentOpportunity in sessionStorage');
-                    sessionStorage.setItem('agentOpportunity', JSON.stringify(data.result));
+                    sessionStorage.setItem('agentOpportunity', JSON.stringify({
+                      result: data.result,
+                      signalTitle: signal.title,
+                    }));
                     console.log('[DASHBOARD] Set in sessionStorage:', !!sessionStorage.getItem('agentOpportunity'));
                     window.location.href = '/';
                     return;

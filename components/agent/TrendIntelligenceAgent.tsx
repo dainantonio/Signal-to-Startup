@@ -175,7 +175,9 @@ export default function TrendIntelligenceAgent() {
     if (!stored) return;
     try {
       sessionStorage.removeItem('agentOpportunity');
-      const result = JSON.parse(stored);
+      const parsed = JSON.parse(stored);
+      // Support both { result, signalTitle } and bare result object
+      const result = parsed.result ?? parsed;
       console.log('[AGENT] Parsed result keys:', Object.keys(result));
       setTimeout(() => {
         analysis.setResult(result);
