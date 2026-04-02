@@ -248,36 +248,41 @@ export default function DashboardPage() {
           <AgentSignalsList
             signals={agentSignals}
             loading={loading}
-            onViewOpportunity={async (signal) => {
-              if (!signal.opportunityId) return;
-              try {
-                const oppDoc = await getDoc(doc(db, 'agent_opportunities', signal.opportunityId));
-                if (!oppDoc.exists()) return;
-                const data = oppDoc.data();
-                sessionStorage.setItem('agentOpportunity', JSON.stringify(data.result));
-              } catch (err) {
-                console.error('Failed to load agent opportunity:', err);
-                return;
+            onView={async (signal) => {
+              if (signal.analyzed && signal.opportunityId) {
+                try {
+                  const oppDoc = await getDoc(doc(db, 'agent_opportunities', signal.opportunityId));
+                  if (oppDoc.exists()) {
+                    const data = oppDoc.data();
+                    sessionStorage.setItem('agentOpportunity', JSON.stringify(data.result));
+                    router.push('/');
+                    return;
+                  }
+                } catch (err) {
+                  console.error('Failed to load agent opportunity:', err);
+                }
               }
-              router.push('/');
-            }}
-            onAnalyze={(signal) => {
+              // Fall back to manual analysis
               try {
                 sessionStorage.setItem('sharedArticle', JSON.stringify({
                   url: signal.url,
                   title: signal.title,
-                  text: signal.snippet,
-                  source: 'agent',
+                  text: signal.snippet || signal.title,
+                  source: signal.source,
                 }));
               } catch {}
               router.push('/');
             }}
             onDismiss={async (id) => {
               try {
-                await updateDoc(doc(db, 'agent_signals', id), { read: true });
-                setAgentSignals(prev => prev.map(s => s.id === id ? { ...s, read: true } : s));
+                await updateDoc(doc(db, 'agent_signals', id), {
+                  read: true,
+                  dismissed: true,
+                  dismissedAt: new Date().toISOString(),
+                });
+                setAgentSignals(prev => prev.filter(s => s.id !== id));
               } catch (err) {
-                console.error('Failed to dismiss signal:', err);
+                console.error('Dismiss failed:', err);
               }
             }}
           />
@@ -642,14 +647,12 @@ function KanbanCard({ opportunity, onStatusChange, isUpdating }: KanbanCardProps
 function AgentSignalsList({
   signals,
   loading,
-  onViewOpportunity,
-  onAnalyze,
+  onView,
   onDismiss,
 }: {
   signals: AgentSignal[];
   loading: boolean;
-  onViewOpportunity: (signal: AgentSignal) => void;
-  onAnalyze: (signal: AgentSignal) => void;
+  onView: (signal: AgentSignal) => void;
   onDismiss: (id: string) => void;
 }) {
   const [dismissing, setDismissing] = React.useState<string | null>(null);
@@ -737,26 +740,16 @@ function AgentSignalsList({
           </div>
 
           <div className="flex gap-2">
-            {signal.analyzed && signal.opportunityId ? (
-              <button
-                type="button"
-                onClick={() => onViewOpportunity(signal)}
-                className="flex-1 py-2 bg-black text-white rounded-xl text-[10px] font-mono uppercase tracking-widest font-bold hover:bg-black/80 transition-all flex items-center justify-center gap-1.5"
-              >
-                🤖 View Opportunity
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => onAnalyze(signal)}
-                className="flex-1 py-2 bg-foreground text-background rounded-xl text-[10px] font-mono uppercase tracking-widest font-bold hover:bg-foreground/90 transition-all"
-              >
-                ⚡ Analyze
-              </button>
-            )}
             <button
               type="button"
-              disabled={dismissing === signal.id || signal.read}
+              onClick={() => onView(signal)}
+              className="flex-1 py-2 bg-foreground text-background rounded-xl text-[10px] font-mono uppercase tracking-widest font-bold hover:bg-foreground/90 transition-all flex items-center justify-center gap-1.5"
+            >
+              {signal.analyzed && signal.opportunityId ? '🤖 View Opportunity' : '⚡ Analyze'}
+            </button>
+            <button
+              type="button"
+              disabled={dismissing === signal.id}
               onClick={async () => {
                 setDismissing(signal.id);
                 await onDismiss(signal.id);
@@ -764,7 +757,7 @@ function AgentSignalsList({
               }}
               className="px-4 py-2 border border-border/10 rounded-xl text-[10px] font-mono uppercase text-muted hover:text-gray-700 hover:border-gray-300 transition-all disabled:opacity-40"
             >
-              {dismissing === signal.id ? '...' : signal.read ? 'Read' : 'Dismiss'}
+              {dismissing === signal.id ? '...' : 'Dismiss'}
             </button>
           </div>
         </motion.div>
