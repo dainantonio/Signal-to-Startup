@@ -114,14 +114,16 @@ export default function TrendIntelligenceAgentNewsroom() {
     console.log('[AGENT] sessionStorage:', stored ? 'FOUND' : 'NOT FOUND');
     if (!stored) return;
     try {
-      sessionStorage.removeItem('agentOpportunity');
       const { result, signalTitle } = JSON.parse(stored);
+      sessionStorage.removeItem('agentOpportunity');
       analysis.setResult(result);
       setModalSourceTitle(signalTitle || 'Agent Discovery');
       setShowAnalysisModal(true);
       console.log('[AGENT] Loaded agent opportunity:', signalTitle);
-    } catch (e) {
-      console.error('[AGENT] Error loading agent opportunity:', e);
+    } catch (parseError) {
+      console.error('[AGENT] SessionStorage parse error:', parseError);
+      sessionStorage.removeItem('agentOpportunity');
+      // Don't crash — just show feed
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);

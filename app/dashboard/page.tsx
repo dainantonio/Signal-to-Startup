@@ -79,6 +79,22 @@ interface AgentSignal {
   opportunityId?: string;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function sanitizeForStorage(obj: any): any {
+  if (typeof obj === 'string') {
+    return obj
+      .replace(/[\u0000-\u001F\u007F-\u009F]/g, ' ')
+      .replace(/\\/g, '\\\\');
+  }
+  if (Array.isArray(obj)) return obj.map(sanitizeForStorage);
+  if (obj && typeof obj === 'object') {
+    return Object.fromEntries(
+      Object.entries(obj).map(([k, v]) => [k, sanitizeForStorage(v)])
+    );
+  }
+  return obj;
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<FirebaseUser | null>(null);
@@ -256,9 +272,11 @@ export default function DashboardPage() {
                   if (oppDoc.exists()) {
                     const data = oppDoc.data();
                     console.log('[DASHBOARD] Storing agentOpportunity in sessionStorage');
+                    const sanitized = sanitizeForStorage(data.result);
                     sessionStorage.setItem('agentOpportunity', JSON.stringify({
-                      result: data.result,
+                      result: sanitized,
                       signalTitle: signal.title,
+                      source: 'Agent discovered',
                     }));
                     console.log('[DASHBOARD] Set in sessionStorage:', !!sessionStorage.getItem('agentOpportunity'));
                     window.location.href = '/';
