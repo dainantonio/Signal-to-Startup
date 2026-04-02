@@ -260,6 +260,14 @@ export default function TrendIntelligenceAgentNewsroom() {
                     <LayoutDashboard className="w-4 h-4 text-gray-600" />
                     <span className="font-medium hidden sm:inline">Pipeline</span>
                   </Link>
+                  {user.email === 'dain.russell@gmail.com' && (
+                    <Link
+                      href="/admin"
+                      className="flex items-center gap-2 px-3 md:px-4 py-2 md:py-2.5 bg-white border border-gray-200 hover:border-gray-300 rounded-xl transition-all shadow-sm text-sm"
+                    >
+                      <span className="font-medium hidden sm:inline text-gray-600">Admin</span>
+                    </Link>
+                  )}
                   <div className="flex items-center gap-2 md:gap-3 bg-white border border-gray-200 px-3 md:px-4 py-2 md:py-2.5 shadow-sm rounded-xl flex-1 sm:flex-initial">
                     <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-700">
                       <UserIcon className="w-4 h-4" />
