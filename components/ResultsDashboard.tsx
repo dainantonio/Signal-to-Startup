@@ -161,6 +161,85 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
 
       {/* Analysis Summary */}
       <section id="step-2" className="scroll-mt-24">
+        {/* AI Verdict Banner */}
+        {result.ai_verdict && (
+          <div className={`px-5 py-4 rounded-2xl border text-sm font-medium mb-6 flex items-start gap-3 shadow-sm ${
+            result.ai_verdict === 'Truth'
+              ? 'bg-green-50 border-green-200 text-green-800'
+              : result.ai_verdict === 'Emerging'
+              ? 'bg-amber-50 border-amber-200 text-amber-800'
+              : 'bg-red-50 border-red-200 text-red-800'
+          }`}>
+            <div className="mt-0.5">
+              {result.ai_verdict === 'Truth' ? <Check className="w-5 h-5" /> 
+                : result.ai_verdict === 'Emerging' ? <Zap className="w-5 h-5" /> 
+                : <AlertTriangle className="w-5 h-5" />}
+            </div>
+            <div>
+              <p className="font-bold uppercase tracking-tight text-xs mb-1">
+                {result.ai_verdict === 'Truth' ? '✓ AI Truth' 
+                  : result.ai_verdict === 'Emerging' 
+                  ? '⚡ Emerging Signal'
+                  : '⚠ AI Fad'}
+              </p>
+              <p className="leading-relaxed opacity-90">{result.ai_evidence}</p>
+              {result.real_world_roi && (
+                <p className="mt-2 text-xs font-mono bg-white/50 px-2 py-1 rounded inline-block">
+                  ROI Evidence: {result.real_world_roi}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Compound Analysis Header */}
+        {result.isCompound && (
+          <div className="bg-black text-white p-6 md:p-10 rounded-3xl shadow-2xl mb-6 relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-8 opacity-10">
+              <Sparkles className="w-32 h-32" />
+            </div>
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-6">
+                <span className="px-3 py-1 bg-white/20 rounded-full text-[10px] font-mono uppercase font-bold tracking-widest backdrop-blur-sm">
+                  Compound Signal
+                </span>
+                <div className="flex items-center gap-1.5 px-3 py-1 bg-primary/30 rounded-full text-[10px] font-mono uppercase font-bold tracking-widest backdrop-blur-sm">
+                  <TrendingUp className="w-3 h-3" />
+                  Convergence: {result.convergence_score}%
+                </div>
+              </div>
+              
+              <h3 className="text-2xl md:text-3xl font-sans font-bold leading-tight mb-4">
+                {result.compound_trend}
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8 pt-8 border-t border-white/10">
+                <div>
+                  <h4 className="text-[10px] font-mono uppercase font-bold tracking-widest text-white/50 mb-4">
+                    Signal Connections
+                  </h4>
+                  <ul className="space-y-3">
+                    {result.signal_connections?.map((conn, i) => (
+                      <li key={i} className="flex items-start gap-3 text-sm text-white/80">
+                        <span className="mt-1.5 w-1.5 h-1.5 bg-primary rounded-full flex-shrink-0" />
+                        {conn}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="bg-white/5 p-5 rounded-2xl backdrop-blur-sm border border-white/10">
+                  <h4 className="text-[10px] font-mono uppercase font-bold tracking-widest text-white/50 mb-3">
+                    Compound Advantage
+                  </h4>
+                  <p className="text-sm text-white/90 leading-relaxed italic">
+                    "The whole is greater than the sum of its parts. These signals converging creates a market gap that individual signals miss."
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Trend headline */}
         <div className="bg-white border border-border/10 p-4 md:p-8 rounded-3xl shadow-sm mb-4 md:mb-6">
           <div className="w-full">

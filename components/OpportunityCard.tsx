@@ -120,6 +120,18 @@ export const OpportunityCard: React.FC<OpportunityCardProps> = ({
           </p>
         </div>
 
+        {/* Compound Advantage */}
+        {opp.compound_advantage && (
+          <div className="mb-6 p-3 bg-purple-50 border border-purple-100 rounded-xl">
+            <p className="text-[10px] font-bold text-purple-700 mb-1 uppercase tracking-widest flex items-center gap-1.5">
+              <Sparkles className="w-3 h-3" /> Compound Advantage
+            </p>
+            <p className="text-xs text-purple-900 leading-relaxed italic">
+              {opp.compound_advantage}
+            </p>
+          </div>
+        )}
+
         {/* Spacer to push CTA to bottom */}
         <div className="flex-1" />
 

@@ -327,6 +327,117 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
     // Do NOT clear result — keep existing results visible after cancel
   };
 
+  const analyzeCompoundSignal = async (compoundText: string, articles: FeedSignal[]) => {
+    setLoading(true);
+    setLoadingStage(0);
+    setLoadingProgress(5);
+    setError(null);
+    setResult(null);
+    setIsAgentResult(false);
+
+    const progressInterval = setInterval(() => {
+      setLoadingProgress(prev => {
+        if (prev >= 95) return prev;
+        return prev + (prev < 40 ? 2 : prev < 70 ? 1 : 0.5);
+      });
+    }, 400);
+
+    try {
+      const genAI = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
+      const model = 'gemini-2.5-flash';
+
+      const marketContext = marketModeConfigs[selectedMode]?.promptContext || '';
+      const countryPrompt = buildCountryPrompt(countryTags);
+
+      const prompt = `You are an expert market analyst specializing in finding COMPOUND business opportunities — opportunities that emerge from the convergence of multiple market signals simultaneously.
+
+MULTIPLE SIGNALS DETECTED:
+${compoundText}
+
+${marketContext}
+${countryPrompt}
+
+TASK: Analyze how these ${articles.length} signals TOGETHER create opportunities that NONE of them would reveal individually.
+
+Look for:
+- Convergence patterns across signals
+- Timing advantages (why NOW with all these signals)
+- Compound market gaps created by signal intersection
+- Arbitrage opportunities between the signals
+- Second and third order effects
+
+The compound opportunity must be STRONGER and MORE SPECIFIC than what any single signal suggests.
+
+Return ONLY this JSON:
+{
+  "compound_trend": "One sentence describing the convergence pattern",
+  "convergence_score": number 0-100 (how strongly these signals reinforce each other),
+  "signal_connections": [
+    "How signal 1 and signal 2 are connected",
+    "How signal 2 and signal 3 are connected"
+  ],
+  "summary": "2-3 sentences on the compound opportunity",
+  "trend": "A short title for the compound trend",
+  "affected_groups": ["group1", "group2", "group3"],
+  "problems": ["compound problem 1", "compound problem 2"],
+  "opportunities": [
+    {
+      "name": "opportunity name",
+      "description": "Why this needs ALL signals to be true",
+      "compound_advantage": "What makes this stronger than single-signal opportunities",
+      "target_customer": "specific customer",
+      "why_now": "Why the timing of ALL signals matters",
+      "monetization": "how to make money",
+      "pricing_model": "specific pricing",
+      "status": "New",
+      "priority": "High",
+      "startup_cost": number,
+      "grant_eligible": boolean,
+      "speed_to_launch": number 1-10,
+      "difficulty": number 1-10,
+      "roi_potential": number 1-10,
+      "urgency": number 1-10,
+      "local_fit": number 1-10,
+      "competition_gap": number 1-10,
+      "money_score": number 0-100
+    }
+  ],
+  "best_idea": {
+    "name": "best opportunity",
+    "reason": "why this compound signal makes this the best idea",
+    "who_should_build": "who",
+    "cost_estimate": "$X - $Y",
+    "speed_rating": "Fast/Medium/Slow",
+    "first_steps": ["step1", "step2", "step3"]
+  }
+}`;
+
+      const response = await genAI.models.generateContent({
+        model,
+        contents: prompt,
+        config: {
+          responseMimeType: 'application/json',
+          maxOutputTokens: 8192,
+          temperature: 0.3,
+        },
+      });
+
+      const rawText = response.text || '';
+      const parsedResult = JSON.parse(rawText.trim());
+      
+      clearInterval(progressInterval);
+      setLoadingProgress(100);
+      setResult({ ...parsedResult, isCompound: true });
+      setLoading(false);
+
+    } catch (err) {
+      console.error('[COMPOUND ANALYSIS FAILED]', err);
+      setError('Failed to analyze compound signals.');
+      clearInterval(progressInterval);
+      setLoading(false);
+    }
+  };
+
   const analyzeSignal = async (overrideInput?: string) => {
     console.log('[1] analyzeSignal called');
 
@@ -777,6 +888,7 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
     deepDiveLoading,
     activeDeepDiveTab, setActiveDeepDiveTab,
     analyzeSignal,
+    analyzeCompoundSignal,
     cancelAnalysis,
     generateDeepDive,
     cancelDeepDive,

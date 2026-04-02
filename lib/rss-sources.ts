@@ -5,7 +5,7 @@
 export interface RSSSource {
   url: string;
   market: 'global' | 'caribbean' | 'africa' | 'uk' | 'latam';
-  sector: 'ai' | 'policy' | 'markets' | 'funding' | 'sustainability' | 'realestate' | 'health';
+  sector: 'ai' | 'policy' | 'markets' | 'funding' | 'sustainability' | 'realestate' | 'health' | 'ai_intelligence';
   name: string;
   tier: 1 | 2 | 3;
 }
@@ -65,6 +65,10 @@ export const RSS_SOURCES: RSSSource[] = [
   { url: 'https://feeds.feedburner.com/venturebeat/SZYF',              market: 'global', sector: 'ai',             name: 'VentureBeat',                tier: 1 },
   { url: 'https://www.technologyreview.com/feed/',                     market: 'global', sector: 'ai',             name: 'MIT Tech Review',            tier: 1 },
   { url: 'https://feeds.reuters.com/reuters/technologyNews',           market: 'global', sector: 'ai',             name: 'Reuters Tech',               tier: 1 },
+  { url: 'https://aiindex.stanford.edu/feed/',                         market: 'global', sector: 'ai_intelligence', name: 'Stanford AI Index',          tier: 1 },
+  { url: 'https://www.mckinsey.com/capabilities/quantumblack/our-insights/rss', market: 'global', sector: 'ai_intelligence', name: 'McKinsey AI',          tier: 1 },
+  { url: 'https://www.technologyreview.com/feed/',                     market: 'global', sector: 'ai_intelligence', name: 'MIT Tech Review',            tier: 1 },
+  { url: 'https://newsletter.pragmaticengineer.com/feed',              market: 'global', sector: 'ai_intelligence', name: 'Pragmatic Engineer',         tier: 1 },
 
   // ── GLOBAL / US — Funding & Grants ───────────────────────────────────
   { url: 'https://techcrunch.com/category/venture/feed/',              market: 'global', sector: 'funding',        name: 'TechCrunch Venture',         tier: 1 },

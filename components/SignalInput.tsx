@@ -38,6 +38,7 @@ interface SignalInputProps {
   loadingProgress?: number;
   result: unknown | null;
   analyzeSignal: (overrideInput?: string) => void;
+  analyzeCompoundSignal: (compoundText: string, articles: FeedSignal[]) => void;
   cancelAnalysis: () => void;
   selectedMode: MarketMode;
   setSelectedMode: (mode: MarketMode) => void;
@@ -49,7 +50,7 @@ export const SignalInput: React.FC<SignalInputProps> = ({
   input, setInput, urlInput, setUrlInput, fetchingUrl, fetchUrl,
   urlFetchStatus = 'idle', setUrlFetchStatus,
   location, setLocation, focus, setFocus, loading, loadingStage = 0, loadingProgress = 5,
-  result, analyzeSignal, cancelAnalysis,
+  result, analyzeSignal, analyzeCompoundSignal, cancelAnalysis,
   countryTags, setCountryTags,
   selectedMode, setSelectedMode,
 }) => {
@@ -103,6 +104,8 @@ export const SignalInput: React.FC<SignalInputProps> = ({
   const [showCountry, setShowCountry] = useState(false);
   const [lastFetchKey, setLastFetchKey] = useState('');
   const [showFilterDrawer, setShowFilterDrawer] = useState(false);
+  const [multiSelectMode, setMultiSelectMode] = useState(false);
+  const [selectedArticles, setSelectedArticles] = useState<FeedSignal[]>([]);
   const [filters, setFilters] = useState<FeedFilters>(() => {
     try {
       const saved = localStorage.getItem('userPreferences');
@@ -537,6 +540,20 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                   )}
                   <button
                     type="button"
+                    onClick={() => {
+                      setMultiSelectMode(!multiSelectMode);
+                      setSelectedArticles([]);
+                    }}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${
+                      multiSelectMode
+                        ? 'bg-black text-white border-black'
+                        : 'border-gray-200 text-gray-600 hover:border-black'
+                    }`}
+                  >
+                    {multiSelectMode ? '✕ Cancel' : '⊕ Compare signals'}
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => setShowFilterDrawer(true)}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-600 hover:border-gray-400 transition-colors"
                   >
@@ -586,6 +603,63 @@ export const SignalInput: React.FC<SignalInputProps> = ({
             </div>
           )}
 
+          {/* Sticky Compound Analysis Bar */}
+          {multiSelectMode && (
+            <div className={`fixed bottom-0 left-0 right-0 z-[60] bg-white border-t border-gray-200 p-4 transition-all duration-300 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] ${
+              selectedArticles.length > 0 ? 'translate-y-0' : 'translate-y-full'
+            }`}>
+              <div className="max-w-3xl mx-auto">
+                {/* Selected signal pills */}
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {selectedArticles.map((article) => (
+                    <div key={article.url || article.title}
+                      className="flex items-center gap-1.5 px-3 py-1 bg-gray-100 rounded-full text-[10px] font-medium border border-gray-200">
+                      <span className="text-gray-700 max-w-32 truncate">
+                        {article.title}
+                      </span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedArticles(prev => prev.filter(a => (a.url || a.title) !== (article.url || article.title)));
+                        }}
+                        className="text-gray-400 hover:text-black ml-1"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Analyze button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const compoundText = selectedArticles.map((a, i) => 
+                      `Signal ${i + 1} — ${a.source}:\n${a.title}\n${a.snippet}`
+                    ).join('\n\n');
+                    analyzeCompoundSignal(compoundText, selectedArticles);
+                    setMultiSelectMode(false);
+                    setSelectedArticles([]);
+                  }}
+                  disabled={selectedArticles.length < 2}
+                  className="w-full py-3 bg-black text-white rounded-xl text-xs font-bold uppercase tracking-widest disabled:opacity-40 hover:bg-gray-900 transition-colors flex items-center justify-center gap-2"
+                >
+                  {selectedArticles.length < 2
+                    ? `Select ${2 - selectedArticles.length} more signal${selectedArticles.length === 1 ? '' : 's'} to compare`
+                    : <>
+                        <Sparkles className="w-4 h-4" />
+                        Compound analysis — {selectedArticles.length} signals
+                      </>
+                  }
+                </button>
+                
+                <p className="text-[10px] text-gray-400 text-center mt-2 font-mono uppercase tracking-tight">
+                  Select 2-5 signals to find compound opportunities hidden across multiple stories
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Feed cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {fetchingFeed
@@ -606,6 +680,8 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                   const isSuccess = successUrl === key;
                   const isOtherAnalyzing = !!analyzingUrl && analyzingUrl !== key;
 
+                  const isSelected = selectedArticles.some(a => (a.url || a.title) === (sig.url || sig.title));
+
                   return (
                     <motion.div
                       key={i}
@@ -618,12 +694,27 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                           ? '0 0 0 2px #22c55e, 0 20px 60px rgba(34,197,94,0.2)'
                           : isAnalyzing
                           ? '0 20px 60px rgba(0,0,0,0.2)'
+                          : isSelected
+                          ? '0 0 0 2px #000, 0 10px 30px rgba(0,0,0,0.1)'
                           : '0 1px 3px rgba(0,0,0,0.08)',
                       }}
                       transition={{ duration: 0.3, ease: 'easeInOut' }}
                       className={`relative bg-white border border-gray-200 rounded-2xl flex flex-col overflow-hidden ${
                         isOtherAnalyzing ? 'pointer-events-none' : ''
-                      } ${isAnalyzing ? 'z-10 ring-2 ring-blue-400 ring-offset-2' : ''}`}
+                      } ${isAnalyzing ? 'z-10 ring-2 ring-blue-400 ring-offset-2' : ''} ${
+                        multiSelectMode ? 'cursor-pointer' : ''
+                      } ${isSelected ? 'border-black bg-gray-50' : ''}`}
+                      onClick={() => {
+                        if (!multiSelectMode) return;
+                        setSelectedArticles(prev => {
+                          const alreadySelected = prev.some(a => (a.url || a.title) === (sig.url || sig.title));
+                          if (alreadySelected) {
+                            return prev.filter(a => (a.url || a.title) !== (sig.url || sig.title));
+                          }
+                          if (prev.length >= 5) return prev;
+                          return [...prev, sig];
+                        });
+                      }}
                     >
                       {isAnalyzing ? (
                         /* ── ANALYZING STATE ── */
@@ -676,6 +767,13 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                         <div className="p-5 flex flex-col gap-3">
                           {/* Header row */}
                           <div className="flex items-center gap-2 flex-wrap">
+                            {multiSelectMode && (
+                              <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${
+                                isSelected ? 'bg-black border-black' : 'border-gray-300'
+                              }`}>
+                                {isSelected && <span className="text-white text-[10px]">✓</span>}
+                              </div>
+                            )}
                             <span className="text-[9px] font-mono font-bold text-muted uppercase tracking-wider truncate">{sig.source}</span>
                             <span className={`px-2 py-0.5 text-[9px] font-mono uppercase font-bold rounded-md ${cfg.badgeBg} ${cfg.badgeText}`}>{cfg.label}</span>
                             {sig.isLocalSource && (
@@ -694,19 +792,19 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                           {/* Title */}
                           <p className="text-sm font-semibold leading-snug line-clamp-2">{sig.title}</p>
                           {/* Snippet */}
-                          <p className="text-xs text-muted leading-relaxed line-clamp-2 flex-1">{sig.snippet}</p>
-                          {/* Analyze button */}
-                          <button
-                            type="button"
-                            onClick={() => onAnalyzeSignal(sig)}
-                            disabled={!!analyzingUrl}
-                            aria-label={`Analyze: ${sig.title}`}
-                            className="w-full flex items-center justify-center gap-2 py-2.5 bg-foreground text-background rounded-xl font-mono text-[10px] uppercase tracking-widest hover:bg-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
-                          >
-                            <Zap className="w-3.5 h-3.5" />Analyze
-                          </button>
-                        </div>
-                      )}
+                          <p className="text-xs text-muted leading-relaxed line-clamp-2 flex-1">{sig.snippet}<                          {/* Analyze button */}
+                          {!multiSelectMode && (
+                            <button
+                              type="button"
+                              onClick={() => onAnalyzeSignal(sig)}
+                              disabled={!!analyzingUrl}
+                              aria-label={`Analyze: ${sig.title}`}
+                              className="w-full flex items-center justify-center gap-2 py-2.5 bg-foreground text-background rounded-xl font-mono text-[10px] uppercase tracking-widest hover:bg-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                            >
+                              <Zap className="w-3.5 h-3.5 fill-current" />
+                              Analyze signal
+                            </button>
+                          )}                   )}
 
                       {/* Bottom-edge progress strip */}
                       <AnimatePresence>

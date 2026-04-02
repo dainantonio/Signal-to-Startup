@@ -612,8 +612,9 @@ export default function TrendIntelligenceAgent() {
           loadingStage={analysis.loadingStage}
           loadingProgress={analysis.loadingProgress}
           result={analysis.result}
-          analyzeSignal={analysis.analyzeSignal}
-          cancelAnalysis={analysis.cancelAnalysis}
+            analyzeSignal={analysis.analyzeSignal}
+            analyzeCompoundSignal={analysis.analyzeCompoundSignal}
+            cancelAnalysis={analysis.cancelAnalysis}
           selectedMode={selectedMode}
           setSelectedMode={handleSetSelectedMode}
           countryTags={countryTags}
