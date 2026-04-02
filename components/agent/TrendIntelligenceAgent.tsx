@@ -169,24 +169,29 @@ export default function TrendIntelligenceAgent() {
 
   // Pick up pre-analyzed opportunity from agent (via dashboard "View Opportunity")
   React.useEffect(() => {
-    console.log('[AGENT] Mount useEffect fired');
-    const stored = sessionStorage.getItem('agentOpportunity');
-    console.log('[AGENT] sessionStorage check:', stored ? 'FOUND' : 'NOT FOUND');
-    if (!stored) return;
-    try {
-      sessionStorage.removeItem('agentOpportunity');
-      const parsed = JSON.parse(stored);
-      // Support both { result, signalTitle } and bare result object
-      const result = parsed.result ?? parsed;
-      console.log('[AGENT] Parsed result keys:', Object.keys(result));
-      setTimeout(() => {
-        analysis.setResult(result);
-        setIsAgentResult(true);
-        console.log('[AGENT] Results loaded from agent');
-      }, 300);
-    } catch (e) {
-      console.error('[AGENT] Parse/set error:', e);
-    }
+    const oppId = sessionStorage.getItem('agentOpportunityId');
+    const signalTitle = sessionStorage.getItem('agentSignalTitle');
+    console.log('[AGENT] Checking for agent opportunity:', oppId);
+    if (!oppId) return;
+    sessionStorage.removeItem('agentOpportunityId');
+    sessionStorage.removeItem('agentSignalTitle');
+    const load = async () => {
+      try {
+        const { doc, getDoc, db } = await import('@/firebase');
+        const oppDoc = await getDoc(doc(db, 'agent_opportunities', oppId));
+        if (oppDoc.exists()) {
+          const data = oppDoc.data();
+          console.log('[AGENT] Opportunity loaded:', data.result?.best_idea?.name);
+          analysis.setResult(data.result);
+          setIsAgentResult(true);
+        } else {
+          console.error('[AGENT] Opportunity not found:', oppId);
+        }
+      } catch (e) {
+        console.error('[AGENT] Failed to load opportunity:', e);
+      }
+    };
+    load();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

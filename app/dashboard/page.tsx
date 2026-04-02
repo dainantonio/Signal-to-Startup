@@ -271,14 +271,9 @@ export default function DashboardPage() {
                   const oppDoc = await getDoc(doc(db, 'agent_opportunities', signal.opportunityId));
                   if (oppDoc.exists()) {
                     const data = oppDoc.data();
-                    console.log('[DASHBOARD] Storing agentOpportunity in sessionStorage');
-                    const sanitized = sanitizeForStorage(data.result);
-                    sessionStorage.setItem('agentOpportunity', JSON.stringify({
-                      result: sanitized,
-                      signalTitle: signal.title,
-                      source: 'Agent discovered',
-                    }));
-                    console.log('[DASHBOARD] Set in sessionStorage:', !!sessionStorage.getItem('agentOpportunity'));
+                    console.log('[DASHBOARD] Storing agentOpportunityId:', signal.opportunityId);
+                    sessionStorage.setItem('agentOpportunityId', signal.opportunityId);
+                    sessionStorage.setItem('agentSignalTitle', signal.title || '');
                     window.location.href = '/';
                     return;
                   }

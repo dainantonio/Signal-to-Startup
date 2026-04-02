@@ -109,22 +109,30 @@ export default function TrendIntelligenceAgentNewsroom() {
   // Pick up pre-analyzed opportunity from agent (via dashboard "View Opportunity")
   useEffect(() => {
     if (!user) return;
-    console.log('[AGENT] Auth confirmed, checking sessionStorage');
-    const stored = sessionStorage.getItem('agentOpportunity');
-    console.log('[AGENT] sessionStorage:', stored ? 'FOUND' : 'NOT FOUND');
-    if (!stored) return;
-    try {
-      const { result, signalTitle } = JSON.parse(stored);
-      sessionStorage.removeItem('agentOpportunity');
-      analysis.setResult(result);
-      setModalSourceTitle(signalTitle || 'Agent Discovery');
-      setShowAnalysisModal(true);
-      console.log('[AGENT] Loaded agent opportunity:', signalTitle);
-    } catch (parseError) {
-      console.error('[AGENT] SessionStorage parse error:', parseError);
-      sessionStorage.removeItem('agentOpportunity');
-      // Don't crash — just show feed
-    }
+    const oppId = sessionStorage.getItem('agentOpportunityId');
+    const signalTitle = sessionStorage.getItem('agentSignalTitle');
+    console.log('[AGENT] Checking for agent opportunity:', oppId);
+    if (!oppId) return;
+    sessionStorage.removeItem('agentOpportunityId');
+    sessionStorage.removeItem('agentSignalTitle');
+    const loadOpportunity = async () => {
+      try {
+        const { doc, getDoc, db } = await import('@/firebase');
+        const oppDoc = await getDoc(doc(db, 'agent_opportunities', oppId));
+        if (oppDoc.exists()) {
+          const data = oppDoc.data();
+          console.log('[AGENT] Opportunity loaded:', data.result?.best_idea?.name);
+          analysis.setResult(data.result);
+          setModalSourceTitle(signalTitle || data.signalTitle || 'Agent discovered signal');
+          setShowAnalysisModal(true);
+        } else {
+          console.error('[AGENT] Opportunity not found:', oppId);
+        }
+      } catch (err) {
+        console.error('[AGENT] Failed to load opportunity:', err);
+      }
+    };
+    loadOpportunity();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
