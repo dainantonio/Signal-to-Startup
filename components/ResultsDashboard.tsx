@@ -168,7 +168,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
               <Sparkles className="w-4 h-4" />
               <span className="text-xs font-mono uppercase font-bold tracking-wide">Emerging Trend Identified</span>
             </div>
-            <h3 className="text-base md:text-xl font-sans font-semibold leading-snug mb-3 text-foreground w-full">
+            <h3 className="text-base md:text-lg font-sans font-semibold leading-snug mb-3 text-foreground w-full">
               {result.trend}
             </h3>
             <p className="text-sm md:text-base text-muted leading-relaxed w-full">{result.summary}</p>

@@ -82,6 +82,15 @@ export const PAYWALL_DOMAINS = [
   'newyorker.com',
 ];
 
+// Sports and off-topic domains — filtered out regardless of content
+export const BLOCKED_DOMAINS = [
+  'on3.com',
+  'si.com',
+  'espn.com',
+  'bleacherreport.com',
+  'theathletic.com',
+];
+
 export const RSS_SOURCES: RSSSource[] = [
   // GLOBAL — AI & TECH
   { url: 'https://techcrunch.com/feed/',                                         market: 'global', sector: 'ai',             name: 'TechCrunch',        tier: 1 },

@@ -1,5 +1,5 @@
 import { XMLParser } from 'fast-xml-parser';
-import { RSS_SOURCES, PAYWALL_DOMAINS } from './rss-sources';
+import { RSS_SOURCES, PAYWALL_DOMAINS, BLOCKED_DOMAINS } from './rss-sources';
 import { cleanText } from './text-cleaner';
 import type { SectorKey } from '@/components/types';
 
@@ -337,8 +337,18 @@ export async function fetchRSSFeeds(options: FetchRSSOptions): Promise<FetchRSSR
   const removed = beforePaywallFilter - noPaywall.length;
   if (removed > 0) console.log(`[PAYWALL FILTER] removed ${removed} paywalled articles`);
 
+  // Filter out blocked sports/off-topic domains
+  const noBlocked = noPaywall.filter(item => {
+    const url = item.url?.toLowerCase() ?? '';
+    const source = item.source.toLowerCase();
+    return !BLOCKED_DOMAINS.some(d => {
+      const base = d.replace('.com', '');
+      return url.includes(d) || source.includes(base);
+    });
+  });
+
   // Filter out non-business lifestyle/entertainment articles
-  const businessOnly = noPaywall.filter(isBusinessRelevant);
+  const businessOnly = noBlocked.filter(isBusinessRelevant);
 
   // Filter by recency window
   const recent = businessOnly.filter(item => {

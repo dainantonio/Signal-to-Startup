@@ -23,6 +23,7 @@ export function cleanText(raw: string): string {
   t = t.replace(/&#038;/g,  '&');
   t = t.replace(/&amp;/g,   '&');
   t = t.replace(/&nbsp;/g,  ' ');
+  t = t.replace(/&#160;/g,  ' ');
   t = t.replace(/&lt;/g,    '<');
   t = t.replace(/&gt;/g,    '>');
   t = t.replace(/&quot;/g,  '"');

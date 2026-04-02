@@ -621,7 +621,7 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                           : '0 1px 3px rgba(0,0,0,0.08)',
                       }}
                       transition={{ duration: 0.3, ease: 'easeInOut' }}
-                      className={`relative bg-white border rounded-2xl flex flex-col overflow-hidden ${
+                      className={`relative bg-white border border-gray-200 rounded-2xl flex flex-col overflow-hidden ${
                         isOtherAnalyzing ? 'pointer-events-none' : ''
                       } ${isAnalyzing ? 'z-10 ring-2 ring-blue-400 ring-offset-2' : ''}`}
                     >
