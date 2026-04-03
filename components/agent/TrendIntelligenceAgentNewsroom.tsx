@@ -152,6 +152,14 @@ export default function TrendIntelligenceAgentNewsroom() {
     analysis.analyzeSignal(text);
   }, [analysis]);
 
+  // Handle compound multi-signal analysis
+  const handleCompoundAnalysis = useCallback((articles: import('../types').FeedSignal[]) => {
+    const title = `Compound signal — ${articles.length} sources`;
+    setModalSourceTitle(title);
+    setIsAgentModal(false);
+    analysis.analyzeCompoundSignal(articles);
+  }, [analysis]);
+
   // Back to feed
   const handleBackToFeed = useCallback(() => {
     analysis.cancelAnalysis();
@@ -224,12 +232,12 @@ export default function TrendIntelligenceAgentNewsroom() {
               <Logo size="lg" showWordmark showSubbrand theme="light" />
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 md:gap-3 w-full lg:w-auto">
+            <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
               {user ? (
                 <>
                   <button
                     onClick={() => setShowDailyBrief(true)}
-                    className="flex items-center gap-2 px-3 md:px-4 py-2 md:py-2.5 bg-blue-600 text-white hover:bg-blue-700 rounded-xl transition-all shadow-sm text-sm relative"
+                    className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-xl transition-all text-sm relative"
                   >
                     <Bell className="w-4 h-4" />
                     <span className="font-medium hidden sm:inline">Daily Brief</span>
@@ -241,62 +249,64 @@ export default function TrendIntelligenceAgentNewsroom() {
                         return false;
                       }
                     })() && (
-                      <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-pulse" />
+                      <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white" />
                     )}
                   </button>
                   <button
                     onClick={() => setShowHistory(!showHistory)}
-                    className="flex items-center gap-2 px-3 md:px-4 py-2 md:py-2.5 bg-white border border-gray-200 hover:border-gray-300 rounded-xl transition-all shadow-sm text-sm"
+                    className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 hover:border-gray-300 rounded-xl transition-all text-sm"
                   >
-                    <History className="w-4 h-4 text-gray-600" />
-                    <span className="font-medium hidden sm:inline">
-                      History ({analysis.history.length})
-                    </span>
+                    <History className="w-4 h-4 text-gray-500" />
+                    <span className="font-medium text-gray-700 hidden sm:inline">History</span>
+                    {analysis.history.length > 0 && (
+                      <span className="text-xs text-gray-400">({analysis.history.length})</span>
+                    )}
                   </button>
                   <Link
                     href="/dashboard"
-                    className="flex items-center gap-2 px-3 md:px-4 py-2 md:py-2.5 bg-white border border-gray-200 hover:border-gray-300 rounded-xl transition-all shadow-sm text-sm"
+                    className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 hover:border-gray-300 rounded-xl transition-all text-sm"
                   >
-                    <LayoutDashboard className="w-4 h-4 text-gray-600" />
-                    <span className="font-medium hidden sm:inline">Pipeline</span>
+                    <LayoutDashboard className="w-4 h-4 text-gray-500" />
+                    <span className="font-medium text-gray-700 hidden sm:inline">Dashboard</span>
                   </Link>
                   {user.email === 'dain.russell@gmail.com' && (
                     <Link
                       href="/admin"
-                      className="flex items-center gap-2 px-3 md:px-4 py-2 md:py-2.5 bg-white border border-gray-200 hover:border-gray-300 rounded-xl transition-all shadow-sm text-sm"
+                      className="px-3 py-2 bg-white border border-gray-200 hover:border-gray-300 rounded-xl transition-all text-sm font-medium text-gray-600"
                     >
-                      <span className="font-medium hidden sm:inline text-gray-600">Admin</span>
+                      Admin
                     </Link>
                   )}
-                  <div className="flex items-center gap-2 md:gap-3 bg-white border border-gray-200 px-3 md:px-4 py-2 md:py-2.5 shadow-sm rounded-xl flex-1 sm:flex-initial">
-                    <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-700">
-                      <UserIcon className="w-4 h-4" />
+                  <div className="flex items-center gap-2 bg-white border border-gray-200 px-3 py-2 rounded-xl">
+                    <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-gray-600">
+                      <UserIcon className="w-3.5 h-3.5" />
                     </div>
-                    <span className="text-sm font-medium truncate max-w-[100px] sm:max-w-none">
+                    <span className="text-sm font-medium text-gray-700 hidden sm:block max-w-[80px] truncate">
                       {user.displayName?.split(' ')[0]}
                     </span>
                     <button
                       onClick={logout}
-                      className="text-gray-400 hover:text-red-500 transition-colors ml-auto"
+                      className="text-gray-400 hover:text-red-500 transition-colors"
+                      title="Sign out"
                     >
                       <LogOut className="w-4 h-4" />
                     </button>
                   </div>
                 </>
               ) : (
-                <div className="flex items-center gap-2 md:gap-3 w-full sm:w-auto">
+                <div className="flex items-center gap-2 w-full sm:w-auto">
                   <button
                     onClick={() => setShowHistory(!showHistory)}
-                    className="p-2 md:p-2.5 bg-white border border-gray-200 hover:border-gray-300 rounded-xl transition-all shadow-sm"
+                    className="p-2 bg-white border border-gray-200 hover:border-gray-300 rounded-xl transition-all"
                   >
                     <History className="w-5 h-5 text-gray-600" />
                   </button>
                   <button
                     onClick={login}
-                    className="flex items-center justify-center gap-2 bg-black text-white px-4 md:px-5 py-2 md:py-2.5 text-sm font-medium hover:bg-gray-800 transition-all shadow-lg rounded-xl flex-1 sm:flex-initial"
+                    className="flex items-center justify-center gap-2 bg-black text-white px-4 py-2 text-sm font-medium hover:bg-gray-800 transition-all rounded-xl flex-1 sm:flex-initial"
                   >
                     <LogIn className="w-4 h-4" />
-                    <span className="whitespace-nowrap">Login to Save</span>
+                    <span className="whitespace-nowrap">Sign in</span>
                   </button>
                   {loginError && <p className="text-sm text-red-500 w-full sm:w-auto">{loginError}</p>}
                 </div>
@@ -337,6 +347,7 @@ export default function TrendIntelligenceAgentNewsroom() {
           onQuickEdit={() => {
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }}
+          onCompoundAnalysis={handleCompoundAnalysis}
         />
 
         {/* Analysis Result Modal - Auto-opens from feed */}

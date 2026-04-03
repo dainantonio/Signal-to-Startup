@@ -48,10 +48,14 @@ export interface AnalysisResult {
   createdAt?: string;
   marketMode?: MarketMode;
   countryTag?: string;
+  // Compound analysis fields
   isCompound?: boolean;
   compound_trend?: string;
   convergence_score?: number;
   signal_connections?: string[];
+  sources?: { title: string; source: string; url: string }[];
+  sourceCount?: number;
+  // AI Intelligence verdict fields
   ai_verdict?: 'Truth' | 'Emerging' | 'Fad';
   ai_evidence?: string;
   real_world_roi?: string | null;
@@ -123,16 +127,7 @@ export const SECTOR_CONFIGS: Record<SectorKey, SectorConfig> = {
   sustainability: { key: 'sustainability', label: 'Sustainability',   color: 'teal',    borderColor: 'border-teal-300',    bgColor: 'bg-teal-50',     textColor: 'text-teal-700',    badgeBg: 'bg-teal-100',     badgeText: 'text-teal-800'    },
   realestate:     { key: 'realestate',     label: 'Real Estate',      color: 'orange',  borderColor: 'border-orange-300',  bgColor: 'bg-orange-50',   textColor: 'text-orange-700',  badgeBg: 'bg-orange-100',   badgeText: 'text-orange-800'  },
   health:         { key: 'health',         label: 'Health',           color: 'pink',    borderColor: 'border-pink-300',    bgColor: 'bg-pink-50',     textColor: 'text-pink-700',    badgeBg: 'bg-pink-100',     badgeText: 'text-pink-800'    },
-  ai_intelligence: { 
-    key: 'ai_intelligence', 
-    label: 'AI Intelligence',
-    color: 'violet',
-    borderColor: 'border-violet-300',
-    bgColor: 'bg-violet-50',
-    textColor: 'text-violet-700',
-    badgeBg: 'bg-violet-100',
-    badgeText: 'text-violet-800'
-  },
+  ai_intelligence: { key: 'ai_intelligence', label: 'AI Intelligence', color: 'violet', borderColor: 'border-violet-300', bgColor: 'bg-violet-50', textColor: 'text-violet-700', badgeBg: 'bg-violet-100', badgeText: 'text-violet-800' },
 };
 
 export interface FeedSignal {

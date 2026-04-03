@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, ArrowRight, Sparkles, Share2 } from 'lucide-react';
+import { X, ArrowRight } from 'lucide-react';
 import { AnalysisResult, Opportunity } from './types';
 import { BriefingColumns } from './BriefingColumns';
 import { OpportunityCard } from './OpportunityCard';
@@ -79,25 +79,63 @@ export const AnalysisResultModal: React.FC<AnalysisResultModalProps> = ({
                   </div>
                 </div>
               )}
+              {result.isCompound && (
+                <div className="px-4 py-3 bg-indigo-50 border-b border-indigo-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm">🔗</span>
+                      <span className="text-xs font-semibold text-indigo-800 uppercase tracking-wide">
+                        Compound signal — {result.sourceCount} sources
+                      </span>
+                    </div>
+                    {result.convergence_score != null && (
+                      <span className={`text-sm font-bold ${
+                        result.convergence_score >= 80 ? 'text-green-600'
+                        : result.convergence_score >= 60 ? 'text-amber-600'
+                        : 'text-gray-600'
+                      }`}>
+                        {result.convergence_score}% convergence
+                      </span>
+                    )}
+                  </div>
+                  {result.signal_connections && result.signal_connections.length > 0 && (
+                    <div className="space-y-1">
+                      {result.signal_connections.map((conn, i) => (
+                        <p key={i} className="text-xs text-indigo-700 flex items-start gap-1.5">
+                          <span className="flex-shrink-0 mt-0.5">↗</span>{conn}
+                        </p>
+                      ))}
+                    </div>
+                  )}
+                  {result.sources && result.sources.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {result.sources.map((s, i) => (
+                        <span key={i} className="text-xs px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-full">
+                          {s.source}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
               <div className="p-4 md:p-8 space-y-6 md:space-y-12">
                 {/* Briefing Columns - Mobile Stacked */}
                 <section>
                   <h3 className="text-xl md:text-2xl font-serif font-bold text-gray-900 mb-4 md:mb-6 px-2">
                     Intelligence Briefing
                   </h3>
-                  
+
                   {/* Mobile: Stacked, Desktop: 2 Columns */}
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
                     {/* Trend */}
                     <div className="bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-2xl p-4 md:p-6 shadow-sm">
                       <div className="flex items-center gap-2 mb-3 md:mb-4">
-                        <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-blue-600" />
                         <h4 className="text-xs md:text-sm font-semibold text-gray-500 uppercase tracking-wide">
-                          Emerging Trend
+                          {result.isCompound ? 'Compound Trend' : 'Emerging Trend'}
                         </h4>
                       </div>
                       <h5 className="text-base md:text-lg font-semibold text-gray-900 mb-3 md:mb-4 leading-snug break-words">
-                        {result.trend}
+                        {result.isCompound ? (result.compound_trend || result.trend) : result.trend}
                       </h5>
                       <p className="text-sm md:text-base text-gray-700 leading-relaxed break-words">
                         {result.summary}
@@ -149,7 +187,6 @@ export const AnalysisResultModal: React.FC<AnalysisResultModalProps> = ({
                 {/* Next Steps */}
                 <section className="bg-gradient-to-br from-gray-900 to-gray-800 text-white p-6 md:p-8 rounded-2xl md:rounded-3xl shadow-xl">
                   <div className="flex items-center gap-3 mb-4 md:mb-6">
-                    <Sparkles className="w-5 h-5 md:w-6 md:h-6" />
                     <h3 className="text-xl md:text-2xl font-serif font-bold">
                       Recommended Next Steps
                     </h3>

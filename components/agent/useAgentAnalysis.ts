@@ -328,117 +328,6 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
     // Do NOT clear result — keep existing results visible after cancel
   };
 
-  const analyzeCompoundSignal = async (compoundText: string, articles: FeedSignal[]) => {
-    setLoading(true);
-    setLoadingStage(0);
-    setLoadingProgress(5);
-    setError(null);
-    setResult(null);
-    setIsAgentResult(false);
-
-    const progressInterval = setInterval(() => {
-      setLoadingProgress(prev => {
-        if (prev >= 95) return prev;
-        return prev + (prev < 40 ? 2 : prev < 70 ? 1 : 0.5);
-      });
-    }, 400);
-
-    try {
-      const genAI = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
-      const model = 'gemini-2.5-flash';
-
-      const marketContext = marketModeConfigs[selectedMode]?.promptContext || '';
-      const countryPrompt = buildCountryPrompt(countryTags);
-
-      const prompt = `You are an expert market analyst specializing in finding COMPOUND business opportunities — opportunities that emerge from the convergence of multiple market signals simultaneously.
-
-MULTIPLE SIGNALS DETECTED:
-${compoundText}
-
-${marketContext}
-${countryPrompt}
-
-TASK: Analyze how these ${articles.length} signals TOGETHER create opportunities that NONE of them would reveal individually.
-
-Look for:
-- Convergence patterns across signals
-- Timing advantages (why NOW with all these signals)
-- Compound market gaps created by signal intersection
-- Arbitrage opportunities between the signals
-- Second and third order effects
-
-The compound opportunity must be STRONGER and MORE SPECIFIC than what any single signal suggests.
-
-Return ONLY this JSON:
-{
-  "compound_trend": "One sentence describing the convergence pattern",
-  "convergence_score": number 0-100 (how strongly these signals reinforce each other),
-  "signal_connections": [
-    "How signal 1 and signal 2 are connected",
-    "How signal 2 and signal 3 are connected"
-  ],
-  "summary": "2-3 sentences on the compound opportunity",
-  "trend": "A short title for the compound trend",
-  "affected_groups": ["group1", "group2", "group3"],
-  "problems": ["compound problem 1", "compound problem 2"],
-  "opportunities": [
-    {
-      "name": "opportunity name",
-      "description": "Why this needs ALL signals to be true",
-      "compound_advantage": "What makes this stronger than single-signal opportunities",
-      "target_customer": "specific customer",
-      "why_now": "Why the timing of ALL signals matters",
-      "monetization": "how to make money",
-      "pricing_model": "specific pricing",
-      "status": "New",
-      "priority": "High",
-      "startup_cost": number,
-      "grant_eligible": boolean,
-      "speed_to_launch": number 1-10,
-      "difficulty": number 1-10,
-      "roi_potential": number 1-10,
-      "urgency": number 1-10,
-      "local_fit": number 1-10,
-      "competition_gap": number 1-10,
-      "money_score": number 0-100
-    }
-  ],
-  "best_idea": {
-    "name": "best opportunity",
-    "reason": "why this compound signal makes this the best idea",
-    "who_should_build": "who",
-    "cost_estimate": "$X - $Y",
-    "speed_rating": "Fast/Medium/Slow",
-    "first_steps": ["step1", "step2", "step3"]
-  }
-}`;
-
-      const response = await genAI.models.generateContent({
-        model,
-        contents: prompt,
-        config: {
-          responseMimeType: 'application/json',
-          maxOutputTokens: 8192,
-          temperature: 0.3,
-        },
-      });
-
-      const rawText = response.text || '';
-      const parsedResult = JSON.parse(rawText.trim());
-      
-      clearInterval(progressInterval);
-      setLoadingProgress(100);
-      setResult({ ...parsedResult, isCompound: true });
-      setLoading(false);
-
-    } catch (err) {
-      console.error('[COMPOUND ANALYSIS FAILED]', err);
-      setError('Failed to analyze compound signals.');
-      clearInterval(progressInterval);
-      setLoading(false);
-    }
-  };
-
   const analyzeSignal = async (overrideInput?: string) => {
     console.log('[1] analyzeSignal called');
 
@@ -719,6 +608,149 @@ Return ONLY this JSON:
       // ALWAYS clear loading state — never leave the UI stuck
       clearInterval(progressInterval);
       console.log('[FINALLY] clearing loading. aborted:', signal.aborted);
+      setLoading(false);
+    }
+  };
+
+  const analyzeCompoundSignal = async (articles: FeedSignal[]) => {
+    if (articles.length < 2) return;
+
+    const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+    if (!apiKey) { setError('Gemini API key not configured.'); return; }
+
+    setLoading(true);
+    setError(null);
+    setLoadingStage(0);
+    setLoadingProgress(5);
+
+    const progressInterval = setInterval(() => {
+      setLoadingProgress(p => Math.min(p + 2, 90));
+    }, 400);
+
+    try {
+      const compoundText = articles.map((a, i) =>
+        `Signal ${i + 1} — ${a.source}:\n${a.title}\n${a.snippet}`
+      ).join('\n\n---\n\n');
+
+      const marketContext = marketModeConfigs[selectedMode]?.promptContext || '';
+      const countryLine = countryTags.length > 0 ? `TARGET MARKET: ${countryTags.join(', ')}` : '';
+
+      const genAI = new GoogleGenAI({ apiKey });
+      const response = await genAI.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: `You are an expert market analyst specializing in compound business opportunities — opportunities that emerge from the convergence of multiple market signals simultaneously.
+
+MULTIPLE SIGNALS DETECTED:
+${compoundText}
+
+${marketContext}
+${countryLine}
+
+TASK: Analyze how these ${articles.length} signals TOGETHER create opportunities that NONE of them would reveal individually. Look for convergence patterns, timing advantages, compound market gaps, and second/third order effects.
+
+Return ONLY valid JSON in this exact structure:
+{
+  "compound_trend": "One sentence describing the convergence pattern",
+  "trend": "Same as compound_trend",
+  "convergence_score": <number 0-100 how strongly these signals reinforce each other>,
+  "signal_connections": ["How signal 1 and 2 are connected", "How signal 2 and 3 are connected"],
+  "summary": "2-3 sentences on the compound opportunity",
+  "affected_groups": ["group1", "group2", "group3"],
+  "problems": ["compound problem 1", "compound problem 2"],
+  "opportunities": [
+    {
+      "name": "opportunity name",
+      "description": "Why this needs ALL signals to be true",
+      "compound_advantage": "What makes this stronger than single-signal opportunities",
+      "target_customer": "specific customer",
+      "why_now": "Why the timing of ALL signals matters",
+      "monetization": "how to make money",
+      "pricing_model": "specific pricing",
+      "status": "New",
+      "priority": "High",
+      "startup_cost": <number under 2000>,
+      "grant_eligible": <boolean>,
+      "speed_to_launch": <number 1-10>,
+      "difficulty": <number 1-10>,
+      "roi_potential": <number 1-10>,
+      "urgency": <number 1-10>,
+      "local_fit": <number 1-10>,
+      "competition_gap": <number 1-10>,
+      "money_score": <number 0-100>
+    }
+  ],
+  "best_idea": {
+    "name": "best opportunity name",
+    "reason": "why this compound signal makes this the best idea",
+    "who_should_build": "who",
+    "cost_estimate": "$X - $Y",
+    "speed_rating": "Fast",
+    "first_steps": ["step1", "step2", "step3"]
+  }
+}
+
+Return EXACTLY 3 opportunities. Each must be stronger because of the combination of signals.`,
+        config: {
+          responseMimeType: 'application/json',
+          maxOutputTokens: 8192,
+        },
+      });
+
+      const rawText = response.text || '';
+      let parsed: AnalysisResult;
+      try {
+        parsed = JSON.parse(rawText.trim());
+      } catch {
+        const match = rawText.match(/\{[\s\S]*\}/);
+        if (!match) throw new Error('Could not parse compound analysis response.');
+        parsed = JSON.parse(match[0]);
+      }
+
+      // Ensure trend is set
+      if (!parsed.trend && parsed.compound_trend) parsed.trend = parsed.compound_trend;
+
+      // Enforce 3 opportunities
+      if (!parsed.opportunities || parsed.opportunities.length < 1) {
+        throw new Error('Compound analysis returned no opportunities.');
+      }
+      parsed.opportunities = parsed.opportunities.slice(0, 3);
+
+      parsed.isCompound = true;
+      parsed.sourceCount = articles.length;
+      parsed.sources = articles.map(a => ({ title: a.title, source: a.source, url: a.url }));
+
+      if (user) {
+        try {
+          const docRef = await addDoc(collection(db, 'analyses'), {
+            userId: user.uid,
+            isCompound: true,
+            sourceCount: articles.length,
+            sources: parsed.sources,
+            trend: parsed.trend,
+            summary: parsed.summary,
+            convergence_score: parsed.convergence_score,
+            opportunities: parsed.opportunities,
+            best_idea: parsed.best_idea,
+            marketMode: selectedMode,
+            countryTag: countryTags.length > 0 ? countryTags.join(',') : null,
+            createdAt: new Date().toISOString(),
+          });
+          parsed.id = docRef.id;
+          loadHistory(user.uid);
+        } catch (err) {
+          console.warn('[COMPOUND] Firestore save failed:', err);
+        }
+      }
+
+      clearInterval(progressInterval);
+      setLoadingProgress(100);
+      setLoadingStage(3);
+      setResult(parsed);
+    } catch (err) {
+      console.error('[COMPOUND] Analysis failed:', err);
+      setError(err instanceof Error ? err.message : 'Compound analysis failed. Please try again.');
+    } finally {
+      clearInterval(progressInterval);
       setLoading(false);
     }
   };

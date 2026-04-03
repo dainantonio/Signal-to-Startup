@@ -3,7 +3,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
-  Sparkles,
   Loader2,
   X,
   FileUp,
@@ -23,7 +22,7 @@ import { MarketModeSelector } from './MarketModeSelector';
 import { COUNTRY_CONTEXT } from '@/lib/rss-sources';
 
 const capitalize = (s: string) => s.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-const ALL_SECTORS: SectorKey[] = ['ai', 'policy', 'markets', 'funding', 'sustainability', 'realestate', 'health'];
+const ALL_SECTORS: SectorKey[] = ['ai', 'policy', 'markets', 'funding', 'sustainability', 'realestate', 'health', 'ai_intelligence'];
 
 const CARD_STAGES = [
   { progress: 15, label: 'Fetching article...', delay: 300 },
@@ -51,6 +50,7 @@ interface SignalDeskNewsroomProps {
   setCountryTags: (tags: string[]) => void;
   onQuickEdit?: () => void;
   showQuickEdit?: boolean;
+  onCompoundAnalysis?: (articles: FeedSignal[]) => void;
 }
 
 export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
@@ -71,8 +71,11 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
   setCountryTags,
   onQuickEdit,
   showQuickEdit = false,
+  onCompoundAnalysis,
 }) => {
-  const [inputMode, setInputMode] = useState<'paste' | 'feed'>('paste');
+  const [inputMode, setInputMode] = useState<'paste' | 'feed'>('feed');
+  const [multiSelectMode, setMultiSelectMode] = useState(false);
+  const [selectedArticles, setSelectedArticles] = useState<FeedSignal[]>([]);
 
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pdfStatus, setPdfStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -270,18 +273,7 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
       {/* Mode Toggle */}
       <div className="flex bg-white border border-gray-200 rounded-2xl p-1.5 mb-6 shadow-sm w-fit mx-auto">
         <button
-          onClick={() => setInputMode('paste')}
-          className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all ${
-            inputMode === 'paste'
-              ? 'bg-black text-white shadow-lg'
-              : 'text-gray-600 hover:text-black hover:bg-gray-50'
-          }`}
-        >
-          <Edit3 className="w-4 h-4" />
-          Paste Signal
-        </button>
-        <button
-          onClick={() => setInputMode('feed')}
+          onClick={() => { setInputMode('feed'); setMultiSelectMode(false); setSelectedArticles([]); }}
           className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all ${
             inputMode === 'feed'
               ? 'bg-black text-white shadow-lg'
@@ -294,6 +286,17 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
             <span className="w-2 h-2 bg-red-400 rounded-full animate-pulse" />
           )}
         </button>
+        <button
+          onClick={() => { setInputMode('paste'); setMultiSelectMode(false); setSelectedArticles([]); }}
+          className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all ${
+            inputMode === 'paste'
+              ? 'bg-black text-white shadow-lg'
+              : 'text-gray-600 hover:text-black hover:bg-gray-50'
+          }`}
+        >
+          <Edit3 className="w-4 h-4" />
+          Paste Signal
+        </button>
       </div>
 
       {inputMode === 'paste' ? (
@@ -305,7 +308,6 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
                 <h2 className="text-2xl font-sans font-bold text-gray-900 mb-1">Signal Desk</h2>
                 <p className="text-sm text-gray-500">Paste your market signal to extract opportunities</p>
               </div>
-              <Sparkles className="w-6 h-6 text-gray-300" />
             </div>
           </div>
 
@@ -328,9 +330,6 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
                 placeholder="Paste a news article, policy update, or market signal here..."
                 className="w-full h-64 bg-gray-50 border-0 rounded-2xl p-6 focus:ring-2 focus:ring-black focus:bg-white outline-none resize-none font-sans text-base leading-relaxed transition-all"
               />
-              <div className="absolute bottom-6 right-6 text-gray-200">
-                <Sparkles className="w-6 h-6" />
-              </div>
             </div>
 
             <div className="flex items-center gap-3">
@@ -402,7 +401,6 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
                 disabled={!input.trim()}
                 className="w-full bg-black text-white py-5 rounded-2xl text-base font-semibold hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-3 shadow-lg active:scale-[0.98]"
               >
-                <Sparkles className="w-5 h-5" />
                 Extract Opportunities
               </button>
             )}
@@ -457,6 +455,20 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
                 )}
               </div>
               <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMultiSelectMode(!multiSelectMode);
+                    setSelectedArticles([]);
+                  }}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-semibold transition-all ${
+                    multiSelectMode
+                      ? 'bg-black text-white border-black'
+                      : 'border-gray-200 text-gray-600 hover:border-gray-400'
+                  }`}
+                >
+                  {multiSelectMode ? '✕ Cancel' : '⊕ Compare'}
+                </button>
                 <button
                   type="button"
                   onClick={() => setShowFilterDrawer(true)}
@@ -518,12 +530,54 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
                         filter: isOtherAnalyzing ? 'blur(1px)' : 'blur(0px)',
                       }}
                       transition={{ duration: 0.2 }}
-                      className={`relative bg-white border border-gray-200 rounded-2xl flex flex-col overflow-hidden ${
-                        isOtherAnalyzing ? 'pointer-events-none' : ''} ${
-                        isAnalyzing ? 'ring-2 ring-black shadow-xl' : 'shadow-sm hover:shadow-md'
-                      } transition-all`}
+                      className={`relative bg-white rounded-2xl flex flex-col overflow-hidden transition-all ${
+                        multiSelectMode
+                          ? selectedArticles.some(a => a.url === key)
+                            ? 'border-2 border-black shadow-md'
+                            : 'border-2 border-gray-200 hover:border-gray-400 cursor-pointer'
+                          : isOtherAnalyzing ? 'pointer-events-none border border-gray-200' :
+                            isAnalyzing ? 'border border-gray-200 ring-2 ring-black shadow-xl' : 'border border-gray-200 shadow-sm hover:shadow-md'
+                      }`}
                     >
-                      {isAnalyzing ? (
+                      {multiSelectMode ? (
+                        /* Multi-select card */
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedArticles(prev => {
+                              const isSelected = prev.some(a => a.url === key);
+                              if (isSelected) return prev.filter(a => a.url !== key);
+                              if (prev.length >= 5) return prev;
+                              return [...prev, sig];
+                            });
+                          }}
+                          className="w-full text-left p-5 flex flex-col gap-3"
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className={`w-5 h-5 rounded border-2 flex-shrink-0 mt-0.5 flex items-center justify-center transition-all ${
+                              selectedArticles.some(a => a.url === key)
+                                ? 'bg-black border-black'
+                                : 'border-gray-300'
+                            }`}>
+                              {selectedArticles.some(a => a.url === key) && (
+                                <span className="text-white text-xs leading-none">✓</span>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1.5">
+                                <span className="text-xs font-semibold text-gray-500 uppercase truncate">
+                                  {sig.source}
+                                </span>
+                                <span className={`px-2 py-0.5 text-xs font-semibold rounded-md ${cfg.badgeBg} ${cfg.badgeText}`}>
+                                  {cfg.label}
+                                </span>
+                              </div>
+                              <p className="text-sm font-semibold leading-snug line-clamp-2 text-gray-900">{sig.title}</p>
+                              <p className="text-xs text-gray-500 line-clamp-2 mt-1">{sig.snippet}</p>
+                            </div>
+                          </div>
+                        </button>
+                      ) : isAnalyzing ? (
                         <div className="p-5 flex flex-col gap-3">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="text-xs font-semibold text-gray-500 uppercase truncate">
@@ -593,6 +647,52 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
                   );
                 })}
           </div>
+
+          {/* Sticky Compound Analysis Bar */}
+          {multiSelectMode && (
+            <div className={`fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-2xl transition-transform duration-300 ${
+              selectedArticles.length > 0 ? 'translate-y-0' : 'translate-y-full'
+            }`}>
+              <div className="max-w-3xl mx-auto px-4 py-4">
+                {selectedArticles.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {selectedArticles.map(article => (
+                      <div key={article.url} className="flex items-center gap-1.5 px-3 py-1 bg-gray-100 rounded-full text-xs">
+                        <span className="font-medium text-gray-700 max-w-[140px] truncate">{article.title}</span>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedArticles(prev => prev.filter(a => a.url !== article.url))}
+                          className="text-gray-400 hover:text-black flex-shrink-0"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (onCompoundAnalysis && selectedArticles.length >= 2) {
+                      onCompoundAnalysis(selectedArticles);
+                      setMultiSelectMode(false);
+                      setSelectedArticles([]);
+                    }
+                  }}
+                  disabled={selectedArticles.length < 2}
+                  className="w-full py-3 bg-black text-white rounded-xl text-sm font-semibold disabled:opacity-40 hover:bg-gray-900 transition-colors"
+                >
+                  {selectedArticles.length < 2
+                    ? `Select ${2 - selectedArticles.length} more signal${selectedArticles.length === 1 ? '' : 's'} to compare`
+                    : `⚡ Compound analysis — ${selectedArticles.length} signals`
+                  }
+                </button>
+                <p className="text-xs text-gray-400 text-center mt-2">
+                  Select 2–5 signals · Find hidden compound opportunities
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Filter Drawer */}
           {showFilterDrawer && (

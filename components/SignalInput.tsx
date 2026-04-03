@@ -38,7 +38,7 @@ interface SignalInputProps {
   loadingProgress?: number;
   result: unknown | null;
   analyzeSignal: (overrideInput?: string) => void;
-  analyzeCompoundSignal: (compoundText: string, articles: FeedSignal[]) => void;
+  analyzeCompoundSignal: (articles: FeedSignal[]) => void;
   cancelAnalysis: () => void;
   selectedMode: MarketMode;
   setSelectedMode: (mode: MarketMode) => void;
@@ -634,10 +634,7 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    const compoundText = selectedArticles.map((a, i) => 
-                      `Signal ${i + 1} — ${a.source}:\n${a.title}\n${a.snippet}`
-                    ).join('\n\n');
-                    analyzeCompoundSignal(compoundText, selectedArticles);
+                    analyzeCompoundSignal(selectedArticles);
                     setMultiSelectMode(false);
                     setSelectedArticles([]);
                   }}

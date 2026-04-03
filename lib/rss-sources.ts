@@ -116,6 +116,12 @@ export const RSS_SOURCES: RSSSource[] = [
   { url: 'https://www.realbusiness.co.uk/feed',                        market: 'uk',        sector: 'markets',     name: 'Real Business UK',           tier: 1 },
   { url: 'https://smallbusiness.co.uk/feed/',                          market: 'uk',        sector: 'markets',     name: 'Small Business UK',          tier: 1 },
 
+  // ── AI INTELLIGENCE — Real ROI, trends, not hype ─────────────────────
+  { url: 'https://www.technologyreview.com/feed/',                        market: 'global', sector: 'ai_intelligence', name: 'MIT Tech Review AI',    tier: 1 },
+  { url: 'https://newsletter.pragmaticengineer.com/feed',                 market: 'global', sector: 'ai_intelligence', name: 'Pragmatic Engineer',     tier: 1 },
+  { url: 'https://feeds.feedburner.com/venturebeat/SZYF',                 market: 'global', sector: 'ai_intelligence', name: 'VentureBeat AI',         tier: 1 },
+  { url: 'https://techcrunch.com/category/artificial-intelligence/feed/', market: 'global', sector: 'ai_intelligence', name: 'TechCrunch AI',          tier: 1 },
+
   // ── LATIN AMERICA ─────────────────────────────────────────────────────
   { url: 'https://www.contxto.com/en/feed/',                           market: 'latam',     sector: 'ai',          name: 'Contxto LatAm Tech',         tier: 1 },
   { url: 'https://lavca.org/feed/',                                    market: 'latam',     sector: 'funding',     name: 'LAVCA VC Latin America',     tier: 1 },
