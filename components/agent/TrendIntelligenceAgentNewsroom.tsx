@@ -61,6 +61,11 @@ export default function TrendIntelligenceAgentNewsroom() {
       return [];
     }
   });
+  const [readingLevel, setReadingLevel] = useState<'simple' | 'standard' | 'advanced'>(() => {
+    try {
+      return (localStorage.getItem('s2s_reading_level') as 'simple' | 'standard' | 'advanced') || 'standard';
+    } catch { return 'standard'; }
+  });
 
   // Persist country tags
   useEffect(() => {
@@ -94,6 +99,7 @@ export default function TrendIntelligenceAgentNewsroom() {
         const prefs: UserPreferences = JSON.parse(saved);
         if (prefs.marketMode) setSelectedMode(prefs.marketMode);
         if (prefs.countryTag) handleSetCountryTags([prefs.countryTag]);
+        if (prefs.readingLevel) setReadingLevel(prefs.readingLevel);
       }
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -105,7 +111,7 @@ export default function TrendIntelligenceAgentNewsroom() {
     if (prefs.countryTag) handleSetCountryTags([prefs.countryTag]);
   };
 
-  const analysis = useAgentAnalysis(user, selectedMode, countryTags);
+  const analysis = useAgentAnalysis(user, selectedMode, countryTags, readingLevel);
 
   // Pick up pre-analyzed opportunity from agent (via dashboard "View Opportunity")
   useEffect(() => {
@@ -405,6 +411,7 @@ export default function TrendIntelligenceAgentNewsroom() {
                 setGrantOnly={analysis.setGrantOnly}
                 generateDeepDive={analysis.generateDeepDive}
                 countryTags={countryTags}
+                readingLevel={readingLevel}
               />
 
               {/* Execution Summary (Step 4) */}
@@ -493,6 +500,7 @@ export default function TrendIntelligenceAgentNewsroom() {
               }}
               copied={copied}
               selectedMode={selectedMode}
+              readingLevel={readingLevel}
             />
           )}
         </AnimatePresence>

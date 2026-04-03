@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Grid3x3, SlidersHorizontal } from 'lucide-react';
 import { AnalysisResult, Opportunity } from './types';
 import { OpportunityCard } from './OpportunityCard';
+import { getLabels } from './utils/labels';
 
 interface OpportunityGridProps {
   result: AnalysisResult;
@@ -14,6 +15,7 @@ interface OpportunityGridProps {
   setGrantOnly: (val: boolean) => void;
   generateDeepDive: (opp: Opportunity) => void;
   countryTags?: string[];
+  readingLevel?: 'simple' | 'standard' | 'advanced';
 }
 
 export const OpportunityGrid: React.FC<OpportunityGridProps> = ({
@@ -25,17 +27,23 @@ export const OpportunityGrid: React.FC<OpportunityGridProps> = ({
   setGrantOnly,
   generateDeepDive,
   countryTags = [],
+  readingLevel = 'standard',
 }) => {
+  const labels = getLabels(readingLevel);
+  const displayOpportunities = labels.opportunityCount === 1
+    ? filteredOpportunities.slice(0, 1)
+    : filteredOpportunities;
+
   return (
     <section id="step-3" className="scroll-mt-24 mb-16">
       {/* Section Header */}
       <div className="flex items-end justify-between mb-8">
         <div>
           <h2 className="text-3xl font-serif font-bold text-gray-900 mb-2">
-            Opportunity Pages
+            {labels.topOpportunities}
           </h2>
           <p className="text-base text-gray-600">
-            {filteredOpportunities.length} actionable opportunities identified
+            {displayOpportunities.length} actionable opportunities identified
           </p>
         </div>
 
@@ -76,9 +84,9 @@ export const OpportunityGrid: React.FC<OpportunityGridProps> = ({
       </div>
 
       {/* Opportunity Cards Grid */}
-      {filteredOpportunities.length > 0 ? (
+      {displayOpportunities.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredOpportunities.map((opp, i) => (
+          {displayOpportunities.map((opp, i) => (
             <OpportunityCard
               key={i}
               opp={opp}
@@ -86,6 +94,7 @@ export const OpportunityGrid: React.FC<OpportunityGridProps> = ({
               isBestIdea={opp.name === result.best_idea.name}
               generateDeepDive={generateDeepDive}
               countryTags={countryTags}
+              readingLevel={readingLevel}
             />
           ))}
         </div>

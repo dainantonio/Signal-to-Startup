@@ -28,6 +28,7 @@ import { CostEstimator } from './CostEstimator';
 import { GrantFinder } from './GrantFinder';
 import { InvestorMatch } from './InvestorMatch';
 import { Checklist } from './Checklist';
+import { getLabels } from './utils/labels';
 import { 
   auth, 
   db, 
@@ -52,6 +53,7 @@ interface DeepDiveModalProps {
   copyToClipboard: (text: string, id: string) => void;
   copied: string | null;
   selectedMode: MarketMode;
+  readingLevel?: 'simple' | 'standard' | 'advanced';
 }
 
 export const DeepDiveModal: React.FC<DeepDiveModalProps> = ({
@@ -65,8 +67,10 @@ export const DeepDiveModal: React.FC<DeepDiveModalProps> = ({
   generateDeepDive,
   copyToClipboard,
   copied,
-  selectedMode
+  selectedMode,
+  readingLevel = 'standard',
 }) => {
+  const labels = getLabels(readingLevel);
   const [isSaved, setIsSaved] = React.useState(false);
 
   const handleClose = React.useCallback(() => {
@@ -195,11 +199,11 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
   };
 
   const tabs = [
-    { id: 'plan', label: 'Business Plan', icon: FileText },
-    { id: 'costs', label: 'Startup Costs', icon: Calculator },
-    { id: 'grants', label: 'Funding & Grants', icon: Coins },
-    { id: 'checklist', label: '30-Day Checklist', icon: CheckSquare },
-    { id: 'investors', label: 'Investor Match', icon: Users },
+    { id: 'plan', label: labels.businessPlan, icon: FileText },
+    { id: 'costs', label: labels.startupCosts, icon: Calculator },
+    { id: 'grants', label: labels.fundingGrants, icon: Coins },
+    { id: 'checklist', label: labels.checklist, icon: CheckSquare },
+    { id: 'investors', label: labels.investorMatch, icon: Users },
   ] as const;
 
   return (

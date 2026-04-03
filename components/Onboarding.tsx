@@ -16,6 +16,7 @@ export interface UserPreferences {
   countryTag: string;
   sectors: SectorKey[];
   businessTypes: string[];
+  readingLevel: 'simple' | 'standard' | 'advanced';
 }
 
 interface OnboardingProps {
@@ -123,14 +124,16 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   const [countryTag, setCountryTag] = useState('');
   const [sectors, setSectors] = useState<SectorKey[]>(ALL_SECTORS);
   const [businessTypes, setBusinessTypes] = useState<string[]>([]);
+  const [readingLevel, setReadingLevel] = useState<'simple' | 'standard' | 'advanced'>('standard');
   const [showAgentConfirm, setShowAgentConfirm] = useState(false);
 
-  const totalSteps = 3;
+  const totalSteps = 4;
 
   const handleComplete = async () => {
-    const prefs: UserPreferences = { marketMode, countryTag, sectors, businessTypes };
+    const prefs: UserPreferences = { marketMode, countryTag, sectors, businessTypes, readingLevel };
     localStorage.setItem('userPreferences', JSON.stringify(prefs));
     localStorage.setItem('onboardingComplete', 'true');
+    localStorage.setItem('s2s_reading_level', readingLevel);
 
     // Also persist to Firestore so the agent can read preferences server-side
     try {
@@ -138,6 +141,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
       if (user) {
         await setDoc(doc(db, 'user_preferences', user.uid), {
           ...prefs,
+          readingLevel,
           userId: user.uid,
           email: user.email,
           displayName: user.displayName,
@@ -297,7 +301,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             </motion.div>
           )}
 
-          {/* STEP 2 — Sectors */}
+          {/* STEP 2 — Reading Level */}
           {step === 2 && (
             <motion.div
               key="step2"
@@ -309,7 +313,76 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             >
               <div className="space-y-1">
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
-                  Step 2 of 3
+                  Step 2 of 4
+                </p>
+                <h2 className="text-2xl font-bold text-gray-900">
+                  How do you want your opportunities?
+                </h2>
+                <p className="text-sm text-gray-500 leading-relaxed">
+                  We&apos;ll adjust how we explain things to match your style.
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                {([
+                  {
+                    value: 'simple',
+                    emoji: '🗣',
+                    title: 'Talk to me like a friend',
+                    description: "Plain language, simple steps, no business jargon. Perfect if you're just getting started.",
+                  },
+                  {
+                    value: 'standard',
+                    emoji: '📊',
+                    title: 'Give me the full picture',
+                    description: 'Balanced detail with market context, costs, and opportunities clearly explained.',
+                  },
+                  {
+                    value: 'advanced',
+                    emoji: '🚀',
+                    title: 'I want the deep details',
+                    description: 'Full analysis with metrics, competitive landscape, and investor-ready language.',
+                  },
+                ] as const).map(option => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setReadingLevel(option.value)}
+                    className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
+                      readingLevel === option.value
+                        ? 'border-black bg-gray-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <span className="text-2xl flex-shrink-0">{option.emoji}</span>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900 mb-0.5">{option.title}</p>
+                        <p className="text-xs text-gray-500 leading-relaxed">{option.description}</p>
+                      </div>
+                      {readingLevel === option.value && (
+                        <span className="ml-auto text-black flex-shrink-0">✓</span>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {/* STEP 3 — Sectors */}
+          {step === 3 && (
+            <motion.div
+              key="step3"
+              initial={{ opacity: 0, x: 40 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -40 }}
+              transition={{ duration: 0.25 }}
+              className="px-4 py-8 max-w-lg mx-auto space-y-6"
+            >
+              <div className="space-y-1">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
+                  Step 3 of 4
                 </p>
                 <h2 className="text-2xl font-bold text-gray-900">
                   What signals interest you?
@@ -357,10 +430,10 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             </motion.div>
           )}
 
-          {/* STEP 3 — Business type */}
-          {step === 3 && (
+          {/* STEP 4 — Business type */}
+          {step === 4 && (
             <motion.div
-              key="step3"
+              key="step4"
               initial={{ opacity: 0, x: 40 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -40 }}
@@ -369,7 +442,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             >
               <div className="space-y-1">
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
-                  Step 3 of 3
+                  Step 4 of 4
                 </p>
                 <h2 className="text-2xl font-bold text-gray-900">
                   What type of business interests you?

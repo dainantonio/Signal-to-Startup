@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { motion } from 'motion/react';
 import { ChevronRight, Sparkles, Target, Zap, Coins } from 'lucide-react';
 import { Opportunity } from './types';
+import { getLabels } from './utils/labels';
 
 interface OpportunityCardProps {
   opp: Opportunity;
@@ -13,11 +14,13 @@ interface OpportunityCardProps {
   generateDeepDive: (opp: Opportunity) => void;
   isReadOnly?: boolean;
   countryTags?: string[];
+  readingLevel?: 'simple' | 'standard' | 'advanced';
 }
 
 export const OpportunityCard: React.FC<OpportunityCardProps> = ({
-  opp, index, isBestIdea, generateDeepDive, isReadOnly = false, countryTags = []
+  opp, index, isBestIdea, generateDeepDive, isReadOnly = false, countryTags = [], readingLevel = 'standard'
 }) => {
+  const labels = getLabels(readingLevel);
   const colors = {
     High:   { badge: 'bg-emerald-100 text-emerald-800', accent: 'bg-emerald-500' },
     Medium: { badge: 'bg-amber-100 text-amber-800',     accent: 'bg-amber-500'   },
@@ -88,27 +91,29 @@ export const OpportunityCard: React.FC<OpportunityCardProps> = ({
           )}
         </div>
 
-        {/* Key metrics - mobile responsive */}
-        <div className="grid grid-cols-3 gap-3 md:gap-4 mb-6 pb-6 border-b border-gray-100">
-          <div className="min-w-0">
-            <p className="text-xs text-gray-500 mb-1 font-medium truncate">Cost</p>
-            <p className="text-sm md:text-base font-bold text-gray-900 truncate">
-              ${opp.startup_cost.toLocaleString()}
-            </p>
+        {/* Key metrics - hidden in simple mode */}
+        {labels.metricsVisible && (
+          <div className="grid grid-cols-3 gap-3 md:gap-4 mb-6 pb-6 border-b border-gray-100">
+            <div className="min-w-0">
+              <p className="text-xs text-gray-500 mb-1 font-medium truncate">Cost</p>
+              <p className="text-sm md:text-base font-bold text-gray-900 truncate">
+                ${opp.startup_cost.toLocaleString()}
+              </p>
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs text-gray-500 mb-1 font-medium truncate">Speed</p>
+              <p className="text-sm md:text-base font-bold text-gray-900">
+                {opp.speed_to_launch}/10
+              </p>
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs text-gray-500 mb-1 font-medium truncate">ROI</p>
+              <p className="text-sm md:text-base font-bold text-gray-900">
+                {Math.round(opp.money_score)}
+              </p>
+            </div>
           </div>
-          <div className="min-w-0">
-            <p className="text-xs text-gray-500 mb-1 font-medium truncate">Speed</p>
-            <p className="text-sm md:text-base font-bold text-gray-900">
-              {opp.speed_to_launch}/10
-            </p>
-          </div>
-          <div className="min-w-0">
-            <p className="text-xs text-gray-500 mb-1 font-medium truncate">ROI</p>
-            <p className="text-sm md:text-base font-bold text-gray-900">
-              {Math.round(opp.money_score)}
-            </p>
-          </div>
-        </div>
+        )}
 
         {/* Target customer - mobile responsive */}
         <div className="mb-6">
@@ -150,7 +155,7 @@ export const OpportunityCard: React.FC<OpportunityCardProps> = ({
             onClick={() => generateDeepDive(opp)}
             className="w-full bg-black text-white py-4 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 hover:bg-gray-800 active:scale-[0.98] shadow-sm"
           >
-            View Execution Suite
+            {labels.deepDiveButton}
             <ChevronRight className="w-4 h-4" />
           </button>
         )}

@@ -90,6 +90,41 @@ FOR KENYA SPECIFICALLY:
 }
 
 // ---------------------------------------------------------------------------
+// Reading level prompt fragments
+// ---------------------------------------------------------------------------
+const READING_LEVEL_PROMPTS = {
+  simple: `
+WRITING STYLE — SIMPLE MODE:
+Write everything at a Grade 6-8 reading level.
+Use short sentences. Use everyday words.
+Never use business jargon or startup terminology.
+Write like a smart friend explaining over lunch.
+Instead of "B2C revenue model" say "selling directly to customers".
+Instead of "market penetration" say "getting your first customers".
+Instead of "ROI potential" say "how much money you could make".
+Instead of "value proposition" say "why people would choose you".
+Keep opportunity descriptions under 2 sentences.
+First steps must be specific and actionable today.
+Cost estimates must feel achievable — break into phases if large.
+Always use local currency and local examples.
+`,
+  standard: `
+WRITING STYLE — STANDARD MODE:
+Write clearly for an educated entrepreneur who is not a startup insider.
+Explain business concepts briefly when used.
+Balance professional tone with accessibility.
+Use local currency and context throughout.
+`,
+  advanced: `
+WRITING STYLE — ADVANCED MODE:
+Write for sophisticated founders and investors.
+Include market sizing language, competitive moats, unit economics thinking, and growth trajectory.
+Use standard startup and VC terminology.
+Be precise with metrics and financial projections.
+`,
+} as const;
+
+// ---------------------------------------------------------------------------
 // Loading stage labels
 // ---------------------------------------------------------------------------
 export const LOADING_STAGE_LABELS = [
@@ -226,7 +261,7 @@ const deepDiveSchema = {
   required: ["business_plan", "cost_breakdown", "grants", "checklist", "investors"]
 };
 
-export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: MarketMode, countryTags: string[] = []) {
+export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: MarketMode, countryTags: string[] = [], readingLevel: 'simple' | 'standard' | 'advanced' = 'standard') {
   const [history, setHistory] = useState<(AnalysisResult & { id: string })[]>([]);
   const [input, setInput] = useState('');
   const [urlInput, setUrlInput] = useState('');
@@ -431,6 +466,8 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
         TONE: Clear, sharp, execution-focused. Think: "What can someone start THIS WEEK?"
 
         ${buildCountryPrompt(countryTags)}
+
+        ${READING_LEVEL_PROMPTS[readingLevel]}
 
         ${trimmedForGemini.toLowerCase().includes('ai') || trimmedForGemini.toLowerCase().includes('artificial intelligence') ? `
         For this AI-focused signal, explicitly assess:
