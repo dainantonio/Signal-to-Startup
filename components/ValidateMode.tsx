@@ -798,6 +798,16 @@ Return ONLY this JSON object. No text before or after. No markdown:
           result: parsed,
           createdAt: new Date().toISOString(),
         }).catch(err => console.warn('Validation save failed:', err));
+        // Track usage
+        try {
+          addDoc(collection(db, 'usage_logs'), {
+            userId: auth.currentUser.uid,
+            type: 'validation',
+            marketMode: selectedMode || 'global',
+            countryTag: localCountry || null,
+            timestamp: new Date().toISOString(),
+          }).catch(() => {});
+        } catch {}
       }
     } catch (err) {
       if ((err as Error).name === 'AbortError') return;

@@ -8,7 +8,30 @@ import {
   signOut,
   onAuthStateChanged,
   FirebaseUser,
+  db,
+  doc,
+  setDoc,
+  getDoc,
 } from '../../firebase';
+
+const ensureUserDocument = async (user: FirebaseUser) => {
+  try {
+    const userRef = doc(db, 'users', user.uid);
+    const userSnap = await getDoc(userRef);
+    if (!userSnap.exists()) {
+      await setDoc(userRef, {
+        uid: user.uid,
+        email: user.email || '',
+        displayName: user.displayName || '',
+        photoURL: user.photoURL || '',
+        createdAt: new Date().toISOString(),
+      });
+      console.log('[AUTH] User document created:', user.uid);
+    }
+  } catch (err) {
+    console.warn('[AUTH] Failed to create user doc:', err);
+  }
+};
 
 export function useAgentAuth() {
   const [user, setUser] = useState<FirebaseUser | null>(null);
@@ -16,7 +39,12 @@ export function useAgentAuth() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
+      if (firebaseUser) {
+        ensureUserDocument(firebaseUser);
+        setUser(firebaseUser);
+      } else {
+        setUser(null);
+      }
     });
     return () => unsubscribe();
   }, []);

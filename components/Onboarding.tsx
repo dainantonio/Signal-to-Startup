@@ -123,6 +123,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   const [countryTag, setCountryTag] = useState('');
   const [sectors, setSectors] = useState<SectorKey[]>(ALL_SECTORS);
   const [businessTypes, setBusinessTypes] = useState<string[]>([]);
+  const [showAgentConfirm, setShowAgentConfirm] = useState(false);
 
   const totalSteps = 3;
 
@@ -147,10 +148,13 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
       }
     } catch (error) {
       console.warn('[ONBOARDING] Firestore save failed:', error);
-      // Don't block — localStorage already saved
     }
 
-    onComplete(prefs);
+    // Show agent confirmation screen, then advance
+    setShowAgentConfirm(true);
+    setTimeout(() => {
+      onComplete(prefs);
+    }, 3000);
   };
 
   const toggleSector = (sector: SectorKey) => {
@@ -169,6 +173,36 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
 
   return (
     <div className="fixed inset-0 bg-white z-50 flex flex-col">
+
+      {/* Agent confirmation overlay */}
+      {showAgentConfirm && (
+        <div className="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center p-8 text-center">
+          <div className="text-5xl mb-6">🤖</div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-3">Your agent is active</h2>
+          <p className="text-gray-500 text-base leading-relaxed mb-6 max-w-sm">
+            Your Signal Monitor is now watching{' '}
+            {countryTag ? `${countryTag} and global` : 'global'} markets for
+            opportunities that match your profile.
+          </p>
+          <div className="space-y-3 w-full max-w-xs">
+            {[
+              { time: '7:00 AM UTC', action: 'Monitor scans for new signals', icon: '📡' },
+              { time: '8:00 AM UTC', action: 'Scout analyzes top opportunities', icon: '🔍' },
+              { time: '9:00 AM UTC', action: 'Digest delivered to your inbox', icon: '📧' },
+            ].map(item => (
+              <div key={item.time} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl text-left">
+                <span className="text-xl">{item.icon}</span>
+                <div>
+                  <p className="text-xs font-semibold text-gray-900">{item.action}</p>
+                  <p className="text-xs text-gray-400">{item.time} daily</p>
+                </div>
+                <span className="ml-auto w-2 h-2 rounded-full bg-green-500" />
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-gray-400 mt-6">Taking you to your feed...</p>
+        </div>
+      )}
 
       {/* Progress bar */}
       <div className="h-1 bg-gray-100">
@@ -237,7 +271,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
 
               <div className="space-y-2">
                 <p className="text-xs font-medium text-gray-500">
-                  Narrow to a specific country (optional)
+                  Select your country <span className="text-amber-600">*required</span>
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {COUNTRY_OPTIONS[marketMode].map(country => {
@@ -414,7 +448,12 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             <button
               type="button"
               onClick={() => setStep(s => s + 1)}
-              className="flex-1 py-3 bg-black text-white rounded-xl text-sm font-semibold hover:bg-gray-900 transition-colors"
+              disabled={step === 1 && !countryTag}
+              className={`flex-1 py-3 bg-black text-white rounded-xl text-sm font-semibold transition-colors ${
+                step === 1 && !countryTag
+                  ? 'opacity-40 cursor-not-allowed'
+                  : 'hover:bg-gray-900'
+              }`}
             >
               Continue →
             </button>
@@ -428,7 +467,12 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             </button>
           )}
         </div>
-        {step === 1 && (
+        {step === 1 && !countryTag && (
+          <p className="text-xs text-amber-600 text-center mt-2">
+            Select your country to get local funding sources and cost estimates
+          </p>
+        )}
+        {step === 1 && countryTag && (
           <button
             type="button"
             onClick={handleComplete}

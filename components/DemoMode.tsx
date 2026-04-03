@@ -48,69 +48,53 @@ interface DemoModeProps {
 const DEMO_ARTICLES: DemoArticle[] = [
   {
     id: 1,
-    title: 'Amazon acquires second robotics startup this month as consumer robot market surges',
-    source: 'TechCrunch',
-    sector: 'AI & Tech',
-    snippet:
-      'Amazon has acquired Fauna Robotics, a startup developing kid-size humanoid robots for home use. This follows their acquisition of Rivr last month, signaling a major push into consumer robotics.',
-    url: 'https://techcrunch.com',
-    signalScore: 92,
+    title: 'JPS announces 15% electricity rate increase effective next quarter',
+    source: 'Jamaica Observer',
+    sector: 'Policy',
+    snippet: 'Jamaica Public Service Company has confirmed a 15% increase in electricity rates for residential and commercial customers, citing rising fuel costs and infrastructure investment needs.',
+    url: 'https://www.jamaicaobserver.com',
+    signalScore: 87,
     publishedAt: new Date(Date.now() - 2 * 3600000).toISOString(),
   },
   {
     id: 2,
-    title: 'Caribbean governments announce $500M digital infrastructure investment across 6 islands',
-    source: 'Caribbean Business Report',
-    sector: 'Policy',
-    snippet:
-      'CARICOM member states have committed to a major digital infrastructure fund targeting rural connectivity, digital payments adoption, and e-government services across the region.',
-    url: 'https://caribbeanbusinessreport.com',
-    signalScore: 96,
+    title: 'DBJ launches $500M SME loan facility targeting informal sector businesses',
+    source: 'Jamaica Gleaner',
+    sector: 'Funding & Grants',
+    snippet: 'The Development Bank of Jamaica has unveiled a new loan facility specifically targeting small and micro enterprises in the informal sector, with simplified application requirements and interest rates starting at 8% per annum.',
+    url: 'https://jamaica-gleaner.com',
+    signalScore: 94,
     publishedAt: new Date(Date.now() - 4 * 3600000).toISOString(),
   },
   {
     id: 3,
-    title: 'Remote work becomes permanent for 40% of US companies — office space market collapses',
-    source: 'Reuters Business',
+    title: 'Caribbean digital payments surge as mobile money adoption hits record high',
+    source: 'Caribbean Business Report',
     sector: 'Market Shifts',
-    snippet:
-      'A new survey of Fortune 500 companies shows 40% have made remote work permanent, triggering a collapse in commercial real estate demand and a surge in home office spending.',
-    url: 'https://reuters.com',
-    signalScore: 88,
+    snippet: 'Mobile payment transactions across the Caribbean increased 67% year-over-year with Jamaica leading adoption. Analysts point to post-pandemic behavior shifts and improved smartphone penetration as key drivers.',
+    url: 'https://caribbeanbusinessreport.com',
+    signalScore: 91,
     publishedAt: new Date(Date.now() - 6 * 3600000).toISOString(),
   },
   {
     id: 4,
-    title: 'West Africa fintech funding hits record $2.1B as mobile money adoption accelerates',
-    source: 'Disrupt Africa',
-    sector: 'Funding & Grants',
-    snippet:
-      'Venture capital investment in West African fintech startups has hit a record high, driven by explosive growth in mobile money adoption among unbanked populations in Nigeria and Ghana.',
-    url: 'https://disrupt-africa.com',
-    signalScore: 94,
+    title: 'Tourism arrivals in Jamaica up 23% — local suppliers struggle to meet demand',
+    source: 'Loop Jamaica',
+    sector: 'Market Shifts',
+    snippet: 'Record tourist arrivals are creating supply chain opportunities for local Jamaican businesses, but many informal vendors lack the capacity and formalization to access hotel and resort contracts.',
+    url: 'https://loopjamaica.com',
+    signalScore: 88,
     publishedAt: new Date(Date.now() - 8 * 3600000).toISOString(),
   },
   {
     id: 5,
-    title: 'UK government launches £200M fund for green energy small businesses',
-    source: 'Guardian',
-    sector: 'Sustainability',
-    snippet:
-      'The UK government has announced a new grant fund targeting small businesses that help households reduce energy consumption, including insulation services, solar installation, and smart home technology.',
-    url: 'https://theguardian.com',
-    signalScore: 90,
+    title: 'JBDC opens applications for 2026 business development grants up to $2M JMD',
+    source: 'Jamaica Observer Business',
+    sector: 'Funding & Grants',
+    snippet: 'The Jamaica Business Development Corporation is accepting applications for its annual grant programme supporting micro and small enterprises. Priority given to agri-business, creative industries, and tech-enabled services.',
+    url: 'https://www.jamaicaobserver.com',
+    signalScore: 96,
     publishedAt: new Date(Date.now() - 10 * 3600000).toISOString(),
-  },
-  {
-    id: 6,
-    title: 'Mental health crisis drives 300% surge in demand for workplace wellness services',
-    source: 'Inc Magazine',
-    sector: 'Health',
-    snippet:
-      'Corporate demand for mental health and wellness services has tripled since 2023, with small businesses now actively seeking affordable employee wellness programs as a recruitment and retention tool.',
-    url: 'https://inc.com',
-    signalScore: 86,
-    publishedAt: new Date(Date.now() - 12 * 3600000).toISOString(),
   },
 ];
 
@@ -253,9 +237,18 @@ export default function DemoMode({ onSignUp, onBack }: DemoModeProps) {
         contents: [{
           role: 'user',
           parts: [{
-            text: `You are a startup opportunity finder.
+            text: `You are a startup opportunity finder specializing in the Jamaica and Caribbean market.
 Be concise. Each field maximum 1-2 short sentences.
 Keep total response under 800 tokens.
+
+This signal is from the Jamaica/Caribbean market.
+Focus opportunities on:
+- Informal to formal business transition
+- Local Jamaican entrepreneurs and vendors
+- JMD costs alongside USD
+- DBJ, JBDC, and local funding sources
+- Kingston, Montego Bay, and parish-level markets
+- Mobile-first solutions for low-bandwidth users
 
 Analyze this signal: "${articleText.substring(0, 600)}"
 
@@ -427,7 +420,7 @@ Return ONLY this JSON with NO extra text:
           </button>
           <div className="flex items-center gap-2">
             <span className="text-xs px-2 py-1 bg-amber-100 text-amber-700 rounded-full font-medium">
-              Demo mode
+              🇯🇲 Demo — Jamaica & Caribbean
             </span>
             {demoCount < DEMO_ARTICLE_LIMIT && (
               <span className="text-xs text-gray-400 hidden sm:block">
@@ -456,7 +449,7 @@ Return ONLY this JSON with NO extra text:
             className="max-w-3xl mx-auto px-4 py-8 space-y-6"
           >
             <div className="text-center space-y-2">
-              <h2 className="text-xl font-semibold">Pick any article to analyze</h2>
+              <h2 className="text-xl font-semibold">🇯🇲 Jamaica & Caribbean signals</h2>
               <p className="text-sm text-gray-500">
                 Click Analyze on any article below to see the hidden business opportunity
                 inside it — free, no sign up needed.

@@ -586,6 +586,19 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
       clearInterval(progressInterval);
       setLoadingProgress(100);
       setResult({ ...parsedResult, id: savedId });
+      // Track usage — fire and forget
+      try {
+        if (user) {
+          addDoc(collection(db, 'usage_logs'), {
+            userId: user.uid,
+            type: 'analysis',
+            marketMode: selectedMode || 'global',
+            countryTag: countryTags?.[0] || null,
+            isCompound: false,
+            timestamp: new Date().toISOString(),
+          }).catch(() => {});
+        }
+      } catch {}
       console.log('[10] result set — analysis complete');
       console.log('[10b] opportunities count:', parsedResult?.opportunities?.length, '| trend:', parsedResult?.trend?.slice(0, 60));
 
@@ -746,6 +759,20 @@ Return EXACTLY 3 opportunities. Each must be stronger because of the combination
       setLoadingProgress(100);
       setLoadingStage(3);
       setResult(parsed);
+      // Track compound usage — fire and forget
+      try {
+        if (user) {
+          addDoc(collection(db, 'usage_logs'), {
+            userId: user.uid,
+            type: 'compound_analysis',
+            marketMode: selectedMode || 'global',
+            countryTag: countryTags?.[0] || null,
+            isCompound: true,
+            sourceCount: articles.length,
+            timestamp: new Date().toISOString(),
+          }).catch(() => {});
+        }
+      } catch {}
     } catch (err) {
       console.error('[COMPOUND] Analysis failed:', err);
       setError(err instanceof Error ? err.message : 'Compound analysis failed. Please try again.');
@@ -857,6 +884,17 @@ Return EXACTLY 3 opportunities. Each must be stronger because of the combination
         // Only update UI state if modal is still open
         if (!deepDiveCancelledRef.current) {
           setDeepDiveResult(parsed);
+          // Track usage — fire and forget
+          try {
+            if (user) {
+              addDoc(collection(db, 'usage_logs'), {
+                userId: user.uid,
+                type: 'execution_suite',
+                marketMode: selectedMode || 'global',
+                timestamp: new Date().toISOString(),
+              }).catch(() => {});
+            }
+          } catch {}
         }
       }
     } catch (err: unknown) {
