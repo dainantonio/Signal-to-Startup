@@ -159,7 +159,7 @@ export default function TrendIntelligenceAgent() {
     };
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
-  }, [analysis.selectedOpportunity, analysis.result, analysis.loading, showCancelConfirm, handleBackOrCancel]);
+  }, [analysis.result, analysis.loading, showCancelConfirm, handleBackOrCancel]);
 
   // FIX 3: Save result to sessionStorage whenever it changes
   React.useEffect(() => {
