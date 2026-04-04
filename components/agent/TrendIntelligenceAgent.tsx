@@ -238,9 +238,7 @@ export default function TrendIntelligenceAgent() {
     if (oppName && analysis.result) {
     const opp = analysis.result.opportunities.find(o => o.name === oppName);
       if (opp) {
-        // Use the correct method name and pass the required second argument (signalText)
-        // Ensure you pass the variable that holds your current signal input (usually `signal`)
-        analysis.deepDiveOpportunity(opp, signal); 
+        analysis.generateDeepDive(opp);
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -471,7 +469,7 @@ export default function TrendIntelligenceAgent() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              analysis.deleteAnalysis(item.id);
+                              if (item.id) analysis.deleteAnalysis(item.id);
                             }}
                             aria-label="Delete analysis"
                             className="text-muted hover:text-red-500 transition-colors p-1"

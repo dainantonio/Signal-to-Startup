@@ -281,6 +281,27 @@ export function useAgentAnalysis(
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Signal input state
+  const [input, setInput] = useState('');
+  const [urlInput, setUrlInput] = useState('');
+  const [fetchingUrl, setFetchingUrl] = useState(false);
+  const [urlFetchStatus, setUrlFetchStatus] = useState<'idle' | 'success' | 'error' | 'paywalled' | 'timeout'>('idle');
+  const [location, setLocation] = useState('');
+  const [focus, setFocus] = useState('');
+
+  // History
+  const [history, setHistory] = useState<AnalysisResult[]>([]);
+
+  // Deep dive state
+  const [selectedOpportunity, setSelectedOpportunity] = useState<Opportunity | null>(null);
+  const [deepDiveLoading, setDeepDiveLoading] = useState(false);
+  const [deepDiveResult, setDeepDiveResult] = useState<DeepDiveResult | null>(null);
+  const [activeDeepDiveTab, setActiveDeepDiveTab] = useState<'plan' | 'costs' | 'grants' | 'checklist' | 'investors'>('plan');
+
+  // Filter state
+  const [filterType, setFilterType] = useState<'top' | 'hot' | 'fast'>('top');
+  const [grantOnly, setGrantOnly] = useState(false);
+
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const cancelAnalysis = useCallback(() => {
@@ -667,7 +688,7 @@ Return ONLY valid JSON in this exact structure:
 }` }]}]
       });
 
-      const text = response.response.text();
+      const text = response.text ?? '';
       const parsed = JSON.parse(text);
       setResult(parsed);
 
@@ -686,13 +707,6 @@ Return ONLY valid JSON in this exact structure:
 
     try {
       const genAI = new GoogleGenAI({ apiKey });
-      const model = genAI.getGenerativeModel({
-        model: 'gemini-2.5-flash',
-        generationConfig: {
-          responseMimeType: 'application/json',
-          responseSchema: deepDiveSchema,
-        },
-      });
 
       const prompt = `
         You are a business consultant helping an entrepreneur launch a new business.
@@ -712,14 +726,124 @@ Return ONLY valid JSON in this exact structure:
         TONE: Practical, encouraging, and highly specific.
       `;
 
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const data = JSON.parse(response.text()) as DeepDiveResult;
+      const response = await genAI.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+        config: {
+          responseMimeType: 'application/json',
+          responseSchema: deepDiveSchema,
+        },
+      });
+      const data = JSON.parse(response.text ?? '') as DeepDiveResult;
       return data;
     } catch (err) {
       console.error('[DEEP DIVE FAILED]', err);
       return null;
     }
+  };
+
+  // Load history from Firestore when user logs in
+  useEffect(() => {
+    if (!user) {
+      setHistory([]);
+      return;
+    }
+    const loadHistory = async () => {
+      try {
+        const q = query(
+          collection(db, 'analyses'),
+          where('userId', '==', user.uid),
+          orderBy('createdAt', 'desc')
+        );
+        const snap = await getDocs(q);
+        const items = snap.docs.map(d => ({ ...d.data(), id: d.id } as AnalysisResult));
+        setHistory(items);
+      } catch {
+        // ignore — history is non-critical
+      }
+    };
+    loadHistory();
+  }, [user]);
+
+  const deleteAnalysis = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'analyses', id));
+      setHistory(prev => prev.filter(item => item.id !== id));
+    } catch (err) {
+      console.error('[DELETE ANALYSIS]', err);
+    }
+  };
+
+  // Fetch URL content and populate input
+  const fetchUrl = async () => {
+    if (!urlInput.trim()) return;
+    setFetchingUrl(true);
+    setUrlFetchStatus('idle');
+    try {
+      const res = await fetch(`/api/fetch-url?url=${encodeURIComponent(urlInput.trim())}`);
+      if (!res.ok) throw new Error('Failed to fetch URL');
+      const data = await res.json();
+      const text = data.content || data.text || '';
+      if (text) {
+        setInput(text.slice(0, 2000));
+        setUrlFetchStatus('success');
+      } else {
+        setUrlFetchStatus('error');
+      }
+    } catch {
+      setUrlFetchStatus('error');
+    } finally {
+      setFetchingUrl(false);
+    }
+  };
+
+  // Filtered opportunities derived from result + filter state
+  const filteredOpportunities = useMemo(() => {
+    if (!result?.opportunities) return [];
+    let opps = [...result.opportunities];
+    if (grantOnly) opps = opps.filter(o => o.grant_eligible);
+    if (filterType === 'top') opps = [...opps].sort((a, b) => b.roi_potential - a.roi_potential);
+    else if (filterType === 'hot') opps = [...opps].sort((a, b) => b.urgency - a.urgency);
+    else if (filterType === 'fast') opps = [...opps].sort((a, b) => b.speed_to_launch - a.speed_to_launch);
+    return opps;
+  }, [result, filterType, grantOnly]);
+
+  // Cancel deep dive
+  const cancelDeepDive = () => {
+    setSelectedOpportunity(null);
+    setDeepDiveResult(null);
+    setDeepDiveLoading(false);
+  };
+
+  // Generate deep dive — wraps deepDiveOpportunity with state management
+  const generateDeepDive = async (opportunity: Opportunity) => {
+    setSelectedOpportunity(opportunity);
+    setDeepDiveResult(null);
+    setDeepDiveLoading(true);
+    setActiveDeepDiveTab('plan');
+    const ddResult = await deepDiveOpportunity(opportunity, input);
+    setDeepDiveLoading(false);
+    if (ddResult) setDeepDiveResult(ddResult);
+  };
+
+  const shareOnTwitter = () => {
+    if (!result) return;
+    const text = encodeURIComponent(
+      `Spotted a startup opportunity: ${result.best_idea?.name ?? result.trend} — via Signal to Startup`
+    );
+    window.open(`https://x.com/intent/tweet?text=${text}`, '_blank');
+  };
+
+  const shareOnLinkedIn = () => {
+    const url = encodeURIComponent(window.location.href);
+    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}`, '_blank');
+  };
+
+  // Wrapper that uses stored input when no override is given
+  // (matches SignalInput prop type: (overrideInput?: string) => void)
+  const analyzeSignalWithInput = (overrideInput?: string) => {
+    const text = overrideInput ?? input;
+    if (text.trim()) analyzeSignal(text, location, focus);
   };
 
   return {
@@ -730,8 +854,42 @@ Return ONLY valid JSON in this exact structure:
     setResult,
     error,
     cancelAnalysis,
-    analyzeSignal,
+    analyzeSignal: analyzeSignalWithInput,
     analyzeCompoundSignal,
     deepDiveOpportunity,
+    // Input state
+    input,
+    setInput,
+    urlInput,
+    setUrlInput,
+    fetchingUrl,
+    fetchUrl,
+    urlFetchStatus,
+    setUrlFetchStatus,
+    location,
+    setLocation,
+    focus,
+    setFocus,
+    // History
+    history,
+    deleteAnalysis,
+    // Filtering
+    filteredOpportunities,
+    filterType,
+    setFilterType,
+    grantOnly,
+    setGrantOnly,
+    // Deep dive
+    selectedOpportunity,
+    setSelectedOpportunity,
+    deepDiveLoading,
+    deepDiveResult,
+    activeDeepDiveTab,
+    setActiveDeepDiveTab,
+    cancelDeepDive,
+    generateDeepDive,
+    // Social
+    shareOnTwitter,
+    shareOnLinkedIn,
   };
 }

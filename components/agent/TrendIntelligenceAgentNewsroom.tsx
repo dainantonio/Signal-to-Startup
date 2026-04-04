@@ -588,7 +588,7 @@ export default function TrendIntelligenceAgentNewsroom() {
                           <button
                             onClick={e => {
                               e.stopPropagation();
-                              analysis.deleteAnalysis(item.id);
+                              if (item.id) analysis.deleteAnalysis(item.id);
                             }}
                             className="text-gray-400 hover:text-red-500 transition-colors p-1"
                           >
