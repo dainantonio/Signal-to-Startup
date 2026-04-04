@@ -139,23 +139,29 @@ const responseSchema = {
   properties: {
     today_action: {
       type: Type.STRING,
-      description: "ONE specific thing the user can do TODAY to start this business — free, takes less than 2 hours, requires no money or prior experience. Must be a single complete sentence starting with an action verb. Max 30 words. Examples: 'Search Google for your 3 biggest competitors and write down what they charge.' or 'Message 5 people you know and ask if they would pay $X per month for this service.'"
+      description: "ONE specific thing the user can do TODAY. One sentence. Starts with a verb. Free. Under 25 words."
     },
     today_action_type: {
       type: Type.STRING,
-      description: "one of: research, talk, build, apply, or test"
+      description: "one of: research, talk, build, apply, test"
     },
-    summary: { type: Type.STRING, description: "Briefly summarize the key event or change in 2–3 sentences. Max 60 words." },
-    trend: { type: Type.STRING, description: "What broader trend does this represent? Max 50 words." },
+    summary: { 
+      type: Type.STRING, 
+      description: "2 sentences max." 
+    },
+    trend: { 
+      type: Type.STRING,
+      description: "One sentence max."
+    },
     affected_groups: {
       type: Type.ARRAY,
       items: { type: Type.STRING },
-      description: "List the groups impacted (Businesses, Consumers, Government, Specific industries)."
+      description: "Max 3 items."
     },
     problems: {
       type: Type.ARRAY,
       items: { type: Type.STRING },
-      description: "What NEW problems are created because of this change? (Friction, Inefficiency, Confusion, Compliance burden, Urgency)."
+      description: "Max 2 items."
     },
     opportunities: {
       type: Type.ARRAY,
@@ -163,9 +169,9 @@ const responseSchema = {
         type: Type.OBJECT,
         properties: {
           name: { type: Type.STRING },
-          description: { type: Type.STRING },
+          description: { type: Type.STRING, description: "Max 2 sentences." },
           target_customer: { type: Type.STRING },
-          why_now: { type: Type.STRING },
+          why_now: { type: Type.STRING, description: "One sentence max." },
           monetization: { type: Type.STRING },
           pricing_model: { type: Type.STRING },
           status: { type: Type.STRING, description: "Always set to 'New' for initial discovery." },
@@ -187,7 +193,7 @@ const responseSchema = {
       type: Type.OBJECT,
       properties: {
         name: { type: Type.STRING },
-        reason: { type: Type.STRING },
+        reason: { type: Type.STRING, description: "2 sentences max." },
         who_should_build: { type: Type.STRING },
         cost_estimate: { type: Type.STRING, description: "Estimated startup cost in USD (e.g., '$500 - $1,200')." },
         speed_rating: { type: Type.STRING, description: "Speed rating (e.g., 'Fast', 'Medium', 'Slow')." },
@@ -200,7 +206,16 @@ const responseSchema = {
       required: ["name", "reason", "who_should_build", "cost_estimate", "speed_rating", "first_steps"]
     }
   },
-  required: ["today_action", "today_action_type", "summary", "trend", "affected_groups", "problems", "opportunities", "best_idea"]
+  required: [
+    "today_action",
+    "today_action_type", 
+    "summary",
+    "trend",
+    "affected_groups",
+    "problems",
+    "opportunities",
+    "best_idea"
+  ]
 };
 
 const deepDiveSchema = {
@@ -227,176 +242,57 @@ const deepDiveSchema = {
         properties: {
           name: { type: Type.STRING, description: "Exact name of the grant or funding program." },
           organization: { type: Type.STRING, description: "The organization offering it." },
-          amount: { type: Type.STRING, description: "Approximate funding amount (e.g. 'Up to $10,000' or '$500-$5,000')." },
-          who_qualifies: { type: Type.STRING, description: "Who is eligible for this grant." },
-          why_this_qualifies: { type: Type.STRING, description: "One sentence: why this specific business qualifies." },
-          how_to_apply: { type: Type.STRING, description: "Website URL or application process description." }
+          amount: { type: Type.STRING, description: "Estimated amount or range." },
+          link: { type: Type.STRING, description: "Direct URL to apply or learn more." },
+          why_fit: { type: Type.STRING, description: "One sentence on why this business qualifies." }
         },
-        required: ["name", "organization", "amount", "who_qualifies", "why_this_qualifies", "how_to_apply"]
-      },
-      description: "3-5 specific, real, currently active grants or funding programs for this business type and location."
+        required: ["name", "organization", "amount", "link", "why_fit"]
+      }
     },
-    checklist: {
+    marketing_strategy: {
       type: Type.ARRAY,
       items: {
         type: Type.OBJECT,
         properties: {
-          title: { type: Type.STRING, description: "Short action title starting with a verb (e.g. 'Register your business name')" },
-          description: { type: Type.STRING, description: "2-3 specific sentences on what to do and how." },
-          phase: { type: Type.INTEGER, description: "1=Research & Validation, 2=Legal & Setup, 3=Build & Prepare, 4=Launch & First Customers" },
-          time_estimate: { type: Type.STRING, description: "e.g. '2 hours', '1 day', '3 days'" },
-          cost: { type: Type.STRING, description: "e.g. '$0', '$50-150', 'Free'" }
+          channel: { type: Type.STRING },
+          tactic: { type: Type.STRING },
+          cost: { type: Type.STRING },
+          effort: { type: Type.STRING, description: "Low, Medium, or High" }
         },
-        required: ["title", "description", "phase", "time_estimate"]
-      },
-      description: "Exactly 12 steps: 3 per phase (Research, Legal/Setup, Build, Launch). Specific to this business and location."
-    },
-    investors: {
-      type: Type.ARRAY,
-      items: {
-        type: Type.OBJECT,
-        properties: {
-          name: { type: Type.STRING, description: "Name of the VC firm, angel network, or investor group." },
-          focus: { type: Type.STRING, description: "Why they are a match (e.g., 'Focuses on early-stage ag-tech')." },
-          stage: { type: Type.STRING, description: "Typical investment stage (e.g., 'Seed', 'Pre-seed', 'Angel')." },
-          website: { type: Type.STRING, description: "The investor's actual homepage URL. If unknown, leave empty string." }
-        },
-        required: ["name", "focus", "stage", "website"]
-      },
-      description: "List of 3-5 potential investors or VC firms that align with this niche."
+        required: ["channel", "tactic", "cost", "effort"]
+      }
     }
   },
-  required: ["business_plan", "cost_breakdown", "grants", "checklist", "investors"]
+  required: ["business_plan", "cost_breakdown", "grants", "marketing_strategy"]
 };
 
-export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: MarketMode, countryTags: string[] = [], readingLevel: 'simple' | 'standard' | 'advanced' = 'standard') {
-  const [history, setHistory] = useState<(AnalysisResult & { id: string })[]>([]);
-  const [input, setInput] = useState('');
-  const [urlInput, setUrlInput] = useState('');
-  const [fetchingUrl, setFetchingUrl] = useState(false);
-  const [urlFetchStatus, setUrlFetchStatus] = useState<'idle' | 'success' | 'error' | 'paywalled' | 'timeout'>('idle');
-  const [location, setLocation] = useState('');
-  const [focus, setFocus] = useState('');
+// ---------------------------------------------------------------------------
+// Hook: useAgentAnalysis
+// ---------------------------------------------------------------------------
+export function useAgentAnalysis(user: FirebaseUser | null, loadHistory: (uid: string) => void) {
   const [loading, setLoading] = useState(false);
   const [loadingStage, setLoadingStage] = useState(0);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [filterType, setFilterType] = useState<'top' | 'hot' | 'fast'>('top');
-  const [minScore, setMinScore] = useState(0);
-  const [grantOnly, setGrantOnly] = useState(false);
-  const [maxCost, setMaxCost] = useState(2000);
+  const [selectedMode, setSelectedMode] = useState<MarketMode>('global');
+  const [countryTags, setCountryTags] = useState<string[]>([]);
+  const [readingLevel, setReadingLevel] = useState<'simple' | 'standard' | 'advanced'>('standard');
+
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  const [selectedOpportunity, setSelectedOpportunity] = useState<Opportunity | null>(null);
-  const [deepDiveResult, setDeepDiveResult] = useState<DeepDiveResult | null>(null);
-  const [deepDiveLoading, setDeepDiveLoading] = useState(false);
-  const [isAgentResult, setIsAgentResult] = useState(false);
-  const [activeDeepDiveTab, setActiveDeepDiveTab] = useState<'plan' | 'costs' | 'grants' | 'checklist' | 'investors'>('plan');
-  const deepDiveCache = useRef<Map<string, DeepDiveResult>>(new Map());
-  // Ref-based cancellation flag — avoids async state race after modal close
-  const deepDiveCancelledRef = useRef(false);
+  const analyzeSignal = async (signalText: string, location?: string, focus?: string) => {
+    if (!signalText.trim()) return;
 
-  useEffect(() => {
-    if (user) {
-      loadHistory(user.uid);
-    } else {
-      setHistory([]);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+    // Reset UI state
+    setResult(null);
+    setError(null);
+    setLoadingProgress(0);
 
-  const loadHistory = async (uid: string) => {
-    try {
-      const q = query(
-        collection(db, 'analyses'),
-        where('userId', '==', uid),
-        orderBy('createdAt', 'desc')
-      );
-      const querySnapshot = await getDocs(q);
-      const docs = querySnapshot.docs.map(d => ({
-        id: d.id,
-        ...d.data()
-      })) as (AnalysisResult & { id: string })[];
-      setHistory(docs);
-    } catch (err) {
-      console.error('Failed to load analysis history:', err);
-    }
-  };
-
-  const deleteAnalysis = async (id: string) => {
-    try {
-      await deleteDoc(doc(db, 'analyses', id));
-      setHistory(prev => prev.filter(a => a.id !== id));
-      if (result && (result as AnalysisResult & { id: string }).id === id) {
-        setResult(null);
-      }
-    } catch (err) {
-      console.error('Failed to delete analysis:', err);
-    }
-  };
-
-  const fetchUrl = async () => {
-    if (!urlInput.trim()) return;
-    setFetchingUrl(true);
-    setUrlFetchStatus('idle');
-    try {
-      const response = await fetch(`/api/fetch-url?url=${encodeURIComponent(urlInput)}`);
-      // Always parse — fetch-url returns 200 even for errors
-      const data = await response.json();
-      if (data.paywalled) {
-        setUrlFetchStatus('paywalled');
-        return;
-      }
-      if (data.timedOut || !data.content) {
-        setUrlFetchStatus('timeout');
-        return;
-      }
-      if (data.error) {
-        setUrlFetchStatus('error');
-        return;
-      }
-      setInput(data.content);
-      setUrlFetchStatus('success');
-    } catch {
-      setUrlFetchStatus('error');
-    } finally {
-      setFetchingUrl(false);
-    }
-  };
-
-  const cancelAnalysis = () => {
-    abortControllerRef.current?.abort();
-    setLoading(false);
-    // Do NOT clear result — keep existing results visible after cancel
-  };
-
-  const analyzeSignal = async (overrideInput?: string) => {
-    console.log('[1] analyzeSignal called');
-
-    const rawText = overrideInput ?? input;
-
-    // [CHECK] Input validation
-    if (!rawText || rawText.trim().length < 10) {
-      console.error('[FAIL] Input text is empty or too short:', rawText?.length ?? 0, 'chars');
-      setError('No article text to analyze. Please try another article.');
-      return;
-    }
-    console.log('[2] input text length:', rawText.length);
-
-    if (overrideInput) setInput(overrideInput);
-
-    const signalText = sanitizeInput(rawText);
-    console.log('[2b] sanitized text length:', signalText.length);
-
-    // Trim to first 1500 chars — the signal is always at the opening of an article
-    const trimmedForGemini = signalText.trim().substring(0, 1500).replace(/\s+/g, ' ');
-
-    // [CHECK] API key
     const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
     if (!apiKey) {
-      console.error('[FAIL] NEXT_PUBLIC_GEMINI_API_KEY is not set');
-      setError('Gemini API key not configured. Check your environment variables.');
+      console.error('[AUTH] GEMINI_API_KEY missing from environment');
+      setError('Gemini API key not configured.');
       return;
     }
     console.log('[KEY] Gemini API key present:', true);
@@ -432,6 +328,8 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
       console.log('[3] calling Gemini API with model:', model);
       console.log('[ABORT] signal aborted at start:', signal.aborted);
 
+      const trimmedForGemini = sanitizeInput(signalText);
+
       const prompt = `
         You are an AI Trend Intelligence Agent.
         Your job is to analyze news articles, policy updates, and market signals to identify actionable business and product opportunities.
@@ -447,6 +345,7 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
         ${focus || 'General Business'}
 
         RULES:
+        - Keep ALL text fields concise — descriptions under 2 sentences, trend under 1 sentence, today_action under 25 words
         - You MUST return EXACTLY 3 opportunities. Not 2, not 4, not 5. EXACTLY 3.
         - Each opportunity must be a distinct business model.
         - If the signal only supports 1-2 strong ideas, create adjacent opportunities in the same space.
@@ -498,7 +397,7 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
 
       const responseStream = await genAI.models.generateContentStream({
         model,
-        contents: prompt,
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
         config: {
           responseMimeType: 'application/json',
           responseSchema,
@@ -562,6 +461,7 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
         console.error('[RAW RESPONSE]', accumulated.slice(0, 500));
         throw new Error('The AI returned an incomplete response. Please try again.');
       }
+      console.log('[ANALYSIS] today_action present:', !!parsedResult?.today_action, parsedResult?.today_action?.slice(0, 50));
       console.log('[6] parsed result — trend:', parsedResult?.trend, '| opportunities:', parsedResult?.opportunities?.length);
       console.log('[ANALYSIS] today_action:', parsedResult?.today_action?.slice(0, 80));
 
@@ -705,7 +605,7 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
       const genAI = new GoogleGenAI({ apiKey });
       const response = await genAI.models.generateContent({
         model: 'gemini-2.5-flash',
-        contents: `You are an expert market analyst specializing in compound business opportunities — opportunities that emerge from the convergence of multiple market signals simultaneously.
+        contents: [{ role: 'user', parts: [{ text: `You are an expert market analyst specializing in compound business opportunities — opportunities that emerge from the convergence of multiple market signals simultaneously.
 
 MULTIPLE SIGNALS DETECTED:
 ${compoundText}
@@ -753,287 +653,79 @@ Return ONLY valid JSON in this exact structure:
     "cost_estimate": "$X - $Y",
     "speed_rating": "Fast",
     "first_steps": ["step1", "step2", "step3"]
-  },
-  "today_action": "ONE specific thing the user can do TODAY to start this business — free, takes less than 2 hours. One sentence starting with an action verb.",
-  "today_action_type": "research | talk | build | apply | test"
-}
-
-Return EXACTLY 3 opportunities. Each must be stronger because of the combination of signals.`,
-        config: {
-          responseMimeType: 'application/json',
-          maxOutputTokens: 8192,
-        },
+  }
+}` }]}
       });
 
-      const rawText = response.text || '';
-      let parsed: AnalysisResult;
-      try {
-        parsed = JSON.parse(rawText.trim());
-      } catch {
-        const match = rawText.match(/\{[\s\S]*\}/);
-        if (!match) throw new Error('Could not parse compound analysis response.');
-        parsed = JSON.parse(match[0]);
-      }
-
-      // Ensure trend is set
-      if (!parsed.trend && parsed.compound_trend) parsed.trend = parsed.compound_trend;
-
-      // Enforce 3 opportunities
-      if (!parsed.opportunities || parsed.opportunities.length < 1) {
-        throw new Error('Compound analysis returned no opportunities.');
-      }
-      parsed.opportunities = parsed.opportunities.slice(0, 3);
-
-      parsed.isCompound = true;
-      parsed.sourceCount = articles.length;
-      parsed.sources = articles.map(a => ({ title: a.title, source: a.source, url: a.url }));
-
-      if (user) {
-        try {
-          const docRef = await addDoc(collection(db, 'analyses'), {
-            userId: user.uid,
-            isCompound: true,
-            sourceCount: articles.length,
-            sources: parsed.sources,
-            trend: parsed.trend,
-            summary: parsed.summary,
-            convergence_score: parsed.convergence_score,
-            opportunities: parsed.opportunities,
-            best_idea: parsed.best_idea,
-            marketMode: selectedMode,
-            countryTag: countryTags.length > 0 ? countryTags.join(',') : null,
-            createdAt: new Date().toISOString(),
-          });
-          parsed.id = docRef.id;
-          loadHistory(user.uid);
-        } catch (err) {
-          console.warn('[COMPOUND] Firestore save failed:', err);
-        }
-      }
-
-      clearInterval(progressInterval);
-      setLoadingProgress(100);
-      setLoadingStage(3);
+      const text = response.response.text();
+      const parsed = JSON.parse(text);
       setResult(parsed);
-      // Track compound usage — fire and forget
-      try {
-        if (user) {
-          addDoc(collection(db, 'usage_logs'), {
-            userId: user.uid,
-            type: 'compound_analysis',
-            marketMode: selectedMode || 'global',
-            countryTag: countryTags?.[0] || null,
-            isCompound: true,
-            sourceCount: articles.length,
-            timestamp: new Date().toISOString(),
-          }).catch(() => {});
-        }
-      } catch {}
+
     } catch (err) {
-      console.error('[COMPOUND] Analysis failed:', err);
-      setError(err instanceof Error ? err.message : 'Compound analysis failed. Please try again.');
+      setError('Compound analysis failed.');
+      console.error(err);
     } finally {
       clearInterval(progressInterval);
       setLoading(false);
     }
   };
 
-  const cancelDeepDive = useCallback(() => {
-    deepDiveCancelledRef.current = true;
-    setDeepDiveLoading(false);
-    setDeepDiveResult(null);
-  }, []);
-
-  const generateDeepDive = useCallback(async (opp: Opportunity) => {
-    // Reset cancellation flag — this is a fresh generation
-    deepDiveCancelledRef.current = false;
-
-    setSelectedOpportunity(opp);
-    setActiveDeepDiveTab('plan');
-
-    // Return cached result instantly
-    const cacheKey = opp.name;
-    if (deepDiveCache.current.has(cacheKey)) {
-      if (!deepDiveCancelledRef.current) {
-        setDeepDiveResult(deepDiveCache.current.get(cacheKey)!);
-        setDeepDiveLoading(false);
-      }
-      return;
-    }
-
-    setDeepDiveLoading(true);
-    setDeepDiveResult(null);
+  const deepDiveOpportunity = async (opportunity: Opportunity, signalText: string) => {
+    const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+    if (!apiKey) return null;
 
     try {
-      const genAI = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
-      const model = 'gemini-2.5-flash';
-
-      const prompt = `
-        You are an AI Business Advisor.
-        Generate a detailed execution plan for the following business opportunity.
-
-        OPPORTUNITY:
-        Name: ${opp.name}
-        Description: ${opp.description}
-        Target Customer: ${opp.target_customer}
-        Monetization: ${opp.monetization}
-        Location: ${location || 'General'}
-
-        TASK 1 — BUSINESS PLAN:
-        Generate a complete business plan as plain text (no markdown symbols, no *, no #).
-        Use numbered section headings only. Include exactly these 9 sections in this order:
-        1. Executive Summary (2-3 sentences summarizing the business)
-        2. Market Analysis (what market conditions support this idea right now)
-        3. Target Customer (specific profile — age, location, pain point, budget)
-        4. Revenue Model (how money is made — be specific about pricing)
-        5. Pricing Strategy (specific prices, packages, or tiers)
-        6. Startup Cost Breakdown (narrative summary of what the startup budget covers)
-        7. Marketing Approach (first 3 channels to reach customers with tactics)
-        8. Operations Plan (how the business runs day to day)
-        9. 90-Day Action Plan (weeks 1-4: foundation, weeks 5-8: launch, weeks 9-12: growth)
-
-        TASK 2 — STARTUP COST BREAKDOWN:
-        Provide an itemized list of startup expenses with a specific dollar amount for each.
-        For each item include: type ('one-time' or 'monthly') and a notes field with tips.
-        Return 5-10 items covering realistic expenses for this specific business.
-
-        TASK 3 — GRANTS & FUNDING:
-        Identify 3-5 specific, real, currently active grants or funding programs for this business in ${location || 'this region'}.
-        For each: exact program name, the organization offering it, approximate amount, who qualifies, why this business qualifies, and how to apply.
-        Focus only on grants that genuinely apply — do not list generic or inapplicable programs.
-
-        TASK 4 — LAUNCH CHECKLIST:
-        Create exactly 12 steps in 4 phases (3 steps per phase):
-        Phase 1 (Research & Validation): steps before spending any money
-        Phase 2 (Legal & Setup): registration, licenses, accounts
-        Phase 3 (Build & Prepare): product, service, or offering
-        Phase 4 (Launch & First Customers): getting first revenue
-        For each step: clear action title (verb first), 2-3 specific sentences on what to do, time estimate, and cost if any.
-        Make every step specific to this business and location — no generic advice.
-
-        TASK 5 — INVESTORS:
-        Identify 3-5 specific venture capital firms, angel networks, or investor groups that specialize in this niche or stage.
-        For each investor, include their actual homepage URL in 'website' if you know it with confidence.
-        If you are not certain of their URL, leave website as an empty string — do not guess.
-
-        TONE: Professional, practical, and specific. Every recommendation must be actionable this week.
-      `;
-
-      const response = await genAI.models.generateContent({
-        model,
-        contents: prompt,
-        config: {
+      const genAI = new GoogleGenAI({ apiKey });
+      const model = genAI.getGenerativeModel({
+        model: 'gemini-2.5-flash',
+        generationConfig: {
           responseMimeType: 'application/json',
           responseSchema: deepDiveSchema,
-          maxOutputTokens: 8192,
         },
       });
 
-      if (response.text && !deepDiveCancelledRef.current) {
-        const parsed: DeepDiveResult = JSON.parse(response.text);
-        // Cache so re-opens are instant (even if this call was for a closed modal)
-        if (deepDiveCache.current.size >= 5) {
-          const firstKey = deepDiveCache.current.keys().next().value;
-          if (firstKey !== undefined) deepDiveCache.current.delete(firstKey);
-        }
-        deepDiveCache.current.set(cacheKey, parsed);
-        // Only update UI state if modal is still open
-        if (!deepDiveCancelledRef.current) {
-          setDeepDiveResult(parsed);
-          // Track usage — fire and forget
-          try {
-            if (user) {
-              addDoc(collection(db, 'usage_logs'), {
-                userId: user.uid,
-                type: 'execution_suite',
-                marketMode: selectedMode || 'global',
-                timestamp: new Date().toISOString(),
-              }).catch(() => {});
-            }
-          } catch {}
-        }
-      }
-    } catch (err: unknown) {
-      if (deepDiveCancelledRef.current) return; // Swallow errors from cancelled calls
-      console.error(err);
-      const msg = err instanceof Error ? err.message : String(err);
-      if (msg.includes('429') || msg.toLowerCase().includes('quota') || msg.toLowerCase().includes('resource_exhausted')) {
-        setError('API quota exceeded. You\'ve hit the free-tier daily limit. Please try again tomorrow or upgrade your Gemini API plan at ai.google.dev.');
-      } else {
-        setError('Failed to generate execution plan.');
-      }
-    } finally {
-      if (!deepDiveCancelledRef.current) {
-        setDeepDiveLoading(false);
-      }
+      const prompt = `
+        You are a business consultant helping an entrepreneur launch a new business.
+        SIGNAL: ${signalText}
+        BUSINESS IDEA: ${opportunity.name}
+        DESCRIPTION: ${opportunity.description}
+        TARGET CUSTOMER: ${opportunity.target_customer}
+        MONETIZATION: ${opportunity.monetization}
+        LOCATION: ${countryTags.join(', ') || 'Global'}
+
+        TASK: Provide a deep-dive execution plan.
+        1. BUSINESS PLAN: Write a concise 9-section plan (Problem, Solution, Market, Revenue, Marketing, Operations, Team, Risks, Milestones).
+        2. COST BREAKDOWN: List 5-8 specific items needed to start, with costs in USD. Total must be around ${opportunity.startup_cost} USD.
+        3. GRANTS: Find 2-3 REAL grants, loans, or programs in ${countryTags[0] || 'the target market'} that this business could qualify for.
+        4. MARKETING: 3 specific marketing tactics with effort/cost ratings.
+
+        TONE: Practical, encouraging, and highly specific.
+      `;
+
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const data = JSON.parse(response.text()) as DeepDiveResult;
+      return data;
+    } catch (err) {
+      console.error('[DEEP DIVE FAILED]', err);
+      return null;
     }
-  }, [location]);
-
-  const filteredOpportunities = useMemo(() => {
-    if (!result) return [];
-
-    let filtered = [...result.opportunities].filter(opp =>
-      opp.money_score >= minScore &&
-      (!grantOnly || opp.grant_eligible) &&
-      opp.startup_cost <= maxCost
-    );
-
-    if (filterType === 'top') {
-      filtered.sort((a, b) => b.money_score - a.money_score);
-    } else if (filterType === 'hot') {
-      filtered.sort((a, b) => (b.urgency * 10 + b.money_score) - (a.urgency * 10 + a.money_score));
-    } else if (filterType === 'fast') {
-      filtered.sort((a, b) => b.speed_to_launch - a.speed_to_launch);
-    }
-
-    return filtered;
-  }, [result, filterType, minScore, grantOnly, maxCost]);
-
-  const shareOnTwitter = () => {
-    if (!result) return;
-    const text = `AI Trend Intelligence: ${result.trend}\nBest Idea: ${result.best_idea.name}\n\nAnalyzed via Signal to Startup`;
-    const url = (result as AnalysisResult & { id: string }).id
-      ? `${window.location.origin}/analysis/${(result as AnalysisResult & { id: string }).id}`
-      : window.location.href;
-    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
-  };
-
-  const shareOnLinkedIn = () => {
-    if (!result) return;
-    const url = (result as AnalysisResult & { id: string }).id
-      ? `${window.location.origin}/analysis/${(result as AnalysisResult & { id: string }).id}`
-      : window.location.href;
-    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank');
   };
 
   return {
-    history,
-    input, setInput,
-    urlInput, setUrlInput,
-    fetchingUrl, fetchUrl, urlFetchStatus, setUrlFetchStatus,
-    location, setLocation,
-    focus, setFocus,
     loading,
     loadingStage,
     loadingProgress,
-    result, setResult,
+    result,
     error,
-    filterType, setFilterType,
-    minScore, setMinScore,
-    grantOnly, setGrantOnly,
-    maxCost, setMaxCost,
-    selectedOpportunity, setSelectedOpportunity,
-    deepDiveResult,
-    deepDiveLoading,
-    activeDeepDiveTab, setActiveDeepDiveTab,
+    selectedMode,
+    setSelectedMode,
+    countryTags,
+    setCountryTags,
+    readingLevel,
+    setReadingLevel,
     analyzeSignal,
     analyzeCompoundSignal,
-    cancelAnalysis,
-    generateDeepDive,
-    cancelDeepDive,
-    deleteAnalysis,
-    filteredOpportunities,
-    shareOnTwitter,
-    shareOnLinkedIn,
+    deepDiveOpportunity,
   };
 }
