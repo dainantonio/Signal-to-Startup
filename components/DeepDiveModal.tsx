@@ -21,7 +21,6 @@ import {
   ChevronRight,
   TrendingUp
 } from 'lucide-react';
-import Markdown from 'react-markdown';
 import Link from 'next/link';
 import { Opportunity, DeepDiveResult, MarketMode } from './types';
 import { CostEstimator } from './CostEstimator';
@@ -54,6 +53,17 @@ interface DeepDiveModalProps {
   copied: string | null;
   selectedMode: MarketMode;
   readingLevel?: 'simple' | 'standard' | 'advanced';
+}
+
+function formatBusinessPlan(text: string): string[] {
+  if (!text) return [];
+  return text
+    .replace(/(\d+\.\s+)/g, '\n\n$1')
+    .replace(/\*\*/g, '')
+    .replace(/#{1,3}\s/g, '')
+    .split('\n\n')
+    .map(s => s.trim())
+    .filter(s => s.length > 0);
 }
 
 export const DeepDiveModal: React.FC<DeepDiveModalProps> = ({
@@ -475,8 +485,29 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
                 >
                   {activeDeepDiveTab === 'plan' && (
                     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                      <div className="prose prose-slate prose-headings:font-sans prose-headings:font-semibold prose-headings:not-italic prose-sm prose-p:leading-relaxed prose-p:text-gray-600 max-w-none">
-                        <Markdown>{deepDiveResult.business_plan}</Markdown>
+                      <div className="space-y-6 text-sm leading-relaxed text-gray-700">
+                        {formatBusinessPlan(deepDiveResult.business_plan).map((section, i) => {
+                          const isHeading = /^\d+\./.test(section);
+                          const lines = section.split('\n');
+                          return (
+                            <div key={i} className={isHeading ? 'space-y-2' : ''}>
+                              {isHeading ? (
+                                <>
+                                  <h3 className="text-sm font-bold text-gray-900">
+                                    {lines[0]}
+                                  </h3>
+                                  {lines.slice(1).join(' ').trim() && (
+                                    <p className="text-sm text-gray-600 leading-relaxed">
+                                      {lines.slice(1).join(' ').trim()}
+                                    </p>
+                                  )}
+                                </>
+                              ) : (
+                                <p className="text-sm text-gray-600 leading-relaxed">{section}</p>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   )}

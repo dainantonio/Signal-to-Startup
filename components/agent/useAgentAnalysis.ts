@@ -752,7 +752,9 @@ Return ONLY valid JSON in this exact structure:
     "cost_estimate": "$X - $Y",
     "speed_rating": "Fast",
     "first_steps": ["step1", "step2", "step3"]
-  }
+  },
+  "today_action": "ONE specific thing the user can do TODAY to start this business — free, takes less than 2 hours. One sentence starting with an action verb.",
+  "today_action_type": "research | talk | build | apply | test"
 }
 
 Return EXACTLY 3 opportunities. Each must be stronger because of the combination of signals.`,

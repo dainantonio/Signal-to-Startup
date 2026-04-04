@@ -2,6 +2,37 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebase-admin';
 import { GoogleGenAI } from '@google/genai';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function sanitizeResult(result: any): any {
+  if (!result) return result;
+
+  // Truncate long strings in opportunities
+  if (Array.isArray(result.opportunities)) {
+    result.opportunities = result.opportunities.map((opp: Record<string, unknown>) => ({
+      ...opp,
+      description: typeof opp.description === 'string' ? opp.description.substring(0, 300) : '',
+      why_now: typeof opp.why_now === 'string' ? opp.why_now.substring(0, 200) : '',
+      monetization: typeof opp.monetization === 'string' ? opp.monetization.substring(0, 200) : '',
+      compound_advantage: typeof opp.compound_advantage === 'string' ? opp.compound_advantage.substring(0, 200) : undefined,
+    }));
+  }
+
+  // Truncate best_idea strings
+  if (result.best_idea && typeof result.best_idea === 'object') {
+    result.best_idea = {
+      ...result.best_idea,
+      reason: typeof result.best_idea.reason === 'string' ? result.best_idea.reason.substring(0, 300) : '',
+      who_should_build: typeof result.best_idea.who_should_build === 'string' ? result.best_idea.who_should_build.substring(0, 200) : '',
+    };
+  }
+
+  // Truncate top-level strings
+  result.summary = typeof result.summary === 'string' ? result.summary.substring(0, 500) : '';
+  result.trend = typeof result.trend === 'string' ? result.trend.substring(0, 300) : '';
+
+  return result;
+}
+
 const MARKET_CONTEXT: Record<string, string> = {
   global: 'Focus on scalable international opportunities.',
   caribbean: `CARIBBEAN CONTEXT: Focus on informal-to-formal transitions, mobile-first solutions, DBJ/JBDC funding, JMD costs. Use local terminology.`,
@@ -268,6 +299,12 @@ Return a JSON object with exactly these fields and strict length limits:
 
         // STEP 2: Save to agent_opportunities
         const opportunityRef = db.collection('agent_opportunities').doc();
+        const sanitizedResult = sanitizeResult({
+          ...parsed,
+          today_action: (parsed as Record<string, unknown>).today_action || null,
+          today_action_type: (parsed as Record<string, unknown>).today_action_type || null,
+        });
+
         await opportunityRef.set({
           userId: signal.userId,
           signalId: signalDoc.id,
@@ -277,11 +314,7 @@ Return a JSON object with exactly these fields and strict length limits:
           signalScore: signal.userScore,
           marketMode,
           countryTag: countryTag || null,
-          result: {
-            ...parsed,
-            today_action: (parsed as Record<string, unknown>).today_action || null,
-            today_action_type: (parsed as Record<string, unknown>).today_action_type || null,
-          },
+          result: sanitizedResult,
           createdAt: new Date().toISOString(),
           viewed: false,
           saved: false,

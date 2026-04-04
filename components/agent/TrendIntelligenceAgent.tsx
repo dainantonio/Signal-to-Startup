@@ -128,7 +128,7 @@ export default function TrendIntelligenceAgent() {
     // sectors saved to localStorage by Onboarding; SignalInput reads on mount
   };
 
-  const analysis = useAgentAnalysis(user, selectedMode, countryTags);
+  const analysis = useAgentAnalysis(user, selectedMode, countryTags, readingLevel);
 
   // FIX 2: Back to feed
   const handleBackToFeed = useCallback(() => {

@@ -126,11 +126,18 @@ export default function TrendIntelligenceAgentNewsroom() {
         const { doc, getDoc, db } = await import('@/firebase');
         const oppDoc = await getDoc(doc(db, 'agent_opportunities', oppId));
         if (oppDoc.exists()) {
-          const data = oppDoc.data();
-          analysis.setResult(data.result);
-          setModalSourceTitle(signalTitle || data.signalTitle || 'Agent discovered signal');
-          setIsAgentModal(true);
-          setShowAnalysisModal(true);
+          try {
+            const data = oppDoc.data();
+            if (!data.result || typeof data.result !== 'object') {
+              throw new Error('Invalid result structure');
+            }
+            analysis.setResult(data.result);
+            setModalSourceTitle(signalTitle || data.signalTitle || 'Agent discovered signal');
+            setIsAgentModal(true);
+            setShowAnalysisModal(true);
+          } catch (parseErr) {
+            console.error('[AGENT OPP] Load error:', parseErr);
+          }
         } else {
           console.error('[AGENT] Opportunity not found:', oppId);
         }
