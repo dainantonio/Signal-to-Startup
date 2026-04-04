@@ -234,45 +234,59 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
         opportunityName: selectedOpportunity.name,
         marketMode: selectedMode,
         countryTag: undefined,
-        businessPlan: deepDiveResult.business_plan,
-        costBreakdown: deepDiveResult.cost_breakdown.map(item => ({
-          item: item.item,
-          cost: item.cost,
-          type: item.type || 'one-time',
-          notes: item.notes,
+        businessPlan: deepDiveResult.business_plan || '',
+        costBreakdown: (deepDiveResult.cost_breakdown || []).map(item => ({
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          item: (item as any).item || '',
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          cost: (item as any).cost || 0,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          type: (item as any).type || 'one-time',
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          notes: (item as any).notes || undefined,
         })),
-        grants: deepDiveResult.grants
-          .filter(g => typeof g === 'object')
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        grants: ((deepDiveResult.grants || []) as any[])
+          .filter(g => g && typeof g === 'object')
           .map(g => ({
             name: g.name || '',
             organization: g.organization || '',
             amount: g.amount || '',
-            why_this_qualifies: (g as { why_this_qualifies?: string }).why_this_qualifies || '',
-            how_to_apply: (g as { how_to_apply?: string }).how_to_apply || '',
+            why_this_qualifies: g.why_this_qualifies || '',
+            how_to_apply: g.how_to_apply || '',
           })),
-        checklist: deepDiveResult.checklist.map(item => {
+        checklist: (deepDiveResult.checklist || []).map(item => {
+          if (!item) return { title: '', description: '', phase: 1, time_estimate: '' };
           if (typeof item === 'string') {
-            return { title: item as string, description: '', phase: 1, time_estimate: '' };
+            return { title: item, description: '', phase: 1, time_estimate: '' };
           }
           return {
-            title: item.title || '',
-            description: item.description || '',
-            phase: item.phase || 1,
-            time_estimate: item.time_estimate || '',
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            title: (item as any).title || '',
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            description: (item as any).description || '',
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            phase: (item as any).phase || 1,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            time_estimate: (item as any).time_estimate || '',
           };
         }),
-        investors: deepDiveResult.investors.map(inv => ({
-          name: inv.name,
-          focus: inv.focus,
-          stage: inv.stage,
-          website: inv.website,
+        investors: (deepDiveResult.investors || []).map(inv => ({
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          name: (inv as any).name || '',
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          focus: (inv as any).focus || '',
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          stage: (inv as any).stage || '',
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          website: (inv as any).website || undefined,
         })),
         generatedAt: new Date().toISOString(),
       };
       await exportToPDF(data);
     } catch (err) {
       console.error('PDF export failed:', err);
-      alert('PDF export failed. Please try again.');
+      alert('Export failed. Please try again.');
     } finally {
       setExporting(false);
     }

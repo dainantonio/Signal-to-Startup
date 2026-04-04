@@ -182,7 +182,7 @@ export async function exportToPDF(data: PDFExportData): Promise<void> {
   addPage();
   addSectionHeader('Startup Cost Breakdown');
 
-  const totalCost = data.costBreakdown.reduce((sum, item) => sum + item.cost, 0);
+  const totalCost = (data.costBreakdown || []).reduce((sum, item) => sum + item.cost, 0);
 
   checkPageBreak(20);
   pdf.setFillColor(10, 10, 10);
@@ -196,7 +196,7 @@ export async function exportToPDF(data: PDFExportData): Promise<void> {
   });
   yPos += 18;
 
-  for (const item of data.costBreakdown) {
+  for (const item of (data.costBreakdown || [])) {
     checkPageBreak(14);
 
     pdf.setFontSize(9);
@@ -240,11 +240,11 @@ export async function exportToPDF(data: PDFExportData): Promise<void> {
 
   // ─── GRANTS ────────────────────────────────
 
-  if (data.grants.length > 0) {
+  if (data.grants && data.grants.length > 0) {
     addPage();
     addSectionHeader('Funding & Grant Sources');
 
-    for (const grant of data.grants) {
+    for (const grant of (data.grants || [])) {
       checkPageBreak(40);
 
       pdf.setFillColor(252, 252, 252);
@@ -289,7 +289,7 @@ export async function exportToPDF(data: PDFExportData): Promise<void> {
 
   // ─── CHECKLIST ─────────────────────────────
 
-  if (data.checklist.length > 0) {
+  if (data.checklist && data.checklist.length > 0) {
     addPage();
     addSectionHeader('Launch Checklist');
 
@@ -302,7 +302,7 @@ export async function exportToPDF(data: PDFExportData): Promise<void> {
 
     let currentPhase = 0;
 
-    for (const step of data.checklist) {
+    for (const step of (data.checklist || [])) {
       if (step.phase !== currentPhase) {
         currentPhase = step.phase;
         checkPageBreak(14);
@@ -340,7 +340,7 @@ export async function exportToPDF(data: PDFExportData): Promise<void> {
 
   // ─── INVESTORS ──────────────────────────────
 
-  if (data.investors.length > 0) {
+  if (data.investors && data.investors.length > 0) {
     addPage();
     addSectionHeader('Investor Matches');
 
@@ -354,7 +354,7 @@ export async function exportToPDF(data: PDFExportData): Promise<void> {
     );
     yPos += 8;
 
-    for (const investor of data.investors) {
+    for (const investor of (data.investors || [])) {
       checkPageBreak(20);
 
       pdf.setFontSize(10);
