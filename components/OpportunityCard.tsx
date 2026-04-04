@@ -91,8 +91,23 @@ export const OpportunityCard: React.FC<OpportunityCardProps> = ({
           )}
         </div>
 
-        {/* Key metrics - hidden in simple mode */}
-        {labels.metricsVisible && (
+        {/* Key metrics */}
+        {readingLevel === 'simple' ? (
+          <div className="mb-6 pb-6 border-b border-gray-100 space-y-1.5">
+            <p className="text-sm text-gray-700">
+              <span className="font-medium text-gray-500">Startup cost:</span>{' '}
+              <span className="font-bold">${opp.startup_cost.toLocaleString()}</span>
+            </p>
+            <p className="text-sm text-gray-700">
+              <span className="font-medium text-gray-500">Time to launch:</span>{' '}
+              <span className="font-bold">
+                {opp.speed_to_launch >= 8 ? 'Fast (1–2 weeks)'
+                  : opp.speed_to_launch >= 6 ? 'Medium (2–4 weeks)'
+                  : 'Slow (1–3 months)'}
+              </span>
+            </p>
+          </div>
+        ) : labels.metricsVisible ? (
           <div className="grid grid-cols-3 gap-3 md:gap-4 mb-6 pb-6 border-b border-gray-100">
             <div className="min-w-0">
               <p className="text-xs text-gray-500 mb-1 font-medium truncate">Cost</p>
@@ -113,7 +128,7 @@ export const OpportunityCard: React.FC<OpportunityCardProps> = ({
               </p>
             </div>
           </div>
-        )}
+        ) : null}
 
         {/* Target customer - mobile responsive */}
         <div className="mb-6">

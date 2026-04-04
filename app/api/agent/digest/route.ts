@@ -144,6 +144,17 @@ export async function GET(request: NextRequest) {
 
       ${signalCards}
 
+      ${signals[0]?.todayAction ? `
+      <div style="margin:24px 0;padding:20px;background:#f0fdf4;border-radius:12px;border:2px solid #86efac;">
+        <p style="margin:0 0 8px;font-size:11px;font-weight:700;color:#15803d;text-transform:uppercase;letter-spacing:0.1em;">
+          Your Move Today
+        </p>
+        <p style="margin:0;font-size:15px;color:#111;line-height:1.5;font-weight:500;">
+          ${signals[0].todayAction}
+        </p>
+      </div>
+      ` : ''}
+
       <div style="text-align:center;margin-top:24px;padding-top:24px;border-top:1px solid #f3f4f6;">
         <a href="${APP_URL}"
           style="display:inline-block;background:#0f0f0f;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:10px;font-size:13px;font-weight:600;">

@@ -145,6 +145,7 @@ export async function GET(request: NextRequest) {
             createdAt: new Date().toISOString(),
             read: false,
             analyzed: false,
+            todayAction: null,
           });
         }
 

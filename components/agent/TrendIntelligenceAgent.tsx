@@ -54,6 +54,9 @@ export default function TrendIntelligenceAgent() {
   const [countryTags, setCountryTags] = useState<string[]>(() => {
     try { const s = localStorage.getItem('s2s_country_tags'); return s ? JSON.parse(s) : []; } catch { return []; }
   });
+  const [readingLevel] = useState<'simple' | 'standard' | 'advanced'>(() => {
+    try { return (localStorage.getItem('s2s_reading_level') as 'simple' | 'standard' | 'advanced') || 'standard'; } catch { return 'standard'; }
+  });
 
   // Persist country tags
   React.useEffect(() => {
@@ -662,6 +665,7 @@ export default function TrendIntelligenceAgent() {
               shareOnLinkedIn={analysis.shareOnLinkedIn}
               countryTags={countryTags}
               isAgentResult={isAgentResult}
+              readingLevel={readingLevel}
             />
           )}
         </AnimatePresence>

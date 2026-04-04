@@ -59,6 +59,9 @@ export interface AnalysisResult {
   ai_verdict?: 'Truth' | 'Emerging' | 'Fad';
   ai_evidence?: string;
   real_world_roi?: string | null;
+  // Your Next Move
+  today_action?: string;
+  today_action_type?: 'research' | 'talk' | 'build' | 'apply' | 'test';
 }
 
 export interface CostBreakdownItem {

@@ -95,7 +95,9 @@ Return a JSON object with exactly these fields and strict length limits:
 - affected_groups: max 3 items, each max 30 chars
 - problems: max 2 items, each max 60 chars
 - opportunities: exactly 3 items, each with: name (max 40 chars), description (max 100 chars), target_customer (max 50 chars), why_now (max 60 chars), monetization (max 50 chars), pricing_model (max 40 chars), status ("New"), priority ("High" or "Medium" or "Low"), startup_cost (number), grant_eligible (boolean), speed_to_launch (1-10), difficulty (1-10), roi_potential (1-10), urgency (1-10), local_fit (1-10), competition_gap (1-10), money_score (0-100)
-- best_idea: name (max 40 chars), reason (max 80 chars), who_should_build (max 60 chars), cost_estimate (max 20 chars), speed_rating ("Fast" or "Medium" or "Slow"), first_steps (exactly 3 items each max 60 chars)`;
+- best_idea: name (max 40 chars), reason (max 80 chars), who_should_build (max 60 chars), cost_estimate (max 20 chars), speed_rating ("Fast" or "Medium" or "Slow"), first_steps (exactly 3 items each max 60 chars)
+- today_action: ONE specific action the user can take today to start this business. One sentence, starts with a verb, free to do, max 120 chars
+- today_action_type: one of: "research", "talk", "build", "apply", "test"`;
 
         const response = await ai.models.generateContent({
           model: 'gemini-2.5-flash',
@@ -275,7 +277,11 @@ Return a JSON object with exactly these fields and strict length limits:
           signalScore: signal.userScore,
           marketMode,
           countryTag: countryTag || null,
-          result: parsed,
+          result: {
+            ...parsed,
+            today_action: (parsed as Record<string, unknown>).today_action || null,
+            today_action_type: (parsed as Record<string, unknown>).today_action_type || null,
+          },
           createdAt: new Date().toISOString(),
           viewed: false,
           saved: false,

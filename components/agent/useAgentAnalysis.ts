@@ -190,9 +190,17 @@ const responseSchema = {
         }
       },
       required: ["name", "reason", "who_should_build", "cost_estimate", "speed_rating", "first_steps"]
+    },
+    today_action: {
+      type: Type.STRING,
+      description: "ONE specific thing the user can do TODAY to start this business — free, takes less than 2 hours, requires no money or prior experience. Must be a single complete sentence starting with an action verb. Examples: 'Search Google for your 3 biggest competitors and write down what they charge and what customers complain about in reviews.' or 'Message 5 people you know today and ask if they would pay $X per month for this service — write down exactly what they say.'"
+    },
+    today_action_type: {
+      type: Type.STRING,
+      description: "one of: research, talk, build, apply, or test"
     }
   },
-  required: ["summary", "trend", "affected_groups", "problems", "opportunities", "best_idea"]
+  required: ["summary", "trend", "affected_groups", "problems", "opportunities", "best_idea", "today_action", "today_action_type"]
 };
 
 const deepDiveSchema = {
@@ -454,6 +462,12 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
         - Tailor at least 2 ideas to the provided location (${location || 'United States'})
         - Heavily weight opportunities toward the specified focus: ${focus || 'General Business'}
         - For 'best_idea', provide a realistic 'cost_estimate' and 'speed_rating' (Fast, Medium, Slow).
+        - today_action must be ONE sentence only
+        - today_action must start with a verb
+        - today_action must be free to do
+        - today_action must be completable today
+        - today_action must be specific — not 'research the market' but 'Search Google for [specific thing] and write down [what]'
+        - Tailor today_action to the user's country and market context
 
         MARKET CONTEXT:
         ${marketModeConfigs[selectedMode].promptContext}
@@ -600,6 +614,8 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
             problems: parsedResult.problems,
             opportunities: parsedResult.opportunities,
             best_idea: parsedResult.best_idea,
+            today_action: parsedResult.today_action || null,
+            today_action_type: parsedResult.today_action_type || null,
             createdAt: new Date().toISOString(),
             marketMode: selectedMode,
             countryTag: countryTags.length > 0 ? countryTags.join(',') : null,
