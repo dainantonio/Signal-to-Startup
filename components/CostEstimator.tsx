@@ -1,81 +1,135 @@
-import React from 'react';
-import { motion } from 'motion/react';
-import { Zap } from 'lucide-react';
-import { DeepDiveResult } from './types';
+"use client";
 
-interface CostEstimatorProps {
-  deepDiveResult: DeepDiveResult;
+import React, { useState, useEffect } from 'react';
+import { Calculator, Users, Clock, TrendingUp } from 'lucide-react';
+
+interface CostItem {
+  category: string;
+  baseAmount: number;
+  description: string;
 }
 
-export const CostEstimator: React.FC<CostEstimatorProps> = ({ deepDiveResult }) => {
-  const items = deepDiveResult.cost_breakdown;
-  const totalCost = items.reduce((acc, curr) => acc + curr.cost, 0);
+interface CostEstimatorProps {
+  initialItems?: CostItem[];
+}
+
+// FIX: Removed 'default' to match your app's named imports
+export function CostEstimator({ initialItems = [] }: CostEstimatorProps) {
+  // Interactive Multipliers
+  const [teamSize, setTeamSize] = useState(2);
+  const [timelineMonths, setTimelineMonths] = useState(3);
+  const [marketingScale, setMarketingScale] = useState(1); // 1x to 5x
+  
+  const [totalCost, setTotalCost] = useState(0);
+
+  // Default fallback data if the AI hasn't generated specific costs yet
+  const defaultItems = [
+    { category: "Software Development", baseAmount: 15000, description: "MVP app architecture and coding." },
+    { category: "Legal & Compliance", baseAmount: 3000, description: "Entity formation and localized regulatory compliance." },
+    { category: "Marketing & Go-to-Market", baseAmount: 5000, description: "Initial ad spend and launch campaign." }
+  ];
+
+  const itemsToUse = initialItems.length > 0 ? initialItems : defaultItems;
+
+  // Recalculate total when sliders change
+  useEffect(() => {
+    let newTotal = 0;
+    itemsToUse.forEach(item => {
+      let calculatedAmount = item.baseAmount;
+      if (item.category.toLowerCase().includes("development") || item.category.toLowerCase().includes("team")) {
+        calculatedAmount = (item.baseAmount / 2) * teamSize * (timelineMonths / 3);
+      }
+      if (item.category.toLowerCase().includes("marketing") || item.category.toLowerCase().includes("sales")) {
+        calculatedAmount = item.baseAmount * marketingScale;
+      }
+      newTotal += calculatedAmount;
+    });
+    setTotalCost(newTotal);
+  }, [teamSize, timelineMonths, marketingScale, itemsToUse]);
 
   return (
-    <motion.div
-      key="costs"
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-      className="space-y-4"
-    >
-      {/* Total card */}
-      <div className="bg-gray-900 text-white rounded-2xl px-6 py-5 flex items-center justify-between">
-        <div>
-          <p className="text-[10px] font-mono uppercase tracking-widest text-gray-400">Total Capital Required</p>
-          <p className="text-3xl font-bold font-mono mt-1">${totalCost.toLocaleString()}</p>
-        </div>
-        <div className="text-[10px] font-mono text-gray-400 text-right">
-          <p>{items.filter(i => ((i as { type?: string }).type ?? 'one-time') === 'one-time').length} one-time</p>
-          <p>{items.filter(i => ((i as { type?: string }).type ?? '') === 'monthly').length} monthly</p>
-        </div>
+    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+      <div className="flex items-center gap-2 mb-6 border-b pb-4">
+        <Calculator className="w-6 h-6 text-blue-600" />
+        <h3 className="text-xl font-semibold text-gray-800">Interactive Cost Estimator</h3>
       </div>
 
-      {/* Item cards */}
-      <div className="space-y-2">
-        {items.map((item, i) => {
-          const percentage = totalCost > 0 ? (item.cost / totalCost) * 100 : 0;
-          const itemType = (item as { type?: string }).type ?? 'one-time';
-          const notes = (item as { notes?: string }).notes;
-          return (
-            <div key={i} className="bg-gray-50 rounded-xl px-5 py-4 flex items-start gap-4">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <p className="font-medium text-sm text-gray-900">{item.item}</p>
-                  <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded font-bold uppercase flex-shrink-0 ${
-                    itemType === 'monthly'
-                      ? 'bg-blue-100 text-blue-700'
-                      : 'bg-gray-200 text-gray-600'
-                  }`}>
-                    {itemType === 'monthly' ? '/mo' : '1×'}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* Controls Section */}
+        <div className="space-y-6 bg-gray-50 p-4 rounded-lg">
+          <div>
+            <label className="flex items-center justify-between text-sm font-medium text-gray-700 mb-2">
+              <span className="flex items-center gap-2"><Users className="w-4 h-4"/> Team Size (Founders/Contractors)</span>
+              <span className="font-bold text-blue-600">{teamSize}</span>
+            </label>
+            <input 
+              type="range" min="1" max="10" value={teamSize} 
+              onChange={(e) => setTeamSize(Number(e.target.value))}
+              className="w-full accent-blue-600"
+            />
+          </div>
+
+          <div>
+            <label className="flex items-center justify-between text-sm font-medium text-gray-700 mb-2">
+              <span className="flex items-center gap-2"><Clock className="w-4 h-4"/> Timeline to Launch (Months)</span>
+              <span className="font-bold text-blue-600">{timelineMonths}</span>
+            </label>
+            <input 
+              type="range" min="1" max="12" value={timelineMonths} 
+              onChange={(e) => setTimelineMonths(Number(e.target.value))}
+              className="w-full accent-blue-600"
+            />
+          </div>
+
+          <div>
+            <label className="flex items-center justify-between text-sm font-medium text-gray-700 mb-2">
+              <span className="flex items-center gap-2"><TrendingUp className="w-4 h-4"/> Marketing Aggression</span>
+              <span className="font-bold text-blue-600">{marketingScale}x</span>
+            </label>
+            <input 
+              type="range" min="1" max="5" step="0.5" value={marketingScale} 
+              onChange={(e) => setMarketingScale(Number(e.target.value))}
+              className="w-full accent-blue-600"
+            />
+          </div>
+        </div>
+
+        {/* Results Section */}
+        <div className="space-y-4">
+          <div className="bg-blue-50 border border-blue-100 p-4 rounded-lg flex justify-between items-center">
+            <span className="text-sm font-semibold text-blue-800 uppercase tracking-wider">Estimated Total</span>
+            <span className="text-3xl font-bold text-blue-600">
+              ${totalCost.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+            </span>
+          </div>
+
+          <div className="space-y-3 mt-4">
+            <h4 className="text-sm font-semibold text-gray-500 uppercase">Cost Breakdown</h4>
+            {itemsToUse.map((item, idx) => {
+              // Calculate individual dynamic amounts for display
+              let displayAmount = item.baseAmount;
+              if (item.category.toLowerCase().includes("development") || item.category.toLowerCase().includes("team")) {
+                displayAmount = (item.baseAmount / 2) * teamSize * (timelineMonths / 3);
+              }
+              if (item.category.toLowerCase().includes("marketing") || item.category.toLowerCase().includes("sales")) {
+                displayAmount = item.baseAmount * marketingScale;
+              }
+
+              return (
+                <div key={idx} className="flex justify-between items-center text-sm pb-2 border-b border-gray-100 last:border-0">
+                  <div>
+                    <p className="font-medium text-gray-800">{item.category}</p>
+                    <p className="text-xs text-gray-500">{item.description}</p>
+                  </div>
+                  <span className="font-semibold text-gray-700">
+                    ${displayAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                   </span>
                 </div>
-                {notes && (
-                  <p className="text-[11px] text-gray-400 mt-1 leading-snug">{notes}</p>
-                )}
-              </div>
-              <div className="text-right flex-shrink-0">
-                <p className="font-mono font-bold text-sm text-gray-900">${item.cost.toLocaleString()}</p>
-                <p className="text-[10px] text-gray-400 font-mono">{Math.round(percentage)}%</p>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Lean strategy box */}
-      <div className="bg-emerald-50 border border-emerald-200 p-4 flex gap-4 items-start rounded-xl">
-        <div className="p-2 bg-emerald-500 text-white rounded-lg flex-shrink-0">
-          <Zap className="w-4 h-4" />
-        </div>
-        <div>
-          <h4 className="text-xs font-mono uppercase font-bold text-emerald-900">Lean Strategy</h4>
-          <p className="text-xs text-emerald-800 mt-1">
-            Start with one-time costs only. Delay monthly expenses until you have paying customers.
-            Many items can be free or reduced in the first 30 days.
-          </p>
+              );
+            })}
+          </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
-};
+}
