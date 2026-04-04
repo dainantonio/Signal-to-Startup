@@ -17,6 +17,7 @@ import {
   TrendingUp
 } from 'lucide-react';
 import Link from 'next/link';
+import { exportToPDF, PDFExportData } from '@/lib/pdf-export';
 import { Opportunity, DeepDiveResult, MarketMode } from './types';
 import { CostEstimator } from './CostEstimator';
 import { GrantFinder } from './GrantFinder';
@@ -102,6 +103,7 @@ export const DeepDiveModal: React.FC<DeepDiveModalProps> = ({
 }) => {
   const labels = getLabels(readingLevel);
   const [isSaved, setIsSaved] = React.useState(false);
+  const [exporting, setExporting] = React.useState(false);
 
   const handleClose = React.useCallback(() => {
     // 1. Synchronously clear the URL param so the URL-sync effect
@@ -224,8 +226,56 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
     copyToClipboard(notionMarkdown, 'notion-export');
   };
 
-  const exportToPDF = () => {
-    window.print();
+  const handleExportPDF = async () => {
+    if (!deepDiveResult || !selectedOpportunity) return;
+    setExporting(true);
+    try {
+      const data: PDFExportData = {
+        opportunityName: selectedOpportunity.name,
+        marketMode: selectedMode,
+        countryTag: undefined,
+        businessPlan: deepDiveResult.business_plan,
+        costBreakdown: deepDiveResult.cost_breakdown.map(item => ({
+          item: item.item,
+          cost: item.cost,
+          type: item.type || 'one-time',
+          notes: item.notes,
+        })),
+        grants: deepDiveResult.grants
+          .filter(g => typeof g === 'object')
+          .map(g => ({
+            name: g.name || '',
+            organization: g.organization || '',
+            amount: g.amount || '',
+            why_this_qualifies: (g as { why_this_qualifies?: string }).why_this_qualifies || '',
+            how_to_apply: (g as { how_to_apply?: string }).how_to_apply || '',
+          })),
+        checklist: deepDiveResult.checklist.map(item => {
+          if (typeof item === 'string') {
+            return { title: item as string, description: '', phase: 1, time_estimate: '' };
+          }
+          return {
+            title: item.title || '',
+            description: item.description || '',
+            phase: item.phase || 1,
+            time_estimate: item.time_estimate || '',
+          };
+        }),
+        investors: deepDiveResult.investors.map(inv => ({
+          name: inv.name,
+          focus: inv.focus,
+          stage: inv.stage,
+          website: inv.website,
+        })),
+        generatedAt: new Date().toISOString(),
+      };
+      await exportToPDF(data);
+    } catch (err) {
+      console.error('PDF export failed:', err);
+      alert('PDF export failed. Please try again.');
+    } finally {
+      setExporting(false);
+    }
   };
 
   const tabs: { id: 'plan' | 'costs' | 'grants' | 'checklist' | 'investors'; label: string; icon: string }[] = [
@@ -334,11 +384,12 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
                 {copied === 'share-link' ? 'Link Copied' : 'Share Link'}
               </button>
               <button
-                onClick={exportToPDF}
-                className="p-2.5 hover:bg-gray-100 rounded-xl transition-colors text-muted"
+                onClick={handleExportPDF}
+                disabled={exporting || !deepDiveResult}
+                className="p-2.5 hover:bg-gray-100 rounded-xl transition-colors text-muted disabled:opacity-40"
                 aria-label="Export as PDF"
               >
-                <Download size={18} />
+                {exporting ? <Loader2 size={18} className="animate-spin text-gray-400" /> : <Download size={18} />}
               </button>
             </div>
 
@@ -408,11 +459,12 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
                       </button>
                       <button
                         type="button"
-                        onClick={() => { exportToPDF(); setShowActions(false); }}
-                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 rounded-xl text-xs font-medium transition-colors"
+                        onClick={() => { handleExportPDF(); setShowActions(false); }}
+                        disabled={exporting || !deepDiveResult}
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 rounded-xl text-xs font-medium transition-colors disabled:opacity-40"
                       >
-                        <Download className="w-4 h-4" />
-                        Export PDF
+                        {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                        {exporting ? 'Exporting...' : 'Export PDF'}
                       </button>
                       <div className="h-px bg-border/5 my-1" />
                       <button

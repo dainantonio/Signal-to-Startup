@@ -25,9 +25,16 @@ export const GrantFinder: React.FC<GrantFinderProps> = ({ deepDiveResult, select
       exit={{ opacity: 0, x: -20 }}
       className="space-y-8"
     >
-      <p className="text-xs text-gray-400 font-mono">
-        Funding sources specific to this business type and location
-      </p>
+      <div className="flex items-start gap-3 p-3 bg-blue-50 border border-blue-200 rounded-xl">
+        <span className="text-blue-500 flex-shrink-0 mt-0.5">ℹ</span>
+        <div>
+          <p className="text-xs font-semibold text-blue-800">AI-identified funding sources</p>
+          <p className="text-xs text-blue-700 leading-relaxed">
+            Grant eligibility and deadlines change. Verify all details directly with the funding
+            body before applying.
+          </p>
+        </div>
+      </div>
 
       {/* Region-specific grant sources banner */}
       {hasModeSpecificGrants && (

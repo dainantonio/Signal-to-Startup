@@ -19,6 +19,15 @@ export const CostEstimator: React.FC<CostEstimatorProps> = ({ deepDiveResult }) 
       exit={{ opacity: 0, x: -20 }}
       className="space-y-4"
     >
+      {/* Trust label */}
+      <div className="flex items-start gap-3 p-3 bg-gray-50 border border-gray-200 rounded-xl">
+        <span className="text-gray-400 flex-shrink-0 mt-0.5">ℹ</span>
+        <p className="text-xs text-gray-500 leading-relaxed">
+          Estimated costs based on market averages. Actual costs vary by location, vendor, and
+          business model. Use as a starting point for your own research.
+        </p>
+      </div>
+
       {/* Total card */}
       <div className="bg-gray-900 text-white rounded-2xl px-6 py-5 flex items-center justify-between">
         <div>

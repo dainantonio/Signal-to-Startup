@@ -20,6 +20,8 @@
     "firebase": "^12.11.0",
     "firebase-admin": "^13.7.0",
     "he": "^1.2.0",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.2.1",
     "lucide-react": "^0.553.0",
     "motion": "^12.23.24",
     "next": "^15.4.9",

@@ -24,6 +24,17 @@ export const InvestorMatch: React.FC<InvestorMatchProps> = ({ deepDiveResult }) 
         <h3 className="text-2xl font-serif italic tracking-tight">Investor Matchmaking</h3>
       </div>
 
+      <div className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-xl mb-4">
+        <span className="text-amber-500 flex-shrink-0 mt-0.5">⚠</span>
+        <div>
+          <p className="text-xs font-semibold text-amber-800">AI-suggested investors</p>
+          <p className="text-xs text-amber-700 leading-relaxed">
+            These matches are AI-generated based on your opportunity type. Always verify fit on the
+            investor&apos;s website before outreach. Stage and focus areas change frequently.
+          </p>
+        </div>
+      </div>
+
       <div className="space-y-4">
         {deepDiveResult.investors.map((investor, i) => (
           <div key={i} className="bg-white border-2 border-foreground p-6 hover:bg-gray-50 transition-all group">
