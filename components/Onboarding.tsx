@@ -182,11 +182,13 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
       {showAgentConfirm && (
         <div className="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center p-8 text-center">
           <div className="text-5xl mb-6">🤖</div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-3">Your agent is active</h2>
-          <p className="text-gray-500 text-base leading-relaxed mb-6 max-w-sm">
-            Your Signal Monitor is now watching{' '}
-            {countryTag ? `${countryTag} and global` : 'global'} markets for
-            opportunities that match your profile.
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Your agent is activated</h2>
+          <p className="text-base text-gray-500 leading-relaxed mb-2 max-w-sm">
+            Every morning your Signal Monitor finds opportunities matched
+            to{countryTag ? ` ${countryTag}` : ' your market'}.
+          </p>
+          <p className="text-sm text-gray-400 mb-6 max-w-sm">
+            Your first digest arrives tomorrow. For now — let&apos;s find your first signal.
           </p>
           <div className="space-y-3 w-full max-w-xs">
             {[
@@ -239,13 +241,14 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             >
               <div className="space-y-1">
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
-                  Step 1 of 3
+                  Step 1 of 4
                 </p>
-                <h2 className="text-2xl font-bold text-gray-900">
+                <h2 className="text-2xl font-bold text-gray-900 mb-1">
                   Where are you building?
                 </h2>
-                <p className="text-sm text-gray-500 leading-relaxed">
-                  We will tailor your signal feed and opportunity analysis to your market.
+                <p className="text-sm text-gray-500 mb-6">
+                  We use this to find opportunities specific to your market — with local
+                  funding, local costs, and signals that actually matter where you are.
                 </p>
               </div>
 
@@ -297,6 +300,11 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                     );
                   })}
                 </div>
+                {countryTag && (
+                  <p className="text-xs text-green-600 font-medium mt-2 text-center">
+                    ✓ Great — we&apos;ll show you opportunities for {countryTag} in your local currency
+                  </p>
+                )}
               </div>
             </motion.div>
           )}
@@ -315,11 +323,11 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
                   Step 2 of 4
                 </p>
-                <h2 className="text-2xl font-bold text-gray-900">
-                  How do you want your opportunities?
+                <h2 className="text-2xl font-bold text-gray-900 mb-1">
+                  How should we explain things?
                 </h2>
-                <p className="text-sm text-gray-500 leading-relaxed">
-                  We&apos;ll adjust how we explain things to match your style.
+                <p className="text-sm text-gray-500 mb-6">
+                  We adjust how we write to match your style. You can change this anytime.
                 </p>
               </div>
 
@@ -384,11 +392,11 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
                   Step 3 of 4
                 </p>
-                <h2 className="text-2xl font-bold text-gray-900">
-                  What signals interest you?
+                <h2 className="text-2xl font-bold text-gray-900 mb-1">
+                  What topics interest you?
                 </h2>
-                <p className="text-sm text-gray-500 leading-relaxed">
-                  Your feed will prioritize these sectors. You can always change this later.
+                <p className="text-sm text-gray-500 mb-6">
+                  Your agent will focus on these when scanning for signals. Pick as many as you like.
                 </p>
               </div>
 
@@ -444,12 +452,11 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
                   Step 4 of 4
                 </p>
-                <h2 className="text-2xl font-bold text-gray-900">
-                  What type of business interests you?
+                <h2 className="text-2xl font-bold text-gray-900 mb-1">
+                  What kind of business are you interested in?
                 </h2>
-                <p className="text-sm text-gray-500 leading-relaxed">
-                  We will highlight opportunities that match your preferred business model.
-                  Skip if you are open to anything.
+                <p className="text-sm text-gray-500 mb-6">
+                  Optional — but helps us find opportunities that match your experience and interests.
                 </p>
               </div>
 
@@ -551,7 +558,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             onClick={handleComplete}
             className="w-full mt-2 py-2 text-xs text-gray-400 hover:text-black transition-colors"
           >
-            Skip setup — show me everything
+            Skip — show me all types
           </button>
         )}
       </div>
