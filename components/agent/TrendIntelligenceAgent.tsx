@@ -236,9 +236,11 @@ export default function TrendIntelligenceAgent() {
     const params = new URLSearchParams(window.location.search);
     const oppName = params.get('opp');
     if (oppName && analysis.result) {
-      const opp = analysis.result.opportunities.find(o => o.name === oppName);
+    const opp = analysis.result.opportunities.find(o => o.name === oppName);
       if (opp) {
-        analysis.generateDeepDive(opp);
+        // Use the correct method name and pass the required second argument (signalText)
+        // Ensure you pass the variable that holds your current signal input (usually `signal`)
+        analysis.deepDiveOpportunity(opp, signal); 
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
