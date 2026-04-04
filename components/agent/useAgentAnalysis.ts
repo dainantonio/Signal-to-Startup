@@ -100,9 +100,9 @@ Use short sentences. Use everyday words.
 Never use business jargon or startup terminology.
 Write like a smart friend explaining over lunch.
 Instead of "B2C revenue model" say "selling directly to customers".
-Instead of "market penetration" say "getting your first customers".
-Instead of "ROI potential" say "how much money you could make".
-Instead of "value proposition" say "why people would choose you".
+"market penetration" say "getting your first customers".
+"ROI potential" say "how much money you could make".
+"value proposition" say "why people would choose you".
 Keep opportunity descriptions under 2 sentences.
 First steps must be specific and actionable today.
 Cost estimates must feel achievable — break into phases if large.
@@ -269,17 +269,27 @@ const deepDiveSchema = {
 // ---------------------------------------------------------------------------
 // Hook: useAgentAnalysis
 // ---------------------------------------------------------------------------
-export function useAgentAnalysis(user: FirebaseUser | null, loadHistory: (uid: string) => void) {
+export function useAgentAnalysis(
+  user: FirebaseUser | null, 
+  selectedMode: MarketMode,
+  countryTags: string[],
+  readingLevel: 'simple' | 'standard' | 'advanced'
+) {
   const [loading, setLoading] = useState(false);
   const [loadingStage, setLoadingStage] = useState(0);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [selectedMode, setSelectedMode] = useState<MarketMode>('global');
-  const [countryTags, setCountryTags] = useState<string[]>([]);
-  const [readingLevel, setReadingLevel] = useState<'simple' | 'standard' | 'advanced'>('standard');
 
   const abortControllerRef = useRef<AbortController | null>(null);
+
+  const cancelAnalysis = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setLoading(false);
+  }, []);
 
   const analyzeSignal = async (signalText: string, location?: string, focus?: string) => {
     if (!signalText.trim()) return;
@@ -523,7 +533,7 @@ export function useAgentAnalysis(user: FirebaseUser | null, loadHistory: (uid: s
           });
           savedId = docRef.id;
           console.log('[8] Firestore save complete, id:', savedId);
-          loadHistory(user.uid);
+          // Trigger a history reload if needed - but loadHistory is not passed here anymore
         } catch (firestoreErr) {
           // Firestore failure must NOT prevent results from showing
           console.warn('[FIRESTORE] Save failed, continuing without save:', firestoreErr);
@@ -717,13 +727,9 @@ Return ONLY valid JSON in this exact structure:
     loadingStage,
     loadingProgress,
     result,
+    setResult,
     error,
-    selectedMode,
-    setSelectedMode,
-    countryTags,
-    setCountryTags,
-    readingLevel,
-    setReadingLevel,
+    cancelAnalysis,
     analyzeSignal,
     analyzeCompoundSignal,
     deepDiveOpportunity,
