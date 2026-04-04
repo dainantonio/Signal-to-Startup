@@ -654,7 +654,7 @@ Return ONLY valid JSON in this exact structure:
     "speed_rating": "Fast",
     "first_steps": ["step1", "step2", "step3"]
   }
-}` }]}
+}` }]}]
       });
 
       const text = response.response.text();
