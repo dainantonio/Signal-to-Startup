@@ -17,75 +17,53 @@ export const CostEstimator: React.FC<CostEstimatorProps> = ({ deepDiveResult }) 
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
-      className="space-y-8"
+      className="space-y-4"
     >
-      <div className="flex items-end justify-between border-b-2 border-foreground pb-4">
-        <h3 className="text-2xl font-serif italic tracking-tight">Startup Cost Estimator</h3>
-        <div className="text-right">
-          <div className="text-[10px] font-mono uppercase opacity-50">Total Capital Required</div>
-          <div className="text-3xl font-bold font-mono">${totalCost.toLocaleString()}</div>
+      {/* Total card */}
+      <div className="bg-gray-900 text-white rounded-2xl px-6 py-5 flex items-center justify-between">
+        <div>
+          <p className="text-[10px] font-mono uppercase tracking-widest text-gray-400">Total Capital Required</p>
+          <p className="text-3xl font-bold font-mono mt-1">${totalCost.toLocaleString()}</p>
+        </div>
+        <div className="text-[10px] font-mono text-gray-400 text-right">
+          <p>{items.filter(i => ((i as { type?: string }).type ?? 'one-time') === 'one-time').length} one-time</p>
+          <p>{items.filter(i => ((i as { type?: string }).type ?? '') === 'monthly').length} monthly</p>
         </div>
       </div>
 
-      <div className="space-y-1">
-        {/* Table header */}
-        <div className="grid grid-cols-12 px-4 py-2 bg-gray-100 font-mono text-[10px] uppercase tracking-widest opacity-50">
-          <div className="col-span-6">Expense Item</div>
-          <div className="col-span-2 text-center">Type</div>
-          <div className="col-span-2 text-right">Cost</div>
-          <div className="col-span-2 text-right">%</div>
-        </div>
-
+      {/* Item cards */}
+      <div className="space-y-2">
         {items.map((item, i) => {
           const percentage = totalCost > 0 ? (item.cost / totalCost) * 100 : 0;
-          // Handle legacy items without type field
           const itemType = (item as { type?: string }).type ?? 'one-time';
           const notes = (item as { notes?: string }).notes;
           return (
-            <div
-              key={i}
-              className="grid grid-cols-12 px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition-colors items-start"
-            >
-              <div className="col-span-6 pr-2">
-                <p className="font-medium text-sm">{item.item}</p>
+            <div key={i} className="bg-gray-50 rounded-xl px-5 py-4 flex items-start gap-4">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="font-medium text-sm text-gray-900">{item.item}</p>
+                  <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded font-bold uppercase flex-shrink-0 ${
+                    itemType === 'monthly'
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'bg-gray-200 text-gray-600'
+                  }`}>
+                    {itemType === 'monthly' ? '/mo' : '1×'}
+                  </span>
+                </div>
                 {notes && (
-                  <p className="text-[10px] text-gray-400 mt-0.5 leading-snug">{notes}</p>
+                  <p className="text-[11px] text-gray-400 mt-1 leading-snug">{notes}</p>
                 )}
               </div>
-              <div className="col-span-2 flex items-center justify-center">
-                <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded font-bold uppercase ${
-                  itemType === 'monthly'
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'bg-gray-100 text-gray-600'
-                }`}>
-                  {itemType === 'monthly' ? '/mo' : '1×'}
-                </span>
-              </div>
-              <div className="col-span-2 text-right font-mono font-bold text-sm">
-                ${item.cost.toLocaleString()}
-              </div>
-              <div className="col-span-2 flex flex-col items-end gap-1 pl-2">
-                <span className="text-[10px] font-mono font-bold">{Math.round(percentage)}%</span>
-                <div className="w-full max-w-[60px] h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-foreground" style={{ width: `${percentage}%` }} />
-                </div>
+              <div className="text-right flex-shrink-0">
+                <p className="font-mono font-bold text-sm text-gray-900">${item.cost.toLocaleString()}</p>
+                <p className="text-[10px] text-gray-400 font-mono">{Math.round(percentage)}%</p>
               </div>
             </div>
           );
         })}
-
-        {/* Total row */}
-        <div className="grid grid-cols-12 px-4 pt-4 pb-2 font-semibold">
-          <div className="col-span-8 text-sm text-gray-500 uppercase tracking-wide font-mono text-[11px]">
-            Total estimate
-          </div>
-          <div className="col-span-2 text-right font-mono font-bold text-green-700">
-            ${totalCost.toLocaleString()}
-          </div>
-          <div className="col-span-2" />
-        </div>
       </div>
 
+      {/* Lean strategy box */}
       <div className="bg-emerald-50 border border-emerald-200 p-4 flex gap-4 items-start rounded-xl">
         <div className="p-2 bg-emerald-500 text-white rounded-lg flex-shrink-0">
           <Zap className="w-4 h-4" />

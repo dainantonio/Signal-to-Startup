@@ -137,8 +137,16 @@ export const LOADING_STAGE_LABELS = [
 const responseSchema = {
   type: Type.OBJECT,
   properties: {
-    summary: { type: Type.STRING, description: "Briefly summarize the key event or change in 2–3 sentences." },
-    trend: { type: Type.STRING, description: "What broader trend does this represent?" },
+    today_action: {
+      type: Type.STRING,
+      description: "ONE specific thing the user can do TODAY to start this business — free, takes less than 2 hours, requires no money or prior experience. Must be a single complete sentence starting with an action verb. Max 30 words. Examples: 'Search Google for your 3 biggest competitors and write down what they charge.' or 'Message 5 people you know and ask if they would pay $X per month for this service.'"
+    },
+    today_action_type: {
+      type: Type.STRING,
+      description: "one of: research, talk, build, apply, or test"
+    },
+    summary: { type: Type.STRING, description: "Briefly summarize the key event or change in 2–3 sentences. Max 60 words." },
+    trend: { type: Type.STRING, description: "What broader trend does this represent? Max 50 words." },
     affected_groups: {
       type: Type.ARRAY,
       items: { type: Type.STRING },
@@ -190,17 +198,9 @@ const responseSchema = {
         }
       },
       required: ["name", "reason", "who_should_build", "cost_estimate", "speed_rating", "first_steps"]
-    },
-    today_action: {
-      type: Type.STRING,
-      description: "ONE specific thing the user can do TODAY to start this business — free, takes less than 2 hours, requires no money or prior experience. Must be a single complete sentence starting with an action verb. Examples: 'Search Google for your 3 biggest competitors and write down what they charge and what customers complain about in reviews.' or 'Message 5 people you know today and ask if they would pay $X per month for this service — write down exactly what they say.'"
-    },
-    today_action_type: {
-      type: Type.STRING,
-      description: "one of: research, talk, build, apply, or test"
     }
   },
-  required: ["summary", "trend", "affected_groups", "problems", "opportunities", "best_idea", "today_action", "today_action_type"]
+  required: ["today_action", "today_action_type", "summary", "trend", "affected_groups", "problems", "opportunities", "best_idea"]
 };
 
 const deepDiveSchema = {
@@ -563,6 +563,7 @@ export function useAgentAnalysis(user: FirebaseUser | null, selectedMode: Market
         throw new Error('The AI returned an incomplete response. Please try again.');
       }
       console.log('[6] parsed result — trend:', parsedResult?.trend, '| opportunities:', parsedResult?.opportunities?.length);
+      console.log('[ANALYSIS] today_action:', parsedResult?.today_action?.slice(0, 80));
 
       // Enforce exactly 3 opportunities
       if (!parsedResult.opportunities || parsedResult.opportunities.length < 2) {

@@ -126,14 +126,11 @@ export const Checklist: React.FC<ChecklistProps> = ({ deepDiveResult, savedDocId
       className="space-y-8"
     >
       {/* Header */}
-      <div className="border-b-2 border-foreground pb-4 flex justify-between items-end">
-        <div>
-          <h3 className="text-2xl font-serif italic tracking-tight">Launch Checklist</h3>
-          <p className="text-[10px] font-mono uppercase opacity-50 mt-1">From Signal to First Dollar</p>
-        </div>
-        <div className="text-right">
-          <div className="text-xs font-mono uppercase mb-1">{completedCount}/{items.length} Done</div>
-          <div className="w-32 h-2 bg-gray-100 border border-foreground overflow-hidden rounded-full">
+      <div className="flex justify-between items-center">
+        <p className="text-[10px] font-mono uppercase text-gray-400">From Signal to First Dollar</p>
+        <div className="flex items-center gap-3">
+          <div className="text-xs font-mono text-gray-500">{completedCount}/{items.length} Done</div>
+          <div className="w-24 h-1.5 bg-gray-100 overflow-hidden rounded-full">
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${progress}%` }}
@@ -152,7 +149,7 @@ export const Checklist: React.FC<ChecklistProps> = ({ deepDiveResult, savedDocId
           {phases.map(({ phase, label, color, bg, items: phaseItems }) => (
             <div key={phase}>
               {/* Phase header */}
-              <div className={`flex items-center gap-2 px-4 py-2 rounded-lg border mb-4 ${bg}`}>
+              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border mb-4 ${bg}`}>
                 <span className={`text-xs font-mono font-bold uppercase tracking-widest ${color}`}>
                   Phase {phase} — {label}
                 </span>
@@ -236,7 +233,6 @@ export const Checklist: React.FC<ChecklistProps> = ({ deepDiveResult, savedDocId
 
       <div className="bg-foreground text-background p-8 text-center relative overflow-hidden rounded-2xl">
         <div className="relative z-10">
-          <h4 className="text-xl font-serif italic mb-2 tracking-tight">Ready to execute?</h4>
           <p className="text-xs font-mono uppercase tracking-[0.2em] opacity-60 mb-6">
             {completedCount === items.length && items.length > 0
               ? 'All steps complete — go get that first customer!'

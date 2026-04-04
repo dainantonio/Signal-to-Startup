@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Coins, ExternalLink, CheckCircle2, Lightbulb } from 'lucide-react';
+import { ExternalLink, CheckCircle2, Lightbulb } from 'lucide-react';
 import { DeepDiveResult, GrantItem, MarketMode } from './types';
 import { marketModeConfigs } from './MarketModeSelector';
 
@@ -25,17 +25,9 @@ export const GrantFinder: React.FC<GrantFinderProps> = ({ deepDiveResult, select
       exit={{ opacity: 0, x: -20 }}
       className="space-y-8"
     >
-      <div className="flex items-center gap-4 border-b-2 border-foreground pb-4">
-        <div className="p-3 bg-amber-100 text-amber-600 rounded-xl flex-shrink-0">
-          <Coins className="w-6 h-6" />
-        </div>
-        <div>
-          <h3 className="text-2xl font-serif italic tracking-tight">Grant Finder</h3>
-          <p className="text-xs text-gray-400 font-mono mt-0.5">
-            Funding sources specific to this business type and location
-          </p>
-        </div>
-      </div>
+      <p className="text-xs text-gray-400 font-mono">
+        Funding sources specific to this business type and location
+      </p>
 
       {/* Region-specific grant sources banner */}
       {hasModeSpecificGrants && (

@@ -1,16 +1,11 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  ArrowLeft, 
-  RefreshCcw, 
-  X, 
-  Loader2, 
-  FileText, 
-  Calculator, 
-  Coins, 
-  CheckSquare, 
-  Users, 
-  Check, 
+import {
+  ArrowLeft,
+  RefreshCcw,
+  X,
+  Loader2,
+  Check,
   Copy,
   Share2,
   Download,
@@ -55,15 +50,40 @@ interface DeepDiveModalProps {
   readingLevel?: 'simple' | 'standard' | 'advanced';
 }
 
-function formatBusinessPlan(text: string): string[] {
+function formatBusinessPlan(text: string): { heading: string; body: string }[] {
   if (!text) return [];
-  return text
+  const cleaned = text.replace(/\*\*/g, '').replace(/#{1,3}\s/g, '');
+  const parts = cleaned
     .replace(/(\d+\.\s+)/g, '\n\n$1')
-    .replace(/\*\*/g, '')
-    .replace(/#{1,3}\s/g, '')
     .split('\n\n')
     .map(s => s.trim())
     .filter(s => s.length > 0);
+
+  const sections: { heading: string; body: string }[] = [];
+  let currentHeading = '';
+  let bodyLines: string[] = [];
+
+  for (const part of parts) {
+    if (/^\d+\./.test(part)) {
+      if (currentHeading || bodyLines.length > 0) {
+        sections.push({ heading: currentHeading, body: bodyLines.join(' ').trim() });
+      }
+      const newlineIdx = part.indexOf('\n');
+      if (newlineIdx !== -1) {
+        currentHeading = part.slice(0, newlineIdx).trim();
+        bodyLines = [part.slice(newlineIdx + 1).trim()];
+      } else {
+        currentHeading = part;
+        bodyLines = [];
+      }
+    } else {
+      bodyLines.push(part);
+    }
+  }
+  if (currentHeading || bodyLines.length > 0) {
+    sections.push({ heading: currentHeading, body: bodyLines.join(' ').trim() });
+  }
+  return sections;
 }
 
 export const DeepDiveModal: React.FC<DeepDiveModalProps> = ({
@@ -208,13 +228,13 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
     window.print();
   };
 
-  const tabs = [
-    { id: 'plan', label: labels.businessPlan, icon: FileText },
-    { id: 'costs', label: labels.startupCosts, icon: Calculator },
-    { id: 'grants', label: labels.fundingGrants, icon: Coins },
-    { id: 'checklist', label: labels.checklist, icon: CheckSquare },
-    { id: 'investors', label: labels.investorMatch, icon: Users },
-  ] as const;
+  const tabs: { id: 'plan' | 'costs' | 'grants' | 'checklist' | 'investors'; label: string; icon: string }[] = [
+    { id: 'plan', label: labels.businessPlan, icon: '📄' },
+    { id: 'costs', label: labels.startupCosts, icon: '💰' },
+    { id: 'grants', label: labels.fundingGrants, icon: '🏦' },
+    { id: 'checklist', label: labels.checklist, icon: '✅' },
+    { id: 'investors', label: labels.investorMatch, icon: '🤝' },
+  ];
 
   return (
     <motion.div
@@ -443,7 +463,7 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
                         : 'text-muted hover:text-foreground hover:bg-white/50'
                     }`}
                   >
-                    <tab.icon className={`w-4 h-4 flex-shrink-0 ${activeDeepDiveTab === tab.id ? 'text-primary' : 'text-muted'}`} />
+                    <span className="flex-shrink-0 text-base leading-none">{tab.icon}</span>
                     <span>{tab.label}</span>
                     {activeDeepDiveTab === tab.id && <ChevronRight className="hidden lg:block w-4 h-4 ml-auto opacity-40" />}
                   </button>
@@ -485,37 +505,23 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
                 >
                   {activeDeepDiveTab === 'plan' && (
                     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                      <div className="space-y-6 text-sm leading-relaxed text-gray-700">
-                        {formatBusinessPlan(deepDiveResult.business_plan).map((section, i) => {
-                          const isHeading = /^\d+\./.test(section);
-                          const lines = section.split('\n');
-                          return (
-                            <div key={i} className={isHeading ? 'space-y-2' : ''}>
-                              {isHeading ? (
-                                <>
-                                  <h3 className="text-sm font-bold text-gray-900">
-                                    {lines[0]}
-                                  </h3>
-                                  {lines.slice(1).join(' ').trim() && (
-                                    <p className="text-sm text-gray-600 leading-relaxed">
-                                      {lines.slice(1).join(' ').trim()}
-                                    </p>
-                                  )}
-                                </>
-                              ) : (
-                                <p className="text-sm text-gray-600 leading-relaxed">{section}</p>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
+                      {formatBusinessPlan(deepDiveResult.business_plan).map((section, i) => (
+                        <div key={i} className="space-y-2">
+                          {section.heading && (
+                            <h3 className="font-semibold text-gray-900">{section.heading}</h3>
+                          )}
+                          {section.body && (
+                            <p className="text-gray-600 leading-7">{section.body}</p>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   )}
 
                   {activeDeepDiveTab === 'costs' && (
                     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                       <div className="flex items-center gap-3 text-primary bg-primary/5 px-4 py-2 rounded-full w-fit">
-                        <Calculator className="w-4 h-4" />
+                        <span className="text-base leading-none">💰</span>
                         <span className="text-[10px] font-mono uppercase font-bold tracking-widest">Startup Cost Breakdown</span>
                       </div>
                       <CostEstimator deepDiveResult={deepDiveResult} />
@@ -525,7 +531,7 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
                   {activeDeepDiveTab === 'grants' && (
                     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                       <div className="flex items-center gap-3 text-primary bg-primary/5 px-4 py-2 rounded-full w-fit">
-                        <Coins className="w-4 h-4" />
+                        <span className="text-base leading-none">🏦</span>
                         <span className="text-[10px] font-mono uppercase font-bold tracking-widest">Funding & Grant Opportunities</span>
                       </div>
                       <GrantFinder deepDiveResult={deepDiveResult} selectedMode={selectedMode} />
@@ -535,7 +541,7 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
                   {activeDeepDiveTab === 'checklist' && (
                     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                       <div className="flex items-center gap-3 text-primary bg-primary/5 px-4 py-2 rounded-full w-fit">
-                        <CheckSquare className="w-4 h-4" />
+                        <span className="text-base leading-none">✅</span>
                         <span className="text-[10px] font-mono uppercase font-bold tracking-widest">30-Day Execution Checklist</span>
                       </div>
                       <Checklist deepDiveResult={deepDiveResult} savedDocId={savedDocId} />
@@ -545,7 +551,7 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
                   {activeDeepDiveTab === 'investors' && (
                     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                       <div className="flex items-center gap-3 text-primary bg-primary/5 px-4 py-2 rounded-full w-fit">
-                        <Users className="w-4 h-4" />
+                        <span className="text-base leading-none">🤝</span>
                         <span className="text-[10px] font-mono uppercase font-bold tracking-widest">Potential Investor Match</span>
                       </div>
                       <InvestorMatch deepDiveResult={deepDiveResult} />
@@ -554,8 +560,8 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
                 </motion.div>
               ) : (
                 <div className="h-full flex flex-col items-center justify-center py-20 text-center space-y-6">
-                  <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center text-muted">
-                    <FileText className="w-10 h-10" />
+                  <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center text-4xl">
+                    📄
                   </div>
                   <div className="space-y-4">
                     <h3 className="text-base font-sans font-semibold">Ready to deep dive?</h3>
