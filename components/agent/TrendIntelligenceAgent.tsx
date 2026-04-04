@@ -235,7 +235,7 @@ export default function TrendIntelligenceAgent() {
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const oppName = params.get('opp');
-    if (oppName && analysis.result && !analysis.selectedOpportunity) {
+    if (oppName && analysis.result) {
       const opp = analysis.result.opportunities.find(o => o.name === oppName);
       if (opp) {
         analysis.generateDeepDive(opp);
