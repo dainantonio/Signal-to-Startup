@@ -153,7 +153,6 @@ export default function TrendIntelligenceAgent() {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         // If deep dive modal is open, let its own handler deal with it
-        if (analysis.selectedOpportunity) return;
         if (showCancelConfirm) { setShowCancelConfirm(false); return; }
         if (analysis.result || analysis.loading) handleBackOrCancel();
       }
