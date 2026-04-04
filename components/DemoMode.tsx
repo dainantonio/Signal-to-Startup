@@ -48,52 +48,52 @@ interface DemoModeProps {
 const DEMO_ARTICLES: DemoArticle[] = [
   {
     id: 1,
-    title: 'JPS announces 15% electricity rate increase effective next quarter',
-    source: 'Jamaica Observer',
-    sector: 'Policy',
-    snippet: 'Jamaica Public Service Company has confirmed a 15% increase in electricity rates for residential and commercial customers, citing rising fuel costs and infrastructure investment needs.',
-    url: 'https://www.jamaicaobserver.com',
-    signalScore: 87,
+    title: 'SBA unlocks $2B in new small business funding — simplified applications open now',
+    source: 'U.S. Small Business Administration',
+    sector: 'Funding & Grants',
+    snippet: 'The SBA has opened a new $2 billion funding round targeting underserved small businesses, with a streamlined one-page application and same-day eligibility decisions. Priority given to businesses in underserved communities, veterans, and women-owned enterprises.',
+    url: 'https://www.sba.gov',
+    signalScore: 96,
     publishedAt: new Date(Date.now() - 2 * 3600000).toISOString(),
   },
   {
     id: 2,
+    title: 'US retail vacancy hits 8-year high — 40,000 empty storefronts in major metros',
+    source: 'Wall Street Journal',
+    sector: 'Market Shifts',
+    snippet: 'Commercial real estate vacancy rates in US retail corridors have reached their highest point since 2016, with landlords offering unprecedented concessions including rent-free periods and tenant improvement allowances to attract small business operators.',
+    url: 'https://www.wsj.com',
+    signalScore: 91,
+    publishedAt: new Date(Date.now() - 4 * 3600000).toISOString(),
+  },
+  {
+    id: 3,
     title: 'DBJ launches $500M SME loan facility targeting informal sector businesses',
     source: 'Jamaica Gleaner',
     sector: 'Funding & Grants',
     snippet: 'The Development Bank of Jamaica has unveiled a new loan facility specifically targeting small and micro enterprises in the informal sector, with simplified application requirements and interest rates starting at 8% per annum.',
     url: 'https://jamaica-gleaner.com',
     signalScore: 94,
-    publishedAt: new Date(Date.now() - 4 * 3600000).toISOString(),
-  },
-  {
-    id: 3,
-    title: 'Caribbean digital payments surge as mobile money adoption hits record high',
-    source: 'Caribbean Business Report',
-    sector: 'Market Shifts',
-    snippet: 'Mobile payment transactions across the Caribbean increased 67% year-over-year with Jamaica leading adoption. Analysts point to post-pandemic behavior shifts and improved smartphone penetration as key drivers.',
-    url: 'https://caribbeanbusinessreport.com',
-    signalScore: 91,
     publishedAt: new Date(Date.now() - 6 * 3600000).toISOString(),
   },
   {
     id: 4,
-    title: 'Tourism arrivals in Jamaica up 23% — local suppliers struggle to meet demand',
-    source: 'Loop Jamaica',
-    sector: 'Market Shifts',
-    snippet: 'Record tourist arrivals are creating supply chain opportunities for local Jamaican businesses, but many informal vendors lack the capacity and formalization to access hotel and resort contracts.',
-    url: 'https://loopjamaica.com',
-    signalScore: 88,
+    title: 'AI adoption among US small businesses jumps 340% — most owners lack implementation help',
+    source: 'Forbes',
+    sector: 'AI & Tech',
+    snippet: 'A new survey of 10,000 US small business owners found 340% growth in AI tool adoption over 12 months, but 78% report struggling to implement AI effectively. The gap between awareness and practical use is creating strong demand for hands-on AI setup and training services.',
+    url: 'https://www.forbes.com',
+    signalScore: 89,
     publishedAt: new Date(Date.now() - 8 * 3600000).toISOString(),
   },
   {
     id: 5,
-    title: 'JBDC opens applications for 2026 business development grants up to $2M JMD',
-    source: 'Jamaica Observer Business',
-    sector: 'Funding & Grants',
-    snippet: 'The Jamaica Business Development Corporation is accepting applications for its annual grant programme supporting micro and small enterprises. Priority given to agri-business, creative industries, and tech-enabled services.',
-    url: 'https://www.jamaicaobserver.com',
-    signalScore: 96,
+    title: 'Nigerian fintech sector raises $900M in Q1 — payments infrastructure still underserved',
+    source: 'TechCabal',
+    sector: 'Market Shifts',
+    snippet: 'Nigeria\'s fintech ecosystem attracted $900M in venture funding in the first quarter, with investors targeting last-mile payments, agent banking, and B2B financial infrastructure. Analysts highlight a growing gap in services for micro-merchants outside Lagos.',
+    url: 'https://techcabal.com',
+    signalScore: 88,
     publishedAt: new Date(Date.now() - 10 * 3600000).toISOString(),
   },
 ];
@@ -237,18 +237,15 @@ export default function DemoMode({ onSignUp, onBack }: DemoModeProps) {
         contents: [{
           role: 'user',
           parts: [{
-            text: `You are a startup opportunity finder specializing in the Jamaica and Caribbean market.
+            text: `You are a startup opportunity finder for entrepreneurs around the world.
 Be concise. Each field maximum 1-2 short sentences.
 Keep total response under 800 tokens.
 
-This signal is from the Jamaica/Caribbean market.
-Focus opportunities on:
-- Informal to formal business transition
-- Local Jamaican entrepreneurs and vendors
-- JMD costs alongside USD
-- DBJ, JBDC, and local funding sources
-- Kingston, Montego Bay, and parish-level markets
-- Mobile-first solutions for low-bandwidth users
+Analyze signals and identify practical business opportunities.
+When the signal is US-focused, prioritize US market context — SBA grants, local US costs in USD, small business operators.
+When the signal is Jamaica/Caribbean-focused, use JMD costs alongside USD, DBJ/JBDC funding sources, and Caribbean market context.
+When the signal is Africa-focused, use local currency context and emerging market opportunities.
+Always ground opportunities in real market conditions relevant to the signal's geography.
 
 Analyze this signal: "${articleText.substring(0, 600)}"
 
@@ -420,7 +417,7 @@ Return ONLY this JSON with NO extra text:
           </button>
           <div className="flex items-center gap-2">
             <span className="text-xs px-2 py-1 bg-amber-100 text-amber-700 rounded-full font-medium">
-              🇯🇲 Demo — Jamaica & Caribbean
+              🌐 Demo — Live signals
             </span>
             {demoCount < DEMO_ARTICLE_LIMIT && (
               <span className="text-xs text-gray-400 hidden sm:block">
@@ -449,7 +446,7 @@ Return ONLY this JSON with NO extra text:
             className="max-w-3xl mx-auto px-4 py-8 space-y-6"
           >
             <div className="text-center space-y-2">
-              <h2 className="text-xl font-semibold">🇯🇲 Jamaica & Caribbean signals</h2>
+              <h2 className="text-xl font-semibold">🌐 Today&apos;s signals</h2>
               <p className="text-sm text-gray-500">
                 Click Analyze on any article below to see the hidden business opportunity
                 inside it — free, no sign up needed.

@@ -184,11 +184,11 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
           <div className="text-5xl mb-6">🤖</div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Your agent is activated</h2>
           <p className="text-base text-gray-500 leading-relaxed mb-2 max-w-sm">
-            Every morning your Signal Monitor finds opportunities matched
-            to{countryTag ? ` ${countryTag}` : ' your market'}.
+            Every morning your Signal Monitor scans {countryTag || 'your market'} for opportunities
+            that match your profile — in your language, your currency, your market.
           </p>
           <p className="text-sm text-gray-400 mb-6 max-w-sm">
-            Your first digest arrives tomorrow. For now — let&apos;s find your first signal.
+            Your first digest arrives tomorrow morning. For now — let&apos;s find your first signal.
           </p>
           <div className="space-y-3 w-full max-w-xs">
             {[
@@ -248,7 +248,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                 </h2>
                 <p className="text-sm text-gray-500 mb-6">
                   We use this to find opportunities specific to your market — with local
-                  funding, local costs, and signals that actually matter where you are.
+                  grants, local costs in your currency, and signals that actually matter where you are.
                 </p>
               </div>
 
@@ -302,7 +302,8 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                 </div>
                 {countryTag && (
                   <p className="text-xs text-green-600 font-medium mt-2 text-center">
-                    ✓ Great — we&apos;ll show you opportunities for {countryTag} in your local currency
+                    ✓ We will show opportunities for {countryTag} with costs in{' '}
+                    {COUNTRY_CONTEXT[countryTag.toLowerCase()]?.currency ?? 'your local currency'}
                   </p>
                 )}
               </div>
@@ -327,7 +328,8 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                   How should we explain things?
                 </h2>
                 <p className="text-sm text-gray-500 mb-6">
-                  We adjust how we write to match your style. You can change this anytime.
+                  We adjust how we write to match your style. A first-time business owner
+                  and a seasoned founder need different things. You can change this anytime.
                 </p>
               </div>
 
@@ -396,7 +398,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                   What topics interest you?
                 </h2>
                 <p className="text-sm text-gray-500 mb-6">
-                  Your agent will focus on these when scanning for signals. Pick as many as you like.
+                  Your agent focuses on these when scanning for signals each morning. Pick as many as you like — you can change them later.
                 </p>
               </div>
 
@@ -453,10 +455,10 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                   Step 4 of 4
                 </p>
                 <h2 className="text-2xl font-bold text-gray-900 mb-1">
-                  What kind of business are you interested in?
+                  What kind of business are you building?
                 </h2>
                 <p className="text-sm text-gray-500 mb-6">
-                  Optional — but helps us find opportunities that match your experience and interests.
+                  Optional, but helps us find opportunities that match your experience and goals.
                 </p>
               </div>
 
@@ -559,6 +561,15 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             className="w-full mt-2 py-2 text-xs text-gray-400 hover:text-black transition-colors"
           >
             Skip — show me all types
+          </button>
+        )}
+        {step === 4 && (
+          <button
+            type="button"
+            onClick={handleComplete}
+            className="w-full mt-2 py-2 text-xs text-gray-400 hover:text-black transition-colors"
+          >
+            Skip — show me everything
           </button>
         )}
       </div>
