@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Zap } from 'lucide-react';
+import { Zap, ExternalLink } from 'lucide-react';
 import { DeepDiveResult } from './types';
 
 interface CostEstimatorProps {
@@ -61,6 +61,16 @@ export const CostEstimator: React.FC<CostEstimatorProps> = ({ deepDiveResult }) 
                 </div>
                 {notes && (
                   <p className="text-[11px] text-gray-400 mt-1 leading-snug">{notes}</p>
+                )}
+                {(item as any).source_url && (
+                  <a
+                    href={(item as any).source_url.startsWith('http') ? (item as any).source_url : `https://${(item as any).source_url}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 mt-2 text-[10px] uppercase font-mono font-bold text-blue-600 hover:text-blue-800 transition-colors"
+                  >
+                    View Source Pricing <ExternalLink className="w-3 h-3" />
+                  </a>
                 )}
               </div>
               <div className="text-right flex-shrink-0">

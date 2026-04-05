@@ -62,12 +62,13 @@ export const GrantFinder: React.FC<GrantFinderProps> = ({ deepDiveResult, select
       {isRichGrants ? (
         <div className="space-y-4">
           {(grants as GrantItem[]).map((grant, i) => {
-            const hasLink = grant.how_to_apply && (
-              grant.how_to_apply.startsWith('http') ||
-              grant.how_to_apply.startsWith('www')
+            const rawUrl = grant.url || grant.how_to_apply;
+            const hasLink = rawUrl && (
+              rawUrl.startsWith('http') ||
+              rawUrl.startsWith('www')
             );
             const applyUrl = hasLink
-              ? (grant.how_to_apply.startsWith('http') ? grant.how_to_apply : `https://${grant.how_to_apply}`)
+              ? (rawUrl.startsWith('http') ? rawUrl : `https://${rawUrl}`)
               : null;
 
             return (
@@ -107,19 +108,24 @@ export const GrantFinder: React.FC<GrantFinderProps> = ({ deepDiveResult, select
                   </div>
                 </div>
 
-                {/* Apply button */}
-                <div className="pt-1">
+                {/* Apply section */}
+                <div className="pt-1 flex flex-col gap-2">
+                  {grant.how_to_apply && grant.how_to_apply !== rawUrl && (
+                    <p className="text-xs text-gray-500 italic">{grant.how_to_apply}</p>
+                  )}
                   {applyUrl ? (
                     <a
                       href={applyUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-black text-white rounded-lg text-xs font-mono font-bold hover:bg-gray-800 transition-colors"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-black text-white w-fit rounded-lg text-xs font-mono font-bold hover:bg-gray-800 transition-colors"
                     >
                       Apply / Learn more <ExternalLink className="w-3 h-3" />
                     </a>
                   ) : (
-                    <p className="text-xs text-gray-500 italic">{grant.how_to_apply}</p>
+                    grant.how_to_apply === rawUrl && (
+                       <p className="text-xs text-gray-500 italic">{grant.how_to_apply}</p>
+                    )
                   )}
                 </div>
               </div>

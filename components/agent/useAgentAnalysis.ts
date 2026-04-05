@@ -230,7 +230,8 @@ const deepDiveSchema = {
           item: { type: Type.STRING, description: "Name of the expense item" },
           cost: { type: Type.INTEGER, description: "Estimated cost in USD." },
           type: { type: Type.STRING, description: "'one-time' or 'monthly'" },
-          notes: { type: Type.STRING, description: "Optional tip, free tier info, or variation." }
+          notes: { type: Type.STRING, description: "Optional tip, free tier info, or variation." },
+          source_url: { type: Type.STRING, description: "URL to pricing page of vendor if applicable." }
         },
         required: ["item", "cost", "type"]
       }
@@ -243,10 +244,12 @@ const deepDiveSchema = {
           name: { type: Type.STRING, description: "Exact name of the grant or funding program." },
           organization: { type: Type.STRING, description: "The organization offering it." },
           amount: { type: Type.STRING, description: "Estimated amount or range." },
-          link: { type: Type.STRING, description: "Direct URL to apply or learn more." },
-          why_fit: { type: Type.STRING, description: "One sentence on why this business qualifies." }
+          who_qualifies: { type: Type.STRING, description: "Brief description of eligibility." },
+          why_this_qualifies: { type: Type.STRING, description: "One sentence on why this business qualifies." },
+          how_to_apply: { type: Type.STRING, description: "Short instruction or note on how to apply." },
+          url: { type: Type.STRING, description: "Direct URL to apply or learn more." }
         },
-        required: ["name", "organization", "amount", "link", "why_fit"]
+        required: ["name", "organization", "amount", "who_qualifies", "why_this_qualifies"]
       }
     },
     marketing_strategy: {
@@ -261,9 +264,36 @@ const deepDiveSchema = {
         },
         required: ["channel", "tactic", "cost", "effort"]
       }
+    },
+    checklist: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          title: { type: Type.STRING },
+          description: { type: Type.STRING },
+          phase: { type: Type.INTEGER, description: "1=Research, 2=Legal/Setup, 3=Build, 4=Launch" },
+          time_estimate: { type: Type.STRING },
+          cost: { type: Type.STRING, description: "Optional cost estimate." }
+        },
+        required: ["title", "phase", "time_estimate"]
+      }
+    },
+    investors: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          name: { type: Type.STRING },
+          focus: { type: Type.STRING },
+          stage: { type: Type.STRING },
+          website: { type: Type.STRING, description: "URL to investor website or firm." }
+        },
+        required: ["name", "focus", "stage"]
+      }
     }
   },
-  required: ["business_plan", "cost_breakdown", "grants", "marketing_strategy"]
+  required: ["business_plan", "cost_breakdown", "grants", "marketing_strategy", "checklist", "investors"]
 };
 
 // ---------------------------------------------------------------------------
@@ -718,12 +748,15 @@ Return ONLY valid JSON in this exact structure:
         LOCATION: ${countryTags.join(', ') || 'Global'}
 
         TASK: Provide a deep-dive execution plan.
+        You MUST use the Google Search tool to browse the live internet to find real, currently operating data.
         1. BUSINESS PLAN: Write a concise 9-section plan (Problem, Solution, Market, Revenue, Marketing, Operations, Team, Risks, Milestones).
-        2. COST BREAKDOWN: List 5-8 specific items needed to start, with costs in USD. Total must be around ${opportunity.startup_cost} USD.
-        3. GRANTS: Find 2-3 REAL grants, loans, or programs in ${countryTags[0] || 'the target market'} that this business could qualify for.
+        2. COST BREAKDOWN: Search the web for actual software/hardware/vendor pricing. Include source URLs. Total must be around ${opportunity.startup_cost} USD.
+        3. GRANTS: Search the web for 2-3 REAL active grants, loans, or programs in ${countryTags[0] || 'the target market'} that this business could qualify for. Include the real application URL.
         4. MARKETING: 3 specific marketing tactics with effort/cost ratings.
+        5. CHECKLIST: Provide a step-by-step checklist split across 4 phases to launch.
+        6. INVESTORS: Search the web to find 2-3 REAL local investor firms, accelerators or angels that invest in this space/region.
 
-        TONE: Practical, encouraging, and highly specific.
+        TONE: Practical, encouraging, and highly specific. DO NOT hallucinate URLs or grants.
       `;
 
       const response = await genAI.models.generateContent({
@@ -732,6 +765,7 @@ Return ONLY valid JSON in this exact structure:
         config: {
           responseMimeType: 'application/json',
           responseSchema: deepDiveSchema,
+          tools: [{ googleSearch: {} }],
         },
       });
       const data = JSON.parse(response.text ?? '') as DeepDiveResult;

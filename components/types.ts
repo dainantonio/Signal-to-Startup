@@ -69,6 +69,7 @@ export interface CostBreakdownItem {
   cost: number;
   type: 'one-time' | 'monthly';
   notes?: string;
+  source_url?: string;
 }
 
 export interface GrantItem {
@@ -78,6 +79,7 @@ export interface GrantItem {
   who_qualifies: string;
   why_this_qualifies: string;
   how_to_apply: string;
+  url?: string;
 }
 
 export interface ChecklistStep {
