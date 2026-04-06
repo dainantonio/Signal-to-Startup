@@ -12,7 +12,6 @@ import {
   Loader2,
   Copy,
   Check,
-  Sparkles,
   Rocket,
   Sparkles,
   ChevronRight,
