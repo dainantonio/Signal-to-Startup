@@ -82,8 +82,8 @@ export const ActionCenter = () => {
     return (
       <div className="bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-100/50 rounded-3xl p-6 md:p-8 shadow-sm">
         <div className="flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
-          <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm">
-            <Flame className="w-8 h-8 text-orange-200" />
+          <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center border border-orange-100">
+            <Flame className="w-6 h-6 text-orange-400" />
           </div>
           <div>
             <h3 className="text-lg font-sans font-bold text-gray-900">Start Your Execution Streak</h3>
@@ -108,26 +108,20 @@ export const ActionCenter = () => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       {/* Streak Card */}
-      <div className="md:col-span-2 bg-gradient-to-br from-white to-orange-50/30 border border-orange-100/50 rounded-3xl p-6 md:p-8 shadow-sm flex flex-col justify-center relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
-          <Flame className="w-32 h-32 -mr-8 -mt-8" />
-        </div>
+      <div className="md:col-span-2 bg-gray-50/50 border border-border/10 rounded-3xl p-6 shadow-sm flex flex-col justify-center relative overflow-hidden group">
         
         <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div className="flex items-center gap-6">
             <div className="relative">
-              <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-md border border-orange-100 relative z-10">
-                <Flame className={`w-10 h-10 ${streak > 0 ? 'text-orange-500 fill-orange-500 animate-pulse' : 'text-gray-300'}`} />
+              <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-border/5 relative z-10 transition-transform group-hover:scale-105">
+                <Flame className={`w-7 h-7 ${streak > 0 ? 'text-orange-500 fill-orange-500' : 'text-gray-300'}`} />
               </div>
-              {streak > 0 && (
-                <div className="absolute inset-0 bg-orange-400 rounded-full blur-xl opacity-20 animate-pulse" />
-              )}
             </div>
             <div>
-              <p className="text-[10px] font-mono uppercase font-bold tracking-widest text-orange-600/70">Current Streak</p>
+              <p className="text-[10px] font-mono uppercase font-bold tracking-widest text-muted">Execution Streak</p>
               <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-4xl font-serif italic font-bold tracking-tight text-gray-900">{streak}</span>
-                <span className="text-xl font-sans font-medium text-gray-500">Day{streak !== 1 ? 's' : ''}</span>
+                <span className="text-3xl font-serif italic font-bold tracking-tight text-gray-900">{streak}</span>
+                <span className="text-sm font-sans font-medium text-gray-400">Day{streak !== 1 ? 's' : ''}</span>
               </div>
               <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[9px] font-mono uppercase font-bold tracking-widest mt-2 ${currentLevel.bg}`}>
                 <Trophy className="w-3 h-3" /> Level: {currentLevel.name}
@@ -136,20 +130,20 @@ export const ActionCenter = () => {
           </div>
 
           {nextLevel && (
-            <div className="w-full md:w-48 bg-white/60 backdrop-blur-sm border border-orange-100 p-4 rounded-2xl">
-              <p className="text-[9px] font-mono uppercase font-bold text-gray-500 mb-2 flex justify-between">
-                <span>Next Milestone</span>
+            <div className="w-full md:w-44 bg-white/40 border border-border/5 p-3 rounded-xl">
+              <p className="text-[8px] font-mono uppercase font-bold text-muted/60 mb-1.5 flex justify-between">
+                <span>Target</span>
                 <span>{nextLevel.threshold} Days</span>
               </p>
-              <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+              <div className="h-1 w-full bg-gray-100 rounded-full overflow-hidden">
                 <motion.div 
                   initial={{ width: 0 }}
                   animate={{ width: `${Math.min((streak / nextLevel.threshold) * 100, 100)}%` }}
-                  className="h-full bg-orange-500"
+                  className="h-full bg-orange-400"
                 />
               </div>
-              <p className="text-[10px] font-medium text-gray-600 mt-2">
-                {nextLevel.threshold - streak} day{nextLevel.threshold - streak !== 1 ? 's' : ''} to {nextLevel.name}
+              <p className="text-[9px] font-medium text-muted mt-1.5 truncate">
+                {nextLevel.threshold - streak} to {nextLevel.name}
               </p>
             </div>
           )}

@@ -62,6 +62,49 @@ export interface AnalysisResult {
   // Your Next Move
   today_action?: string;
   today_action_type?: 'research' | 'talk' | 'build' | 'apply' | 'test';
+  archived?: boolean;
+}
+
+export interface IdeaValidation {
+  id: string;
+  userId: string;
+  idea: string;
+  validationScore: number;
+  verdict: string;
+  marketMode: string;
+  countryTag: string | null;
+  createdAt: string;
+  archived?: boolean;
+}
+
+export interface SavedArticle {
+  id: string;
+  userId: string;
+  url: string;
+  title: string;
+  text: string;
+  savedAt: string;
+  analyzed: boolean;
+  analyzedAt?: string;
+  archived?: boolean;
+}
+
+export interface AgentSignal {
+  id: string;
+  userId: string;
+  title: string;
+  snippet: string;
+  url: string;
+  source: string;
+  sector: string;
+  market: string;
+  signalScore: number;
+  userScore: number;
+  createdAt: string;
+  read: boolean;
+  analyzed: boolean;
+  opportunityId?: string;
+  archived?: boolean;
 }
 
 export interface CostBreakdownItem {
@@ -133,6 +176,7 @@ export interface SavedOpportunity {
   marketMode?: MarketMode;
   landingPage?: LandingPageData;
   pitchDeck?: PitchDeckData;
+  archived?: boolean;
 }
 
 export interface UserAction {

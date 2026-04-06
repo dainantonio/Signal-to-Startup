@@ -14,6 +14,7 @@ import {
   Sparkles,
   RefreshCw,
   Bell,
+  CheckCircle,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Link from 'next/link';
@@ -53,6 +54,7 @@ export default function TrendIntelligenceAgentNewsroom() {
       return true;
     }
   });
+  const [selectedHistoryIds, setSelectedHistoryIds] = useState<Set<string>>(new Set());
   const [selectedMode, setSelectedMode] = useState<MarketMode>('global');
   const [countryTags, setCountryTags] = useState<string[]>(() => {
     try {
@@ -468,7 +470,6 @@ export default function TrendIntelligenceAgentNewsroom() {
               <section id="step-4" className="scroll-mt-24 mb-16">
                 <div className="bg-black text-white p-12 rounded-3xl shadow-2xl">
                   <div className="flex items-center gap-3 mb-6">
-                    <Sparkles className="w-6 h-6" />
                     <h2 className="text-2xl font-serif font-bold">Next Steps</h2>
                   </div>
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
@@ -576,12 +577,31 @@ export default function TrendIntelligenceAgentNewsroom() {
               >
                 <div className="p-6 border-b border-gray-200 flex items-center justify-between bg-white">
                   <h3 className="text-lg font-semibold">Analysis History</h3>
-                  <button
-                    onClick={() => setShowHistory(false)}
-                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {user && analysis.history.length > 0 && (
+                      <button
+                        onClick={() => {
+                          if (selectedHistoryIds.size === analysis.history.length) {
+                            setSelectedHistoryIds(new Set());
+                          } else {
+                            setSelectedHistoryIds(new Set(analysis.history.map(h => h.id!)));
+                          }
+                        }}
+                        className="text-[10px] font-mono uppercase font-bold text-muted hover:text-foreground transition-colors mr-2"
+                      >
+                        {selectedHistoryIds.size === analysis.history.length ? 'Deselect All' : 'Select All'}
+                      </button>
+                    )}
+                    <button
+                      onClick={() => {
+                        setShowHistory(false);
+                        setSelectedHistoryIds(new Set());
+                      }}
+                      className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="flex-grow overflow-y-auto p-6 space-y-4">
@@ -609,25 +629,52 @@ export default function TrendIntelligenceAgentNewsroom() {
                     analysis.history.map(item => (
                       <div
                         key={item.id}
-                        className="group bg-white border border-gray-200 p-5 hover:border-gray-300 hover:shadow-md transition-all cursor-pointer rounded-xl"
+                        className={`group bg-white border p-5 transition-all cursor-pointer rounded-xl relative ${
+                          selectedHistoryIds.has(item.id!) ? 'border-primary ring-1 ring-primary' : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
+                        }`}
                         onClick={() => {
-                          analysis.setResult(item);
-                          if (item.marketMode) {
-                            setSelectedMode(item.marketMode);
+                          if (selectedHistoryIds.size > 0) {
+                            setSelectedHistoryIds(prev => {
+                              const next = new Set(prev);
+                              if (next.has(item.id!)) next.delete(item.id!);
+                              else next.add(item.id!);
+                              return next;
+                            });
+                          } else {
+                            analysis.setResult(item);
+                            if (item.marketMode) {
+                              setSelectedMode(item.marketMode);
+                            }
+                            setShowHistory(false);
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
                           }
-                          setShowHistory(false);
-                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        onContextMenu={(e) => {
+                          e.preventDefault();
+                          setSelectedHistoryIds(prev => {
+                            const next = new Set(prev);
+                            if (next.has(item.id!)) next.delete(item.id!);
+                            else next.add(item.id!);
+                            return next;
+                          });
                         }}
                       >
                         <div className="flex justify-between items-start mb-3">
-                          <span className="text-xs font-medium text-gray-500">
-                            {item.createdAt
-                              ? new Date(item.createdAt).toLocaleDateString('en-US', {
-                                  month: 'short',
-                                  day: 'numeric',
-                                })
-                              : 'Unknown'}
-                          </span>
+                          <div className="flex items-center gap-2">
+                             {selectedHistoryIds.size > 0 && (
+                               <div className={`w-4 h-4 rounded border flex items-center justify-center ${selectedHistoryIds.has(item.id!) ? 'bg-primary border-primary text-white' : 'border-gray-300 bg-white'}`}>
+                                 {selectedHistoryIds.has(item.id!) && <CheckCircle className="w-3 h-3" />}
+                               </div>
+                             )}
+                            <span className="text-xs font-medium text-gray-500">
+                              {item.createdAt
+                                ? new Date(item.createdAt).toLocaleDateString('en-US', {
+                                    month: 'short',
+                                    day: 'numeric',
+                                  })
+                                : 'Unknown'}
+                            </span>
+                          </div>
                           <button
                             onClick={e => {
                               e.stopPropagation();
@@ -650,6 +697,39 @@ export default function TrendIntelligenceAgentNewsroom() {
                     </div>
                   )}
                 </div>
+
+                {user && analysis.history.length > 0 && (
+                  <div className="p-6 border-t border-gray-200 bg-gray-50/50 flex flex-col gap-3">
+                    {selectedHistoryIds.size > 0 ? (
+                      <button
+                        onClick={async () => {
+                          const count = selectedHistoryIds.size;
+                          if (!window.confirm(`Delete ${count} selected analyses?`)) return;
+                          for (const id of Array.from(selectedHistoryIds)) {
+                            await analysis.deleteAnalysis(id);
+                          }
+                          setSelectedHistoryIds(new Set());
+                        }}
+                        className="w-full py-3 bg-red-600 text-white rounded-xl text-[11px] font-mono uppercase tracking-widest font-bold hover:bg-red-700 transition-all flex items-center justify-center gap-2"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Delete Selected ({selectedHistoryIds.size})
+                      </button>
+                    ) : (
+                      <button
+                        onClick={async () => {
+                          if (!window.confirm('Delete ALL history items? This cannot be undone.')) return;
+                          for (const item of analysis.history) {
+                            if (item.id) await analysis.deleteAnalysis(item.id);
+                          }
+                        }}
+                        className="w-full py-3 bg-gray-100 text-gray-600 rounded-xl text-[11px] font-mono uppercase tracking-widest font-bold hover:bg-red-50 hover:text-red-600 transition-all"
+                      >
+                        Delete All History
+                      </button>
+                    )}
+                  </div>
+                )}
               </motion.div>
             </>
           )}

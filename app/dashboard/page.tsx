@@ -16,7 +16,9 @@ import {
   Sparkles,
   LayoutDashboard,
   Target,
-  Coins
+  Coins,
+  Trash2,
+  CheckSquare
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -38,47 +40,16 @@ import {
   googleProvider,
   limit,
 } from '@/firebase';
-import { SavedOpportunity, OpportunityStatus } from '@/components/types';
+import { 
+  SavedOpportunity, 
+  OpportunityStatus, 
+  IdeaValidation, 
+  SavedArticle, 
+  AgentSignal 
+} from '@/components/types';
 import { COUNTRY_CONTEXT } from '@/lib/rss-sources';
 import { ActionCenter } from '@/components/ActionCenter';
 
-interface IdeaValidation {
-  id: string;
-  idea: string;
-  validationScore: number;
-  verdict: string;
-  marketMode: string;
-  countryTag: string | null;
-  createdAt: string;
-}
-
-interface SavedArticle {
-  id: string;
-  userId: string;
-  url: string;
-  title: string;
-  text: string;
-  savedAt: string;
-  analyzed: boolean;
-  analyzedAt?: string;
-}
-
-interface AgentSignal {
-  id: string;
-  userId: string;
-  title: string;
-  snippet: string;
-  url: string;
-  source: string;
-  sector: string;
-  market: string;
-  signalScore: number;
-  userScore: number;
-  createdAt: string;
-  read: boolean;
-  analyzed: boolean;
-  opportunityId?: string;
-}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function sanitizeForStorage(obj: any): any {
@@ -105,7 +76,9 @@ export default function DashboardPage() {
   const [agentSignals, setAgentSignals] = useState<AgentSignal[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
-  const [dashboardTab, setDashboardTab] = useState<'opportunities' | 'validations' | 'articles' | 'signals'>('opportunities');
+  const [dashboardTab, setDashboardTab] = useState<'opportunities' | 'validations' | 'articles' | 'signals' | 'archive'>('opportunities');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkProcessing, setBulkProcessing] = useState(false);
 
   // Auth listener
   useEffect(() => {
@@ -122,7 +95,6 @@ export default function DashboardPage() {
 
   const loadSavedOpportunities = async (uid: string) => {
     try {
-      // agent_signals: no orderBy to avoid composite index requirement — sort in code
       const [oppSnap, valSnap, artSnap, signalsSnap] = await Promise.all([
         getDocs(query(collection(db, 'saved_opportunities'), where('userId', '==', uid), orderBy('savedAt', 'desc'))),
         getDocs(query(collection(db, 'idea_validations'), where('userId', '==', uid), orderBy('createdAt', 'desc'))),
@@ -138,16 +110,133 @@ export default function DashboardPage() {
       setSavedArticles(
         artSnap.docs.map(d => ({ id: d.id, ...d.data() })) as SavedArticle[]
       );
-      // Sort by createdAt descending in code, cap at 20
       const signals = signalsSnap.docs
         .map(d => ({ id: d.id, ...d.data() }) as AgentSignal)
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-        .slice(0, 20);
+        .slice(0, 50); // Increased limit slightly for history
       setAgentSignals(signals);
     } catch (err) {
       console.error('[DASHBOARD] Failed to load pipeline:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    if (!window.confirm(`Are you sure you want to delete ${selectedIds.size} items? This cannot be undone.`)) return;
+    
+    setBulkProcessing(true);
+    try {
+      const collectionMap: Record<typeof dashboardTab, string> = {
+        opportunities: 'saved_opportunities',
+        validations: 'idea_validations',
+        articles: 'saved_articles',
+        signals: 'agent_signals',
+        archive: '' // Archive tab won't have own collection
+      };
+
+      const ids = Array.from(selectedIds);
+      await Promise.all(ids.map(async (id) => {
+        // Find which collection this ID belongs to if we are in 'archive' tab
+        let collectionName = collectionMap[dashboardTab];
+        if (dashboardTab === 'archive') {
+          // Check all state lists to find where this ID resides
+          if (savedOpportunities.some(o => o.id === id)) collectionName = 'saved_opportunities';
+          else if (validations.some(v => v.id === id)) collectionName = 'idea_validations';
+          else if (savedArticles.some(a => a.id === id)) collectionName = 'saved_articles';
+          else if (agentSignals.some(s => s.id === id)) collectionName = 'agent_signals';
+        }
+
+        if (collectionName) {
+          await deleteDoc(doc(db, collectionName, id));
+        }
+      }));
+
+      // Update local state
+      setSavedOpportunities(prev => prev.filter(o => !selectedIds.has(o.id!)));
+      setValidations(prev => prev.filter(v => !selectedIds.has(v.id!)));
+      setSavedArticles(prev => prev.filter(a => !selectedIds.has(a.id!)));
+      setAgentSignals(prev => prev.filter(s => !selectedIds.has(s.id!)));
+      setSelectedIds(new Set());
+    } catch (err) {
+      console.error('Bulk delete failed:', err);
+    } finally {
+      setBulkProcessing(false);
+    }
+  };
+
+  const handleBulkArchive = async (unarchive = false) => {
+    if (selectedIds.size === 0) return;
+    setBulkProcessing(true);
+    try {
+      const collectionMap: Record<string, string> = {
+        opportunities: 'saved_opportunities',
+        validations: 'idea_validations',
+        articles: 'saved_articles',
+        signals: 'agent_signals',
+        archive: ''
+      };
+
+      const ids = Array.from(selectedIds);
+      await Promise.all(ids.map(async (id) => {
+        let collectionName = collectionMap[dashboardTab];
+        if (dashboardTab === 'archive') {
+          if (savedOpportunities.some(o => o.id === id)) collectionName = 'saved_opportunities';
+          else if (validations.some(v => v.id === id)) collectionName = 'idea_validations';
+          else if (savedArticles.some(a => a.id === id)) collectionName = 'saved_articles';
+          else if (agentSignals.some(s => s.id === id)) collectionName = 'agent_signals';
+        }
+
+        if (collectionName) {
+          await updateDoc(doc(db, collectionName, id), { archived: !unarchive });
+        }
+      }));
+
+      // Update local state
+      const updateFn = (item: any) => selectedIds.has(item.id!) ? { ...item, archived: !unarchive } : item;
+      setSavedOpportunities(prev => prev.map(updateFn));
+      setValidations(prev => prev.map(updateFn));
+      setSavedArticles(prev => prev.map(updateFn));
+      setAgentSignals(prev => prev.map(updateFn));
+      setSelectedIds(new Set());
+    } catch (err) {
+      console.error('Bulk archive failed:', err);
+    } finally {
+      setBulkProcessing(false);
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const selectAll = (currentItems: {id?: string}[]) => {
+    if (selectedIds.size === currentItems.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(currentItems.map(item => item.id!)));
+    }
+  };
+
+  const getActiveList = () => {
+    switch (dashboardTab) {
+      case 'opportunities': return savedOpportunities.filter(o => !o.archived);
+      case 'validations': return validations.filter(v => !v.archived);
+      case 'articles': return savedArticles.filter(a => !a.archived);
+      case 'signals': return agentSignals.filter(s => !s.archived);
+      case 'archive': return [
+        ...savedOpportunities.filter(o => o.archived),
+        ...validations.filter(v => v.archived),
+        ...savedArticles.filter(a => a.archived),
+        ...agentSignals.filter(s => s.archived)
+      ];
+      default: return [];
     }
   };
 
@@ -234,8 +323,7 @@ export default function DashboardPage() {
 
         {/* Page Title */}
         <div className="mb-12 space-y-2">
-          <div className="flex items-center gap-3 text-primary mb-2">
-            <Sparkles className="w-5 h-5" />
+          <div className="flex items-center gap-3 mb-2">
             <span className="text-[10px] font-mono uppercase font-bold tracking-widest">Opportunity Pipeline</span>
           </div>
           <h1 className="text-4xl md:text-6xl font-serif italic font-bold tracking-tight">Strategic Dashboard</h1>
@@ -248,7 +336,8 @@ export default function DashboardPage() {
             ['opportunities', '💼 Opportunities'],
             ['validations', '💡 Validations'],
             ['articles', '🔖 Saved Articles'],
-            ['signals', `🤖 Agent Signals${agentSignals.filter(s => !s.read).length > 0 ? ` (${agentSignals.filter(s => !s.read).length})` : ''}`],
+            ['signals', `🤖 Agent Signals${agentSignals.filter(s => !s.read && !s.archived).length > 0 ? ` (${agentSignals.filter(s => !s.read && !s.archived).length})` : ''}`],
+            ['archive', '📦 Archive'],
           ] as const).map(([tab, label]) => (
             <button
               key={tab}
@@ -263,10 +352,90 @@ export default function DashboardPage() {
           ))}
         </div>
 
+        {/* Bulk Action Toolbar */}
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-4 py-3 border-b border-border/5">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => selectAll(getActiveList())}
+              className="text-[10px] font-mono uppercase font-bold text-muted hover:text-foreground transition-colors flex items-center gap-2"
+            >
+              <div className={`w-4 h-4 border rounded flex items-center justify-center ${selectedIds.size === getActiveList().length && getActiveList().length > 0 ? 'bg-black border-black text-white' : 'border-gray-300'}`}>
+                {selectedIds.size === getActiveList().length && getActiveList().length > 0 && <CheckCircle className="w-3 h-3" />}
+              </div>
+              {selectedIds.size === getActiveList().length && getActiveList().length > 0 ? 'Deselect All' : 'Select All'}
+            </button>
+            {selectedIds.size > 0 && (
+              <span className="text-[10px] font-mono uppercase font-bold text-primary">
+                {selectedIds.size} selected
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            {selectedIds.size > 0 && (
+              <>
+                <button
+                  onClick={() => handleBulkArchive(dashboardTab === 'archive')}
+                  disabled={bulkProcessing}
+                  className="px-3 py-1.5 border border-border/10 rounded-lg text-[10px] font-mono uppercase font-bold text-muted hover:text-foreground transition-all flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  {dashboardTab === 'archive' ? 'Restore' : 'Archive'}
+                </button>
+                <button
+                  onClick={handleBulkDelete}
+                  disabled={bulkProcessing}
+                  className="px-3 py-1.5 border border-red-100 bg-red-50 text-red-600 rounded-lg text-[10px] font-mono uppercase font-bold hover:bg-red-100 transition-all flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Delete
+                </button>
+              </>
+            )}
+            <button
+              onClick={async () => {
+                const current = getActiveList();
+                if (current.length === 0) return;
+                if (!window.confirm(`Are you sure you want to delete ALL ${current.length} items in this view?`)) return;
+                setBulkProcessing(true);
+                try {
+                  const ids = current.map(item => item.id!);
+                  const collectionMap: Record<string, string> = {
+                    opportunities: 'saved_opportunities',
+                    validations: 'idea_validations',
+                    articles: 'saved_articles',
+                    signals: 'agent_signals',
+                  };
+                  await Promise.all(ids.map(id => {
+                    let col = collectionMap[dashboardTab];
+                    if (dashboardTab === 'archive') {
+                      if (savedOpportunities.some(o => o.id === id)) col = 'saved_opportunities';
+                      else if (validations.some(v => v.id === id)) col = 'idea_validations';
+                      else if (savedArticles.some(a => a.id === id)) col = 'saved_articles';
+                      else if (agentSignals.some(s => s.id === id)) col = 'agent_signals';
+                    }
+                    return deleteDoc(doc(db, col, id));
+                  }));
+                  // Local state update omitted for brevity, reload better here
+                  window.location.reload();
+                } catch (err) {
+                  console.error('Delete all failed:', err);
+                } finally {
+                  setBulkProcessing(false);
+                }
+              }}
+              className="text-[10px] font-mono uppercase font-bold text-muted/50 hover:text-red-400 transition-colors"
+            >
+              Delete All
+            </button>
+          </div>
+        </div>
+
         {dashboardTab === 'signals' ? (
           <AgentSignalsList
-            signals={agentSignals}
+            signals={agentSignals.filter(s => !s.archived)}
             loading={loading}
+            selectedIds={selectedIds}
+            onSelect={toggleSelect}
             onView={async (signal) => {
               if (signal.analyzed && signal.opportunityId) {
                 try {
@@ -306,11 +475,18 @@ export default function DashboardPage() {
             }}
           />
         ) : dashboardTab === 'validations' ? (
-          <ValidationsList validations={validations} loading={loading} />
+          <ValidationsList 
+            validations={validations.filter(v => !v.archived)} 
+            loading={loading} 
+            selectedIds={selectedIds}
+            onSelect={toggleSelect}
+          />
         ) : dashboardTab === 'articles' ? (
           <SavedArticlesList
-            articles={savedArticles}
+            articles={savedArticles.filter(a => !a.archived)}
             loading={loading}
+            selectedIds={selectedIds}
+            onSelect={toggleSelect}
             onAnalyze={(article) => {
               try {
                 sessionStorage.setItem('sharedArticle', JSON.stringify({
@@ -331,16 +507,84 @@ export default function DashboardPage() {
               }
             }}
           />
-        ) : (<>
-
-        {/* Metrics Summary Bar */}
-        <div className="flex items-center gap-6 mb-10 px-1 text-sm text-muted">
-          <span><span className="font-bold text-foreground">{totalSaved}</span> saved</span>
-          <span className="text-border/40">·</span>
-          <span><span className="font-bold text-primary">{inProgress}</span> in progress</span>
-          <span className="text-border/40">·</span>
-          <span><span className="font-bold text-secondary">{launched}</span> launched</span>
-        </div>
+        ) : dashboardTab === 'archive' ? (
+          <div className="space-y-12">
+            <div className="bg-gray-50 border border-border/10 p-6 rounded-2xl">
+              <p className="text-sm text-muted font-medium">Archived items are hidden from your main pipeline. You can restore them or delete them permanently here.</p>
+            </div>
+            {getActiveList().length === 0 ? (
+              <div className="text-center py-24 opacity-20 font-serif italic text-2xl font-bold">
+                Archive is empty
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-6">
+                {savedOpportunities.filter(o => o.archived).length > 0 && (
+                  <div className="space-y-4">
+                    <h3 className="text-xs font-mono uppercase font-bold text-muted px-2">Opportunities</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
+                      {savedOpportunities.filter(o => o.archived).map(opp => (
+                        <KanbanCard 
+                          key={opp.id} 
+                          opportunity={opp} 
+                          onStatusChange={(s) => updateStatus(opp.id!, s)} 
+                          isUpdating={updating === opp.id}
+                          selected={selectedIds.has(opp.id!)}
+                          onSelect={() => toggleSelect(opp.id!)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {validations.filter(v => v.archived).length > 0 && (
+                  <div className="space-y-4">
+                    <h3 className="text-xs font-mono uppercase font-bold text-muted px-2">Validations</h3>
+                    <ValidationsList 
+                      validations={validations.filter(v => v.archived)} 
+                      loading={false} 
+                      selectedIds={selectedIds} 
+                      onSelect={toggleSelect} 
+                    />
+                  </div>
+                )}
+                {savedArticles.filter(a => a.archived).length > 0 && (
+                  <div className="space-y-4">
+                    <h3 className="text-xs font-mono uppercase font-bold text-muted px-2">Articles</h3>
+                    <SavedArticlesList 
+                      articles={savedArticles.filter(a => a.archived)} 
+                      loading={false} 
+                      selectedIds={selectedIds} 
+                      onSelect={toggleSelect}
+                      onAnalyze={() => {}}
+                      onRemove={() => {}}
+                    />
+                  </div>
+                )}
+                {agentSignals.filter(s => s.archived).length > 0 && (
+                  <div className="space-y-4">
+                    <h3 className="text-xs font-mono uppercase font-bold text-muted px-2">Agent Signals</h3>
+                    <AgentSignalsList 
+                      signals={agentSignals.filter(s => s.archived)} 
+                      loading={false} 
+                      selectedIds={selectedIds} 
+                      onSelect={toggleSelect}
+                      onView={() => {}}
+                      onDismiss={() => {}}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        ) : (
+          <>
+          {/* Metrics Summary Bar */}
+          <div className="flex items-center gap-6 mb-10 px-1 text-sm text-muted">
+            <span><span className="font-bold text-foreground">{totalSaved}</span> saved</span>
+            <span className="text-border/40">·</span>
+            <span><span className="font-bold text-primary">{inProgress}</span> in progress</span>
+            <span className="text-border/40">·</span>
+            <span><span className="font-bold text-secondary">{launched}</span> launched</span>
+          </div>
 
         {/* Loading State */}
         {loading ? (
@@ -389,6 +633,8 @@ export default function DashboardPage() {
                         opportunity={opp}
                         onStatusChange={(newStatus) => updateStatus(opp.id!, newStatus)}
                         isUpdating={updating === opp.id}
+                        selected={selectedIds.has(opp.id!)}
+                        onSelect={() => toggleSelect(opp.id!)}
                       />
                     ))}
                   </AnimatePresence>
@@ -407,7 +653,17 @@ export default function DashboardPage() {
 // Validations list
 // ---------------------------------------------------------------------------
 
-function ValidationsList({ validations, loading }: { validations: IdeaValidation[]; loading: boolean }) {
+function ValidationsList({ 
+  validations, 
+  loading,
+  selectedIds,
+  onSelect,
+}: { 
+  validations: IdeaValidation[]; 
+  loading: boolean;
+  selectedIds?: Set<string>;
+  onSelect?: (id: string) => void;
+}) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-32 gap-4">
@@ -447,9 +703,21 @@ function ValidationsList({ validations, loading }: { validations: IdeaValidation
             key={v.id}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white border border-border/10 p-6 rounded-2xl shadow-sm hover:shadow-md transition-all"
+            onClick={() => onSelect?.(v.id)}
+            className={`bg-white border p-6 rounded-2xl shadow-sm hover:shadow-md transition-all relative group cursor-pointer ${
+              selectedIds?.has(v.id) ? 'border-primary ring-1 ring-primary' : 'border-border/10'
+            }`}
           >
-            <div className="flex items-center justify-between mb-4">
+            {onSelect && (
+              <div className="absolute top-4 right-4 z-10">
+                <div className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${
+                  selectedIds?.has(v.id) ? 'bg-primary border-primary text-white' : 'border-gray-200 bg-white group-hover:border-gray-400'
+                }`}>
+                  {selectedIds?.has(v.id) && <CheckSquare className="w-3.5 h-3.5" />}
+                </div>
+              </div>
+            )}
+            <div className="flex items-center justify-between mb-4 pr-8">
               <div className={`text-2xl font-bold border rounded-xl px-3 py-1 ${scoreColor}`}>
                 {v.validationScore}
               </div>
@@ -480,9 +748,11 @@ interface KanbanCardProps {
   opportunity: SavedOpportunity & { id: string };
   onStatusChange: (status: OpportunityStatus) => void;
   isUpdating: boolean;
+  selected?: boolean;
+  onSelect?: () => void;
 }
 
-function KanbanCard({ opportunity, onStatusChange, isUpdating }: KanbanCardProps) {
+function KanbanCard({ opportunity, onStatusChange, isUpdating, selected, onSelect }: KanbanCardProps) {
   const [showStatusMenu, setShowStatusMenu] = useState(false);
   const opp = opportunity.opportunity;
   const checklistProgress = opportunity.checklist.filter(c => c.completed).length;
@@ -501,15 +771,28 @@ function KanbanCard({ opportunity, onStatusChange, isUpdating }: KanbanCardProps
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="bg-white border border-border/10 p-6 rounded-2xl shadow-sm hover:shadow-xl hover:border-primary/20 transition-all duration-300 group relative overflow-hidden"
+      onClick={() => onSelect?.()}
+      className={`bg-white border p-6 rounded-2xl shadow-sm hover:shadow-xl hover:border-primary/20 transition-all duration-300 group relative overflow-hidden cursor-pointer ${
+        selected ? 'border-primary ring-1 ring-primary' : 'border-border/10'
+      }`}
     >
+      {/* Checkbox */}
+      {onSelect && (
+        <div className="absolute top-3 right-3 z-10">
+           <div className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${
+            selected ? 'bg-primary border-primary text-white' : 'border-gray-200 bg-white group-hover:border-gray-400'
+          }`}>
+            {selected && <CheckSquare className="w-3.5 h-3.5" />}
+          </div>
+        </div>
+      )}
       {/* Priority Strip */}
       <div className={`absolute top-0 left-0 right-0 h-1 ${priorityColor} opacity-40`} />
 
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex-grow space-y-1">
-          <h3 className="font-serif italic font-bold text-base leading-tight group-hover:text-primary transition-colors">
+          <h3 className="font-serif italic font-bold text-base leading-tight group-hover:text-primary transition-colors pr-6">
             {opp.name}
           </h3>
           <div className="flex items-center gap-2">
@@ -631,11 +914,15 @@ function KanbanCard({ opportunity, onStatusChange, isUpdating }: KanbanCardProps
 function AgentSignalsList({
   signals,
   loading,
+  selectedIds,
+  onSelect,
   onView,
   onDismiss,
 }: {
   signals: AgentSignal[];
   loading: boolean;
+  selectedIds?: Set<string>;
+  onSelect?: (id: string) => void;
   onView: (signal: AgentSignal) => void;
   onDismiss: (id: string) => void;
 }) {
@@ -695,10 +982,20 @@ function AgentSignalsList({
           key={signal.id}
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className={`bg-white border rounded-2xl p-5 shadow-sm hover:shadow-md transition-all ${
-            !signal.read ? 'border-black/20' : 'border-border/10'
+          onClick={() => onSelect?.(signal.id!)}
+          className={`bg-white border rounded-2xl p-5 shadow-sm hover:shadow-md transition-all group relative cursor-pointer ${
+            selectedIds?.has(signal.id!) ? 'border-primary ring-1 ring-primary' : !signal.read ? 'border-black/20' : 'border-border/10'
           }`}
         >
+          {onSelect && (
+            <div className="absolute top-4 right-4 z-10">
+              <div className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${
+                selectedIds?.has(signal.id!) ? 'bg-primary border-primary text-white' : 'border-gray-200 bg-white group-hover:border-gray-400'
+              }`}>
+                {selectedIds?.has(signal.id!) && <CheckSquare className="w-3.5 h-3.5" />}
+              </div>
+            </div>
+          )}
           <div className="flex items-start justify-between gap-3 mb-3">
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-center gap-2 mb-2">
@@ -713,7 +1010,7 @@ function AgentSignalsList({
                   <span className="text-[9px] font-mono font-bold bg-black text-white px-1.5 py-0.5 rounded">NEW</span>
                 )}
               </div>
-              <h3 className="font-semibold text-sm leading-snug line-clamp-2 mb-1">
+              <h3 className="font-semibold text-sm leading-snug line-clamp-2 mb-1 pr-10">
                 {signal.title}
               </h3>
               {signal.snippet && (
@@ -757,11 +1054,15 @@ function AgentSignalsList({
 function SavedArticlesList({
   articles,
   loading,
+  selectedIds,
+  onSelect,
   onAnalyze,
   onRemove,
 }: {
   articles: SavedArticle[];
   loading: boolean;
+  selectedIds?: Set<string>;
+  onSelect?: (id: string) => void;
   onAnalyze: (article: SavedArticle) => void;
   onRemove: (id: string) => void;
 }) {
@@ -809,11 +1110,23 @@ function SavedArticlesList({
           key={article.id}
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white border border-border/10 p-5 rounded-2xl shadow-sm hover:shadow-md transition-all"
+          onClick={() => onSelect?.(article.id!)}
+          className={`bg-white border p-5 rounded-2xl shadow-sm hover:shadow-md transition-all group relative cursor-pointer ${
+            selectedIds?.has(article.id!) ? 'border-primary ring-1 ring-primary' : 'border-border/10'
+          }`}
         >
+          {onSelect && (
+            <div className="absolute top-4 right-4 z-10">
+              <div className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${
+                selectedIds?.has(article.id!) ? 'bg-primary border-primary text-white' : 'border-gray-200 bg-white group-hover:border-gray-400'
+              }`}>
+                {selectedIds?.has(article.id!) && <CheckSquare className="w-3.5 h-3.5" />}
+              </div>
+            </div>
+          )}
           <div className="flex items-start justify-between gap-3 mb-3">
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-sm leading-snug line-clamp-2 mb-1">
+              <h3 className="font-semibold text-sm leading-snug line-clamp-2 mb-1 pr-10">
                 {article.title || article.url}
               </h3>
               <p className="text-[10px] font-mono text-muted truncate">{article.url}</p>
