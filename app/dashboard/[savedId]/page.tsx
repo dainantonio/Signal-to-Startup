@@ -346,7 +346,7 @@ export default function SavedOpportunityPage() {
                   )}
                   {activeTab === 'costs' && (
                     <motion.div key="costs" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-                      <CostEstimator deepDiveResult={deepDive} />
+                      <CostEstimator deepDiveResult={deepDive} marketMode={savedOpp.marketMode} />
                     </motion.div>
                   )}
                   {activeTab === 'grants' && (

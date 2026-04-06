@@ -3,13 +3,17 @@ import { motion } from 'motion/react';
 import { Zap, ExternalLink } from 'lucide-react';
 import { DeepDiveResult } from './types';
 
+import { COUNTRY_CONTEXT } from '@/lib/rss-sources';
+
 interface CostEstimatorProps {
   deepDiveResult: DeepDiveResult;
+  marketMode?: string;
 }
 
-export const CostEstimator: React.FC<CostEstimatorProps> = ({ deepDiveResult }) => {
+export const CostEstimator: React.FC<CostEstimatorProps> = ({ deepDiveResult, marketMode }) => {
   const items = deepDiveResult.cost_breakdown;
   const totalCost = items.reduce((acc, curr) => acc + curr.cost, 0);
+  const symbol = marketMode ? (COUNTRY_CONTEXT[marketMode]?.symbol || '$') : '$';
 
   return (
     <motion.div
@@ -32,7 +36,7 @@ export const CostEstimator: React.FC<CostEstimatorProps> = ({ deepDiveResult }) 
       <div className="bg-gray-900 text-white rounded-2xl px-6 py-5 flex items-center justify-between">
         <div>
           <p className="text-[10px] font-mono uppercase tracking-widest text-gray-400">Total Capital Required</p>
-          <p className="text-3xl font-bold font-mono mt-1">${totalCost.toLocaleString()}</p>
+          <p className="text-3xl font-bold font-mono mt-1">{symbol}{totalCost.toLocaleString()}</p>
         </div>
         <div className="text-[10px] font-mono text-gray-400 text-right">
           <p>{items.filter(i => ((i as { type?: string }).type ?? 'one-time') === 'one-time').length} one-time</p>
@@ -73,8 +77,8 @@ export const CostEstimator: React.FC<CostEstimatorProps> = ({ deepDiveResult }) 
                   </a>
                 )}
               </div>
-              <div className="text-right flex-shrink-0">
-                <p className="font-mono font-bold text-sm text-gray-900">${item.cost.toLocaleString()}</p>
+              <div className="text-right flex-shrink-0 min-w-0">
+                <p className="font-mono font-bold text-sm text-gray-900 truncate">{symbol}{item.cost.toLocaleString()}</p>
                 <p className="text-[10px] text-gray-400 font-mono">{Math.round(percentage)}%</p>
               </div>
             </div>

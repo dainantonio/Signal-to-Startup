@@ -25,6 +25,7 @@ import Onboarding, { UserPreferences } from '../Onboarding';
 import { useAgentAuth } from './useAgentAuth';
 import { useAgentAnalysis } from './useAgentAnalysis';
 import Logo from '../Logo';
+import { db, doc, setDoc, getDoc } from '@/firebase';
 
 // New newsroom components
 import { WorkflowStepper } from '../WorkflowStepper';
@@ -67,12 +68,34 @@ export default function TrendIntelligenceAgentNewsroom() {
     } catch { return 'standard'; }
   });
 
-  // Persist country tags
+  // Persist and Sync Preferences to Firestore
   useEffect(() => {
+    const saveToFirebase = async () => {
+      if (!user) return;
+      try {
+        await setDoc(doc(db, 'users', user.uid), {
+          preferences: {
+            marketMode: selectedMode,
+            countryTag: countryTags[0] || null,
+            readingLevel
+          }
+        }, { merge: true });
+      } catch (err) {
+        console.error('Failed to sync preferences to Firebase:', err);
+      }
+    };
+    saveToFirebase();
+
+    // Fallback to local storage
     try {
       localStorage.setItem('s2s_country_tags', JSON.stringify(countryTags));
+      localStorage.setItem('userPreferences', JSON.stringify({
+        marketMode: selectedMode,
+        countryTag: countryTags[0] || null,
+        readingLevel
+      }));
     } catch {}
-  }, [countryTags]);
+  }, [user, selectedMode, countryTags, readingLevel]);
 
   // Clear country tags when market mode changes
   const handleSetSelectedMode = (mode: MarketMode) => {
@@ -91,19 +114,38 @@ export default function TrendIntelligenceAgentNewsroom() {
     }
   }, []);
 
-  // Load saved preferences on mount
+  // Load saved preferences on mount or auth change
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem('userPreferences');
-      if (saved) {
-        const prefs: UserPreferences = JSON.parse(saved);
-        if (prefs.marketMode) setSelectedMode(prefs.marketMode);
-        if (prefs.countryTag) handleSetCountryTags([prefs.countryTag]);
-        if (prefs.readingLevel) setReadingLevel(prefs.readingLevel);
+    const loadPreferences = async () => {
+      if (user) {
+        try {
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          if (userDoc.exists() && userDoc.data().preferences) {
+            const prefs = userDoc.data().preferences as UserPreferences;
+            if (prefs.marketMode) setSelectedMode(prefs.marketMode);
+            if (prefs.countryTag) handleSetCountryTags([prefs.countryTag]);
+            if (prefs.readingLevel) setReadingLevel(prefs.readingLevel);
+            return; // Only use Firebase if we got it successfully
+          }
+        } catch (err) {
+          console.error('Failed to load preferences from Firebase:', err);
+        }
       }
-    } catch {}
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+      
+      // LocalStorage fallback
+      try {
+        const saved = localStorage.getItem('userPreferences');
+        if (saved) {
+          const prefs: UserPreferences = JSON.parse(saved);
+          if (prefs.marketMode) setSelectedMode(prefs.marketMode);
+          if (prefs.countryTag) handleSetCountryTags([prefs.countryTag]);
+          if (prefs.readingLevel) setReadingLevel(prefs.readingLevel);
+        }
+      } catch {}
+    };
+    
+    loadPreferences();
+  }, [user, handleSetCountryTags]);
 
   const handleOnboardingComplete = (prefs: UserPreferences) => {
     setShowOnboarding(false);

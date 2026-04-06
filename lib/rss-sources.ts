@@ -134,21 +134,21 @@ export const RSS_SOURCES: RSSSource[] = [
 // ---------------------------------------------------------------------------
 // Country context — used for local signal matching
 // ---------------------------------------------------------------------------
-export const COUNTRY_CONTEXT: Record<string, { name: string; flag: string; currency: string; region: string; keywords: string[] }> = {
-  jamaica:        { name: 'Jamaica',      flag: '🇯🇲', currency: 'JMD', region: 'caribbean', keywords: ['jamaica', 'jamaican', 'kingston', 'montego bay', 'ocho rios', 'ja'] },
-  trinidad:       { name: 'Trinidad',     flag: '🇹🇹', currency: 'TTD', region: 'caribbean', keywords: ['trinidad', 'tobago', 'trinidadian', 'port of spain', 't&t'] },
-  barbados:       { name: 'Barbados',     flag: '🇧🇧', currency: 'BBD', region: 'caribbean', keywords: ['barbados', 'barbadian', 'bridgetown', 'bajan'] },
-  guyana:         { name: 'Guyana',       flag: '🇬🇾', currency: 'GYD', region: 'caribbean', keywords: ['guyana', 'guyanese', 'georgetown', 'demerara'] },
-  nigeria:        { name: 'Nigeria',      flag: '🇳🇬', currency: 'NGN', region: 'africa',    keywords: ['nigeria', 'nigerian', 'lagos', 'abuja', 'naira', 'fintech nigeria'] },
-  kenya:          { name: 'Kenya',        flag: '🇰🇪', currency: 'KES', region: 'africa',    keywords: ['kenya', 'kenyan', 'nairobi', 'mombasa', 'm-pesa', 'east africa'] },
-  ghana:          { name: 'Ghana',        flag: '🇬🇭', currency: 'GHS', region: 'africa',    keywords: ['ghana', 'ghanaian', 'accra', 'kumasi', 'cedi', 'west africa'] },
-  'south africa': { name: 'South Africa', flag: '🇿🇦', currency: 'ZAR', region: 'africa',    keywords: ['south africa', 'south african', 'johannesburg', 'cape town', 'rand', 'joburg'] },
-  uk:             { name: 'United Kingdom', flag: '🇬🇧', currency: 'GBP', region: 'uk',      keywords: ['uk', 'united kingdom', 'britain', 'british', 'london', 'england', 'scotland', 'wales'] },
-  mexico:         { name: 'Mexico',       flag: '🇲🇽', currency: 'MXN', region: 'latam',     keywords: ['mexico', 'mexican', 'ciudad de mexico', 'monterrey', 'guadalajara', 'peso'] },
-  brazil:         { name: 'Brazil',       flag: '🇧🇷', currency: 'BRL', region: 'latam',     keywords: ['brazil', 'brazilian', 'sao paulo', 'rio de janeiro', 'brasilia', 'real'] },
-  colombia:       { name: 'Colombia',     flag: '🇨🇴', currency: 'COP', region: 'latam',     keywords: ['colombia', 'colombian', 'bogota', 'medellin', 'cali', 'peso colombiano'] },
-  argentina:      { name: 'Argentina',    flag: '🇦🇷', currency: 'ARS', region: 'latam',     keywords: ['argentina', 'argentinian', 'buenos aires', 'cordoba', 'rosario', 'peso argentino'] },
-  usa:            { name: 'United States', flag: '🇺🇸', currency: 'USD', region: 'global',   keywords: ['united states', 'american', 'us market', 'federal', 'washington', 'new york'] },
+export const COUNTRY_CONTEXT: Record<string, { name: string; flag: string; currency: string; symbol: string; region: string; keywords: string[] }> = {
+  jamaica:        { name: 'Jamaica',      flag: '🇯🇲', currency: 'JMD', symbol: 'J$',  region: 'caribbean', keywords: ['jamaica', 'jamaican', 'kingston', 'montego bay', 'ocho rios', 'ja'] },
+  trinidad:       { name: 'Trinidad',     flag: '🇹🇹', currency: 'TTD', symbol: 'TT$', region: 'caribbean', keywords: ['trinidad', 'tobago', 'trinidadian', 'port of spain', 't&t'] },
+  barbados:       { name: 'Barbados',     flag: '🇧🇧', currency: 'BBD', symbol: 'Bds$', region: 'caribbean', keywords: ['barbados', 'barbadian', 'bridgetown', 'bajan'] },
+  guyana:         { name: 'Guyana',       flag: '🇬🇾', currency: 'GYD', symbol: 'G$',  region: 'caribbean', keywords: ['guyana', 'guyanese', 'georgetown', 'demerara'] },
+  nigeria:        { name: 'Nigeria',      flag: '🇳🇬', currency: 'NGN', symbol: '₦',   region: 'africa',    keywords: ['nigeria', 'nigerian', 'lagos', 'abuja', 'naira', 'fintech nigeria'] },
+  kenya:          { name: 'Kenya',        flag: '🇰🇪', currency: 'KES', symbol: 'KSh', region: 'africa',    keywords: ['kenya', 'kenyan', 'nairobi', 'mombasa', 'm-pesa', 'east africa'] },
+  ghana:          { name: 'Ghana',        flag: '🇬🇭', currency: 'GHS', symbol: 'GH₵', region: 'africa',    keywords: ['ghana', 'ghanaian', 'accra', 'kumasi', 'cedi', 'west africa'] },
+  'south africa': { name: 'South Africa', flag: '🇿🇦', currency: 'ZAR', symbol: 'R',   region: 'africa',    keywords: ['south africa', 'south african', 'johannesburg', 'cape town', 'rand', 'joburg'] },
+  uk:             { name: 'United Kingdom', flag: '🇬🇧', currency: 'GBP', symbol: '£',   region: 'uk',      keywords: ['uk', 'united kingdom', 'britain', 'british', 'london', 'england', 'scotland', 'wales'] },
+  mexico:         { name: 'Mexico',       flag: '🇲🇽', currency: 'MXN', symbol: '$',   region: 'latam',     keywords: ['mexico', 'mexican', 'ciudad de mexico', 'monterrey', 'guadalajara', 'peso'] },
+  brazil:         { name: 'Brazil',       flag: '🇧🇷', currency: 'BRL', symbol: 'R$',  region: 'latam',     keywords: ['brazil', 'brazilian', 'sao paulo', 'rio de janeiro', 'brasilia', 'real'] },
+  colombia:       { name: 'Colombia',     flag: '🇨🇴', currency: 'COP', symbol: '$',   region: 'latam',     keywords: ['colombia', 'colombian', 'bogota', 'medellin', 'cali', 'peso colombiano'] },
+  argentina:      { name: 'Argentina',    flag: '🇦🇷', currency: 'ARS', symbol: '$',   region: 'latam',     keywords: ['argentina', 'argentinian', 'buenos aires', 'cordoba', 'rosario', 'peso argentino'] },
+  usa:            { name: 'United States', flag: '🇺🇸', currency: 'USD', symbol: '$',   region: 'global',   keywords: ['united states', 'american', 'us market', 'federal', 'washington', 'new york'] },
 };
 
 export function getCountryConfig(country: string) {

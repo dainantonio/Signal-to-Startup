@@ -743,13 +743,24 @@ Return ONLY valid JSON in this exact structure:
 }` }]}]
       });
 
-      const text = response.text ?? '';
-      const parsed = JSON.parse(text);
-      setResult(parsed);
+      let text = response.text ?? '';
+      // Strip markdown code blocks
+      text = text.trim();
+      if (text.startsWith('```json')) text = text.slice(7);
+      if (text.startsWith('```')) text = text.slice(3);
+      if (text.endsWith('```')) text = text.slice(0, -3);
+
+      const parsed = JSON.parse(text.trim());
+      setResult({ ...parsed, isCompound: true });
 
     } catch (err) {
-      setError('Compound analysis failed.');
-      console.error(err);
+      console.error('[COMPOUND ANALYSIS FAILED]', err);
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes('JSON')) {
+        setError('The AI hallucinated a response format. Please click Compare to retry.');
+      } else {
+        setError(err instanceof Error ? err.message : 'Compound analysis failed.');
+      }
     } finally {
       clearInterval(progressInterval);
       setLoading(false);
@@ -782,14 +793,14 @@ Return ONLY valid JSON in this exact structure:
         - You MUST NOT use generic USD ($) unless the user is located in the US.
         - All 'grants' MUST ONLY be funding bodies verifiably available in this specific region. Do not ever output a generic US Federal grant for a user in the Caribbean or Africa.
 
-        1. BUSINESS PLAN: Write a concise 9-section plan (Problem, Solution, Market, Revenue, Marketing, Operations, Team, Risks, Milestones).
-        2. COST BREAKDOWN: Search the web for actual software/hardware/vendor pricing. Include source URLs. Total must scale properly mapping to the opportunity startup cost in the correct currency.
-        3. GRANTS: Search the web for 2-3 REAL active grants, loans, or programs in ${countryTags[0] || 'the target market'} that this business could qualify for. Include the real application URL.
+        1. BUSINESS PLAN: Write a concise 9-section plan (Problem, Solution, Market, Revenue, Marketing, Operations, Team, Risks, Milestones). Keep formatting clean and professional. DO NOT excessively use markdown bolding (e.g., '**This**'). Rely on structure, newlines, and bullet points instead for readability.
+        2. COST BREAKDOWN: Search the web for actual software/hardware/vendor pricing. Include source URLs. Total must scale properly mapping to the opportunity startup cost in the correct currency. Zero guessing on fees; if actual figures are not found, state "Data not found online".
+        3. GRANTS: Search the web for 2-3 REAL active grants, loans, or programs in ${countryTags[0] || 'the target market'} that this business could qualify for. Include the real application URL. IF YOU CANNOT FIND A VERIFIABLE REAL-WORLD URL, YOU MUST OUTPUT "Data not found online" INSTEAD OF GUESSING.
         4. MARKETING: 3 specific marketing tactics with effort/cost ratings.
         5. CHECKLIST: Provide a step-by-step checklist split across 4 phases to launch.
-        6. INVESTORS: Search the web to find 2-3 REAL local investor firms, accelerators or angels that invest in this space/region.
+        6. INVESTORS: Search the web to find 2-3 REAL local investor firms, accelerators or angels that invest in this space/region. IF YOU CANNOT FIND A VERIFIABLE REAL-WORLD URL, YOU MUST OUTPUT "Data not found online" INSTEAD OF GUESSING.
 
-        TONE: Practical, encouraging, and highly specific. DO NOT hallucinate URLs or grants.
+        TONE: Practical, encouraging, and highly specific. ZERO GUESSING ON FEES OR URLS. DO NOT hallucinate URLs or grants. We must be trusted to provide accurate info.
 
         OUTPUT FORMAT: You MUST return RAW JSON exactly matching this schema. Do not output any markdown code blocks, backticks, or extra text.
         SCHEMA: ${JSON.stringify(deepDiveSchema)}

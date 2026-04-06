@@ -349,14 +349,17 @@ export default function DashboardPage() {
             <p className="text-[10px] font-mono uppercase font-bold tracking-widest text-muted">Syncing Pipeline...</p>
           </div>
         ) : savedOpportunities.length === 0 ? (
-          <div className="text-center py-32 bg-white border border-dashed border-border/20 rounded-[3rem]">
+          <div className="text-center py-24 bg-white border border-dashed border-border/20 rounded-[3rem] px-6 max-w-3xl mx-auto">
             <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6 text-muted/20">
               <Bookmark className="w-10 h-10" />
             </div>
-            <p className="text-lg font-sans font-bold mb-2">No saved opportunities yet</p>
-            <p className="text-sm text-muted font-medium mb-8">Start by analyzing a signal and saving an opportunity to your pipeline.</p>
+            <p className="text-2xl font-serif italic font-bold mb-4">Your Pipeline is Empty</p>
+            <div className="text-sm text-muted font-medium mb-8 leading-relaxed max-w-xl mx-auto space-y-4">
+              <p>The Pipeline is your execution engine. When you read the news feed and see a business opportunity you like, analyzing it generates a full "Deep Dive" business plan.</p>
+              <p>Save that Deep Dive to this Pipeline to manage its lifecycle from idea to execution. It will automatically generate funding sources, cost estimates, and let you launch a real waitlist website.</p>
+            </div>
             <Link href="/" className="inline-flex items-center gap-2 bg-foreground text-background px-8 py-4 rounded-2xl text-[11px] font-mono uppercase tracking-widest font-bold hover:bg-foreground/90 transition-all shadow-xl shadow-foreground/10">
-              Analyze New Signal <ArrowRight className="w-4 h-4" />
+              Go to News Feed <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
         ) : (
@@ -536,12 +539,12 @@ function KanbanCard({ opportunity, onStatusChange, isUpdating }: KanbanCardProps
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4 mb-6">
-        <div className="space-y-1">
+        <div className="space-y-1 min-w-0">
           <div className="flex items-center gap-1 text-muted">
-            <Coins className="w-3 h-3" />
-            <p className="text-[8px] font-mono uppercase tracking-widest">Cost</p>
+            <Coins className="w-3 h-3 flex-shrink-0" />
+            <p className="text-[8px] font-mono uppercase tracking-widest truncate">Cost</p>
           </div>
-          <p className="text-xs font-bold font-mono">${opp.startup_cost.toLocaleString()}</p>
+          <p className="text-xs font-bold font-mono truncate">{opportunity.marketMode ? (COUNTRY_CONTEXT[opportunity.marketMode]?.symbol || '$') : '$'}{opp.startup_cost.toLocaleString()}</p>
         </div>
         <div className="space-y-1">
           <div className="flex items-center gap-1 text-muted">
