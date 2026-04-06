@@ -1,4 +1,5 @@
 import React from 'react';
+import ReactMarkdown from 'react-markdown';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   ArrowLeft,
@@ -51,41 +52,7 @@ interface DeepDiveModalProps {
   readingLevel?: 'simple' | 'standard' | 'advanced';
 }
 
-function formatBusinessPlan(text: string): { heading: string; body: string }[] {
-  if (!text) return [];
-  const cleaned = text.replace(/\*\*/g, '').replace(/#{1,3}\s/g, '');
-  const parts = cleaned
-    .replace(/(\d+\.\s+)/g, '\n\n$1')
-    .split('\n\n')
-    .map(s => s.trim())
-    .filter(s => s.length > 0);
 
-  const sections: { heading: string; body: string }[] = [];
-  let currentHeading = '';
-  let bodyLines: string[] = [];
-
-  for (const part of parts) {
-    if (/^\d+\./.test(part)) {
-      if (currentHeading || bodyLines.length > 0) {
-        sections.push({ heading: currentHeading, body: bodyLines.join(' ').trim() });
-      }
-      const newlineIdx = part.indexOf('\n');
-      if (newlineIdx !== -1) {
-        currentHeading = part.slice(0, newlineIdx).trim();
-        bodyLines = [part.slice(newlineIdx + 1).trim()];
-      } else {
-        currentHeading = part;
-        bodyLines = [];
-      }
-    } else {
-      bodyLines.push(part);
-    }
-  }
-  if (currentHeading || bodyLines.length > 0) {
-    sections.push({ heading: currentHeading, body: bodyLines.join(' ').trim() });
-  }
-  return sections;
-}
 
 export const DeepDiveModal: React.FC<DeepDiveModalProps> = ({
   selectedOpportunity,
@@ -578,16 +545,9 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
                 >
                   {activeDeepDiveTab === 'plan' && (
                     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                      {formatBusinessPlan(deepDiveResult.business_plan).map((section, i) => (
-                        <div key={i} className="space-y-2">
-                          {section.heading && (
-                            <h3 className="font-semibold text-gray-900">{section.heading}</h3>
-                          )}
-                          {section.body && (
-                            <p className="text-gray-600 leading-7">{section.body}</p>
-                          )}
-                        </div>
-                      ))}
+                      <ReactMarkdown className="prose prose-slate prose-sm sm:prose-base max-w-none prose-headings:font-bold prose-headings:text-gray-900 prose-p:text-gray-600 prose-li:text-gray-600 prose-strong:font-bold prose-strong:text-gray-900 leading-relaxed marker:text-gray-400">
+                        {deepDiveResult.business_plan}
+                      </ReactMarkdown>
                     </div>
                   )}
 
