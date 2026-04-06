@@ -132,6 +132,7 @@ export interface SavedOpportunity {
   savedAt: string;
   marketMode?: MarketMode;
   landingPage?: LandingPageData;
+  pitchDeck?: PitchDeckData;
 }
 
 export interface UserAction {
@@ -147,6 +148,33 @@ export interface Lead {
   opportunityId: string;
   email: string;
   createdAt: string;
+}
+
+export interface PitchDeckData {
+  title: {
+    company_name: string;
+    one_liner: string;
+  };
+  problem: string[];
+  solution: string[];
+  market_size: {
+    tam: string;
+    sam: string;
+    som: string;
+    explanation: string;
+  };
+  business_model: string[];
+  go_to_market: string[];
+  competition: {
+    competitor_types: string;
+    our_advantage: string;
+  };
+  traction: string[];
+  team: string[];
+  the_ask: {
+    amount: string;
+    use_of_funds: string[];
+  };
 }
 
 export type SectorKey = 'ai' | 'policy' | 'markets' | 'funding' | 'sustainability' | 'realestate' | 'health' | 'ai_intelligence';

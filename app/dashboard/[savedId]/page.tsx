@@ -19,7 +19,8 @@ import {
   Share2,
   X,
   Mail,
-  UserCheck
+  UserCheck,
+  Presentation
 } from 'lucide-react';
 import Link from 'next/link';
 import Markdown from 'react-markdown';
@@ -43,6 +44,8 @@ import { GrantFinder } from '@/components/GrantFinder';
 import { InvestorMatch } from '@/components/InvestorMatch';
 import { Checklist } from '@/components/Checklist';
 import { useAgentLandingPage } from '@/components/agent/useAgentLandingPage';
+import { useAgentPitchDeck } from '@/components/agent/useAgentPitchDeck';
+import { PitchDeckViewer } from '@/components/PitchDeckViewer';
 
 export default function SavedOpportunityPage() {
   const params = useParams();
@@ -53,7 +56,7 @@ export default function SavedOpportunityPage() {
   const [savedOpp, setSavedOpp] = useState<SavedOpportunity & { id: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'plan' | 'costs' | 'grants' | 'checklist' | 'investors' | 'leads'>('plan');
+  const [activeTab, setActiveTab] = useState<'plan' | 'costs' | 'grants' | 'checklist' | 'investors' | 'leads' | 'deck'>('plan');
   const [copied, setCopied] = useState<string | null>(null);
   const [leads, setLeads] = useState<Lead[]>([]);
 
@@ -64,8 +67,17 @@ export default function SavedOpportunityPage() {
     const data = await generateLandingPage(savedOpp.opportunity, savedOpp.deepDive, savedId);
     if (data) {
       setSavedOpp({ ...savedOpp, landingPage: data });
-      // Redirect to the new launchpad route
       router.push(`/launchpad/${savedId}`);
+    }
+  };
+
+  const { generatePitchDeck, loading: pdLoading, error: pdError } = useAgentPitchDeck();
+
+  const handleGeneratePitchDeck = async () => {
+    if (!savedOpp) return;
+    const data = await generatePitchDeck(savedOpp.opportunity, savedOpp.deepDive, savedId);
+    if (data) {
+      setSavedOpp({ ...savedOpp, pitchDeck: data });
     }
   };
 
@@ -168,6 +180,7 @@ export default function SavedOpportunityPage() {
     { id: 'grants', label: 'Grant Finder', icon: Coins },
     { id: 'checklist', label: 'Checklist', icon: CheckSquare },
     { id: 'investors', label: 'Investor Match', icon: Users },
+    { id: 'deck', label: 'Pitch Deck', icon: Presentation },
     { id: 'leads', label: 'CRM Leads', icon: Mail },
   ] as const;
 
@@ -349,6 +362,48 @@ export default function SavedOpportunityPage() {
                   {activeTab === 'investors' && (
                     <motion.div key="investors" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
                       <InvestorMatch deepDiveResult={deepDive} />
+                    </motion.div>
+                  )}
+                  {activeTab === 'deck' && (
+                    <motion.div key="deck" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-12">
+                      <div className="flex items-center justify-between border-b border-border/10 pb-6">
+                        <div>
+                          <h3 className="text-xl font-bold font-serif italic mb-1">Interactive Pitch Deck</h3>
+                          <p className="text-sm text-muted">A 10-slide YC-format presentation generated from your plan.</p>
+                        </div>
+                        {savedOpp.pitchDeck && (
+                          <button
+                            onClick={() => window.print()}
+                            className="flex items-center gap-2 px-4 py-2 bg-foreground text-background rounded-xl font-mono text-[10px] uppercase tracking-widest font-bold transition-colors shadow-sm cursor-pointer"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            Save as PDF
+                          </button>
+                        )}
+                      </div>
+                      
+                      {!savedOpp.pitchDeck ? (
+                        <div className="bg-gray-50 border border-gray-200 rounded-3xl p-16 text-center flex flex-col items-center shadow-sm">
+                          <Presentation className="w-16 h-16 text-primary/40 mb-6" />
+                          <h4 className="text-2xl font-bold text-gray-900 mb-4">You don't have a Pitch Deck yet</h4>
+                          <p className="text-gray-500 max-w-md mb-8 text-sm">Have our AI ruthlessly edit your massive business plan down into a punchy 10-slide presentation suitable for Angel Investors.</p>
+                          <button 
+                            onClick={handleGeneratePitchDeck} 
+                            disabled={pdLoading}
+                            className="group relative px-8 py-4 bg-primary text-primary-foreground rounded-2xl font-mono text-[11px] uppercase font-bold tracking-[0.2em] hover:bg-primary/90 transition-all shadow-xl shadow-primary/20 disabled:opacity-50 overflow-hidden"
+                          >
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-[100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+                            {pdLoading ? (
+                              <span className="flex items-center gap-3"><Loader2 className="w-5 h-5 animate-spin" /> Distilling Plan...</span>
+                            ) : (
+                              <span className="flex items-center gap-3"><Presentation className="w-5 h-5" /> Generate Deck</span>
+                            )}
+                          </button>
+                          {pdError && <p className="text-red-500 text-sm mt-6 font-medium">{pdError}</p>}
+                        </div>
+                      ) : (
+                        <PitchDeckViewer deck={savedOpp.pitchDeck} />
+                      )}
                     </motion.div>
                   )}
                   {activeTab === 'leads' && (
