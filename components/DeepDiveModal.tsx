@@ -162,6 +162,13 @@ export const DeepDiveModal: React.FC<DeepDiveModalProps> = ({
     }
   }, [selectedOpportunity, checkIfSaved]);
 
+  React.useEffect(() => {
+    if (selectedOpportunity && !deepDiveResult && !deepDiveLoading) {
+      generateDeepDive(selectedOpportunity);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedOpportunity]);
+
   const saveOpportunity = async () => {
     if (!selectedOpportunity || !auth.currentUser || !deepDiveResult) return;
     setSaving(true);
