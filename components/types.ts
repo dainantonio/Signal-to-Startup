@@ -111,6 +111,14 @@ export interface SavedOpportunity {
   marketMode?: MarketMode;
 }
 
+export interface UserAction {
+  id?: string;
+  userId: string;
+  actionText: string;
+  actionType: 'next_move' | 'checklist' | 'custom';
+  completedAt: string; // ISO DateTime
+}
+
 export type SectorKey = 'ai' | 'policy' | 'markets' | 'funding' | 'sustainability' | 'realestate' | 'health' | 'ai_intelligence';
 
 export interface SectorConfig {

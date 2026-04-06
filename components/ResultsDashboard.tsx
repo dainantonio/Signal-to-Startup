@@ -6,6 +6,8 @@ import { Share2, Twitter, Linkedin, AlertTriangle, Users, ChevronRight, Link as 
 import { AnalysisResult, Opportunity } from './types';
 import { OpportunityCard } from './OpportunityCard';
 import { COUNTRY_CONTEXT } from '@/lib/rss-sources';
+import confetti from 'canvas-confetti';
+import { auth, db, collection, addDoc } from '../firebase';
 
 interface ResultsDashboardProps {
   result: AnalysisResult;
@@ -180,9 +182,30 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
           <div className="mt-4 flex items-center gap-3">
             {!nextMoveDone ? (
               <button
-                onClick={() => {
-                  const key = `s2s_next_move_done_${result.trend?.slice(0, 20)}`;
-                  localStorage.setItem(key, 'true');
+                onClick={async () => {
+                  try {
+                    // Confetti burst
+                    confetti({
+                      particleCount: 100,
+                      spread: 70,
+                      origin: { y: 0.6 },
+                      colors: ['#10B981', '#34D399', '#059669', '#FCD34D']
+                    });
+
+                    if (auth.currentUser && result.today_action) {
+                      await addDoc(collection(db, 'user_actions'), {
+                        userId: auth.currentUser.uid,
+                        actionText: result.today_action,
+                        actionType: 'next_move',
+                        completedAt: new Date().toISOString()
+                      });
+                    } else {
+                      const key = `s2s_next_move_done_${result.trend?.slice(0, 20)}`;
+                      localStorage.setItem(key, 'true');
+                    }
+                  } catch (err) {
+                    console.error('Failed to save action', err);
+                  }
                   setNextMoveDone(true);
                 }}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${

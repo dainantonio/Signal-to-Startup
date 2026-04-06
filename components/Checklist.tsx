@@ -2,7 +2,8 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { CheckCircle2, Loader2, Check, CheckSquare, Clock, DollarSign } from 'lucide-react';
 import { DeepDiveResult, ChecklistStep } from './types';
-import { db, doc, getDoc, updateDoc } from '../firebase';
+import confetti from 'canvas-confetti';
+import { auth, db, doc, getDoc, updateDoc, collection, addDoc } from '../firebase';
 
 interface ChecklistProps {
   deepDiveResult: DeepDiveResult;
@@ -89,12 +90,33 @@ export const Checklist: React.FC<ChecklistProps> = ({ deepDiveResult, savedDocId
 
     if (savedDocId) {
       try {
+        // Save step completed locally
         await updateDoc(doc(db, 'saved_opportunities', savedDocId), {
           checklist: newItems.map(item => ({
             text: item.step.title,
             completed: item.completed,
           })),
         });
+
+        // If it was just toggled ON
+        if (!items[index].completed && newItems[index].completed) {
+          confetti({
+            particleCount: 80,
+            spread: 60,
+            origin: { y: 0.7 },
+            colors: ['#10B981', '#34D399', '#059669', '#FCD34D']
+          });
+
+          // Track in user_actions for the daily streak
+          if (auth.currentUser) {
+            await addDoc(collection(db, 'user_actions'), {
+              userId: auth.currentUser.uid,
+              actionText: newItems[index].step.title,
+              actionType: 'checklist',
+              completedAt: new Date().toISOString()
+            });
+          }
+        }
       } catch (err) {
         console.error('Failed to sync checklist:', err);
       }

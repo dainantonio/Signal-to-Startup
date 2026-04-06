@@ -40,6 +40,7 @@ import {
 } from '@/firebase';
 import { SavedOpportunity, OpportunityStatus } from '@/components/types';
 import { COUNTRY_CONTEXT } from '@/lib/rss-sources';
+import { ActionCenter } from '@/components/ActionCenter';
 
 interface IdeaValidation {
   id: string;
@@ -227,6 +228,10 @@ export default function DashboardPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-6 py-12">
+        <div className="mb-12">
+          <ActionCenter />
+        </div>
+
         {/* Page Title */}
         <div className="mb-12 space-y-2">
           <div className="flex items-center gap-3 text-primary mb-2">
