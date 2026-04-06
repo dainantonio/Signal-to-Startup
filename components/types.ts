@@ -100,6 +100,28 @@ export interface DeepDiveResult {
 
 export type OpportunityStatus = 'Saved' | 'In Progress' | 'Launched';
 
+export interface LandingPageData {
+  hero_headline: string;
+  hero_subheadline: string;
+  cta_text: string;
+  value_proposition: {
+    feature_title: string;
+    feature_description: string;
+    icon_name: string; // Generic icon name suggestion e.g. "Zap", "Shield", "TrendingUp"
+  }[];
+  target_audience_pain: string;
+  solution_statement: string;
+  color_theme: {
+    primary: string; // Tailwind color name e.g. "blue", "emerald", "indigo", "rose", "amber"
+    background: 'light' | 'dark';
+  };
+  pricing_suggestion: {
+    tier_name: string;
+    price: string;
+    perks: string[];
+  }[];
+}
+
 export interface SavedOpportunity {
   id?: string;
   userId: string;
@@ -109,6 +131,7 @@ export interface SavedOpportunity {
   checklist: { text: string; completed: boolean }[];
   savedAt: string;
   marketMode?: MarketMode;
+  landingPage?: LandingPageData;
 }
 
 export interface UserAction {

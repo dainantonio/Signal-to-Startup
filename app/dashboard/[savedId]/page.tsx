@@ -13,6 +13,8 @@ import {
   Copy,
   Check,
   Sparkles,
+  Rocket,
+  Sparkles,
   ChevronRight,
   Download,
   Share2,
@@ -34,6 +36,7 @@ import { CostEstimator } from '@/components/CostEstimator';
 import { GrantFinder } from '@/components/GrantFinder';
 import { InvestorMatch } from '@/components/InvestorMatch';
 import { Checklist } from '@/components/Checklist';
+import { useAgentLandingPage } from '@/components/agent/useAgentLandingPage';
 
 export default function SavedOpportunityPage() {
   const params = useParams();
@@ -46,6 +49,18 @@ export default function SavedOpportunityPage() {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'plan' | 'costs' | 'grants' | 'checklist' | 'investors'>('plan');
   const [copied, setCopied] = useState<string | null>(null);
+
+  const { generateLandingPage, loading: lpLoading, error: lpError } = useAgentLandingPage();
+
+  const handleGenerateLandingPage = async () => {
+    if (!savedOpp) return;
+    const data = await generateLandingPage(savedOpp.opportunity, savedOpp.deepDive, savedId);
+    if (data) {
+      setSavedOpp({ ...savedOpp, landingPage: data });
+      // Redirect to the new launchpad route
+      router.push(`/launchpad/${savedId}`);
+    }
+  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -208,6 +223,36 @@ export default function SavedOpportunityPage() {
                   {activeTab === tab.id && <ChevronRight className="w-4 h-4 ml-auto opacity-40" />}
                 </button>
               ))}
+            </div>
+
+            <div className="mt-8 pt-8 border-t border-border/10">
+              <div className="bg-amber-50 border border-amber-200/50 p-6 rounded-3xl relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-4 opacity-10">
+                  <Rocket className="w-16 h-16 -mr-4 -mt-4 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
+                </div>
+                <h3 className="text-xs font-mono uppercase font-bold tracking-widest text-amber-900 mb-2">The Launchpad</h3>
+                <p className="text-xs text-amber-800/70 mb-5 leading-relaxed">Turn this execution plan into a high-converting, public-facing landing page using AI.</p>
+                
+                {savedOpp.landingPage ? (
+                  <Link
+                    href={`/launchpad/${savedId}`}
+                    target="_blank"
+                    className="w-full bg-amber-500 text-white py-3 rounded-xl font-mono text-[10px] uppercase font-bold tracking-widest hover:bg-amber-600 transition-all shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2"
+                  >
+                    View Live Page <ChevronRight className="w-3 h-3" />
+                  </Link>
+                ) : (
+                  <button
+                    onClick={handleGenerateLandingPage}
+                    disabled={lpLoading}
+                    className="w-full bg-amber-500 text-white py-3 rounded-xl font-mono text-[10px] uppercase font-bold tracking-widest hover:bg-amber-600 transition-all shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    {lpLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Rocket className="w-4 h-4" />}
+                    {lpLoading ? 'Generating Site...' : 'Generate Site'}
+                  </button>
+                )}
+                {lpError && <p className="text-[10px] text-red-500 mt-2 font-mono">{lpError}</p>}
+              </div>
             </div>
           </div>
 
