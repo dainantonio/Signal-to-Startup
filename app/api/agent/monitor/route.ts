@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebase-admin';
 import { fetchAllMarkets } from '@/lib/rss-fetcher';
 import { COUNTRY_CONTEXT } from '@/lib/rss-sources';
+import { identifyStrongSignals } from '@/lib/signal-analyzer';
+import { Resend } from 'resend';
+
+const APP_URL = process.env.APP_URL || 'https://signal-to-startup.vercel.app';
 
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get('authorization');
@@ -105,11 +109,15 @@ export async function GET(request: NextRequest) {
             sector: a.sector,
           }))
         );
+        
+        // STEP 4: Identify Strong Signals (Comparison / Clustering)
+        const { strongSignals } = identifyStrongSignals(scoredArticles);
+        const strongUrls = new Set(strongSignals.map(s => s.url));
 
         const topArticles = scoredArticles
-          .filter((a: { userScore: number }) => a.userScore >= 60)
+          .filter((a: { userScore: number; url: string }) => a.userScore >= 60 || strongUrls.has(a.url))
           .sort((a: { userScore: number }, b: { userScore: number }) => b.userScore - a.userScore)
-          .slice(0, 5);
+          .slice(0, 10); // Take more to allow for new filter
 
         if (topArticles.length === 0) continue;
 
@@ -132,6 +140,8 @@ export async function GET(request: NextRequest) {
 
         for (const article of newArticles) {
           const signalRef = db.collection('agent_signals').doc();
+          const isStrong = strongUrls.has(article.url);
+          
           batch.set(signalRef, {
             userId: user.userId,
             title: article.title,
@@ -142,6 +152,7 @@ export async function GET(request: NextRequest) {
             market: article.market,
             signalScore: article.signalScore,
             userScore: article.userScore,
+            isStrongSignal: isStrong,
             createdAt: new Date().toISOString(),
             read: false,
             analyzed: false,
@@ -162,6 +173,50 @@ export async function GET(request: NextRequest) {
         });
 
         await batch.commit();
+
+        // STEP 7: Immediate Briefing for Strong Signals
+        const newStrongSignals = newArticles.filter(a => strongUrls.has(a.url));
+        if (newStrongSignals.length > 0 && process.env.RESEND_API_KEY) {
+          try {
+            const userDataDoc = await db.collection('users').doc(user.userId).get();
+            const email = userDataDoc.data()?.email;
+            
+            if (email) {
+              const resend = new Resend(process.env.RESEND_API_KEY);
+              const signal = newStrongSignals[0]; // Focus on the top one
+              
+              await resend.emails.send({
+                from: 'Signal to Startup <hello@entrepaIneur.com>',
+                to: email,
+                subject: `🔥 Strong Signal Detected: ${signal.title}`,
+                html: `
+                  <div style="font-family:sans-serif;max-width:600px;margin:0 auto;border:1px solid #eee;border-radius:12px;padding:24px;">
+                    <div style="background:#000;color:#fff;padding:12px;border-radius:8px;text-align:center;margin-bottom:20px;">
+                      <h2 style="margin:0;font-size:18px;">Strong Signal Alert</h2>
+                    </div>
+                    <p style="font-size:14px;color:#666;text-transform:uppercase;letter-spacing:1px;font-weight:bold;margin-bottom:8px;">${signal.source} · ${signal.sector}</p>
+                    <h1 style="font-size:24px;margin:0 0 16px;line-height:1.2;">${signal.title}</h1>
+                    <p style="font-size:16px;color:#444;line-height:1.6;margin-bottom:24px;">${signal.snippet}</p>
+                    <div style="background:#f9f9f9;padding:16px;border-radius:8px;margin-bottom:24px;border-left:4px solid #000;">
+                      <p style="margin:0;font-weight:bold;">Why this is strong:</p>
+                      <p style="margin:4px 0 0;color:#666;">This signal matches your profile with a score of ${signal.userScore}/100 and shows early trend clustering ${newStrongSignals.length > 1 ? `(part of ${newStrongSignals.length} related reports)` : ''}.</p>
+                    </div>
+                    <a href="${APP_URL}?signal=${encodeURIComponent(signal.url)}" 
+                       style="display:inline-block;background:#000;color:#fff;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:bold;font-size:16px;">
+                      Analyze Signal →
+                    </a>
+                    <p style="margin-top:32px;font-size:12px;color:#999;text-align:center;border-top:1px solid #eee;padding-top:16px;">
+                      You received this because it matches your Signal to Startup profile.
+                    </p>
+                  </div>
+                `
+              });
+              console.log(`[AGENT] Immediate briefing sent to ${email}`);
+            }
+          } catch (emailError) {
+            console.error('[AGENT] Failed to send immediate briefing:', emailError);
+          }
+        }
 
         results.push({ userId: user.userId, newSignals: newArticles.length });
         console.log(`[AGENT] Saved ${newArticles.length} signals for user ${user.userId}`);
