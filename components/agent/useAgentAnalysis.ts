@@ -757,18 +757,24 @@ Return ONLY valid JSON in this exact structure:
         6. INVESTORS: Search the web to find 2-3 REAL local investor firms, accelerators or angels that invest in this space/region.
 
         TONE: Practical, encouraging, and highly specific. DO NOT hallucinate URLs or grants.
+
+        OUTPUT FORMAT: You MUST return RAW JSON exactly matching this schema. Do not output any markdown code blocks, backticks, or extra text.
+        SCHEMA: ${JSON.stringify(deepDiveSchema)}
       `;
 
       const response = await genAI.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: prompt,
         config: {
-          responseMimeType: 'application/json',
-          responseSchema: deepDiveSchema,
           tools: [{ googleSearch: {} }],
         },
       });
-      const data = JSON.parse(response.text ?? '') as DeepDiveResult;
+      
+      let text = response.text ?? '';
+      // Strip markdown codeblocks if Gemini still adds them
+      text = text.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/\s*```$/, '').trim();
+      
+      const data = JSON.parse(text) as DeepDiveResult;
       return data;
     } catch (err) {
       console.error('[DEEP DIVE FAILED]', err);
