@@ -767,15 +767,28 @@ Return ONLY valid JSON in this exact structure:
         contents: prompt,
         config: {
           tools: [{ googleSearch: {} }],
+          maxOutputTokens: 8192,
         },
       });
       
       let text = response.text ?? '';
-      // Strip markdown codeblocks if Gemini still adds them
-      text = text.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/\s*```$/, '').trim();
       
-      const data = JSON.parse(text) as DeepDiveResult;
-      return data;
+      // More resilient JSON extraction isolating exactly between the first { and last }
+      const match = text.match(/\{[\s\S]*\}/);
+      if (match) {
+        text = match[0];
+      } else {
+        // Fallback cleanup if the match somehow fails
+        text = text.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/\s*```$/, '').trim();
+      }
+      
+      try {
+        const data = JSON.parse(text) as DeepDiveResult;
+        return data;
+      } catch (parseErr) {
+        console.warn('[JSON PARSE FAILED] Raw Text:', text);
+        throw parseErr;
+      }
     } catch (err) {
       console.error('[DEEP DIVE FAILED]', err);
       return null;
