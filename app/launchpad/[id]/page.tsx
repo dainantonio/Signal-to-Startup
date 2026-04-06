@@ -129,17 +129,18 @@ export default function LaunchpadPage() {
       </header>
 
       {/* Hero Section */}
-      <section className="max-w-5xl mx-auto px-6 py-24 md:py-32 text-center relative">
-        <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-${color}-500/20 rounded-full blur-[100px] pointer-events-none`} />
+      <section className="max-w-6xl mx-auto px-6 pt-24 pb-32 md:pt-32 md:pb-40 text-center relative overflow-hidden">
+        <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-${color}-400/20 rounded-full blur-[120px] pointer-events-none`} />
         
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="relative z-10">
-          <span className={`inline-block py-1 px-3 rounded-full bg-${color}-500/10 text-${color}-600 text-sm font-semibold mb-6 ring-1 ring-${color}-500/20 uppercase tracking-widest`}>
+        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }} className="relative z-10 flex flex-col items-center">
+          <span className={`inline-flex items-center gap-2 py-1.5 px-4 rounded-full bg-${color}-500/10 text-${color}-600 text-[11px] font-bold mb-8 ring-1 ring-${color}-500/20 uppercase tracking-[0.2em]`}>
+            <span className={`w-2 h-2 rounded-full bg-${color}-500 animate-pulse`} />
             {data.target_audience_pain}
           </span>
-          <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-8 leading-tight">
+          <h1 className={`text-6xl md:text-8xl font-black tracking-tighter mb-8 leading-[1.1] max-w-4xl text-balance ${isDark ? 'text-white' : 'text-slate-900'}`}>
             {data.hero_headline}
           </h1>
-          <p className={`text-xl md:text-2xl ${themeClasses.textMuted} max-w-3xl mx-auto mb-10 leading-relaxed`}>
+          <p className={`text-xl md:text-2xl ${themeClasses.textMuted} max-w-2xl mx-auto mb-12 leading-relaxed text-balance font-medium`}>
             {data.hero_subheadline}
           </p>
           <div id="waitlist-form" className="flex flex-col items-center justify-center gap-4 max-w-md mx-auto">
@@ -164,6 +165,36 @@ export default function LaunchpadPage() {
               </form>
             )}
           </div>
+
+          {/* Abstract App Graphic */}
+          <motion.div 
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            className={`mt-20 relative w-full max-w-4xl mx-auto rounded-3xl border ${isDark ? 'border-white/10 bg-gray-900/50' : 'border-slate-200/60 bg-white/50'} backdrop-blur-xl shadow-2xl overflow-hidden`}
+          >
+            <div className={`h-12 border-b ${isDark ? 'border-white/5' : 'border-slate-100'} flex items-center px-4 gap-2`}>
+              <div className="flex gap-1.5">
+                <div className="w-3 h-3 rounded-full bg-red-400" />
+                <div className="w-3 h-3 rounded-full bg-amber-400" />
+                <div className="w-3 h-3 rounded-full bg-emerald-400" />
+              </div>
+            </div>
+            <div className="p-8 grid grid-cols-3 gap-6 h-[400px]">
+              <div className={`col-span-1 border ${isDark ? 'border-white/5 bg-white/5' : 'border-slate-100 bg-slate-50/50'} rounded-2xl flex flex-col gap-4 p-4`}>
+                <div className={`w-full h-8 rounded-lg ${isDark ? 'bg-white/5' : 'bg-slate-200/50'} animate-pulse`} />
+                <div className={`w-3/4 h-4 rounded mt-4 ${isDark ? 'bg-white/5' : 'bg-slate-200/50'}`} />
+                <div className={`w-1/2 h-4 rounded ${isDark ? 'bg-white/5' : 'bg-slate-200/50'}`} />
+                <div className={`w-full h-24 rounded-lg mt-auto ${isDark ? 'bg-white/10' : 'bg-slate-200'}`} />
+              </div>
+              <div className={`col-span-2 border ${isDark ? 'border-white/5 bg-white/5' : 'border-slate-100 bg-slate-50/50'} rounded-2xl p-6 flex flex-col`}>
+                <div className={`w-1/3 h-8 rounded-lg mb-8 ${isDark ? 'bg-white/10' : 'bg-slate-200'}`} />
+                <div className={`w-full flex-grow rounded-xl bg-gradient-to-tr from-${color}-500/20 to-transparent flex items-center justify-center border ${isDark ? 'border-white/5' : 'border-slate-100'}`}>
+                   <TrendingUp className={`w-16 h-16 text-${color}-500 opacity-50`} />
+                </div>
+              </div>
+            </div>
+          </motion.div>
         </motion.div>
       </section>
 
@@ -178,11 +209,14 @@ export default function LaunchpadPage() {
               key={idx}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: idx * 0.1 }}
-              className={`p-8 rounded-3xl border ${themeClasses.card} shadow-sm`}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ delay: idx * 0.1, duration: 0.5 }}
+              className={`p-10 rounded-[2.5rem] border ${themeClasses.card} shadow-lg shadow-black/5 hover:-translate-y-2 transition-transform duration-300 relative overflow-hidden group`}
             >
-              <div className={`w-12 h-12 rounded-xl bg-${color}-500/10 flex items-center justify-center mb-6`}>
+              <div className={`absolute top-0 right-0 p-8 opacity-0 group-hover:opacity-5 transform translate-x-4 -translate-y-4 transition-all duration-500 pointer-events-none`}>
+                {renderIcon(feature.icon_name, `w-32 h-32 text-${color}-500`)}
+              </div>
+              <div className={`w-14 h-14 rounded-2xl bg-${color}-500/10 flex items-center justify-center mb-8 ring-1 ring-${color}-500/20`}>
                 {renderIcon(feature.icon_name, `w-6 h-6 text-${color}-500`)}
               </div>
               <h3 className="text-xl font-bold mb-3">{feature.feature_title}</h3>
@@ -199,32 +233,44 @@ export default function LaunchpadPage() {
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Simple, transparent pricing</h2>
             <p className={`${themeClasses.textMuted} text-lg`}>Invest in your future with plans that scale with you.</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 justify-center">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 justify-center relative z-10">
             {data.pricing_suggestion.map((tier, idx) => (
-              <div key={idx} className={`p-8 rounded-3xl border ${themeClasses.card} shadow-sm relative overflow-hidden`}>
+              <motion.div 
+                key={idx}
+                initial={{ opacity: 0, scale: 0.95 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: idx * 0.15 }}
+                className={`p-10 rounded-[2.5rem] border ${idx === 1 ? `border-${color}-400 shadow-2xl shadow-${color}-400/20 relative scale-105 z-10 bg-white` : `${themeClasses.card} shadow-sm`} flex flex-col`}
+              >
                 {idx === 1 && (
-                  <div className={`absolute top-0 inset-x-0 h-1 bg-${color}-500`} />
+                  <div className={`absolute top-0 inset-x-0 h-2 bg-${color}-500 rounded-t-[2.5rem]`} />
                 )}
-                <h3 className="text-lg font-bold uppercase tracking-widest text-gray-500 mb-2">{tier.tier_name}</h3>
+                {idx === 1 && (
+                  <span className={`absolute top-4 right-6 bg-${color}-100 text-${color}-700 text-[10px] font-bold uppercase tracking-widest py-1 px-3 rounded-full ring-1 ring-${color}-500/20`}>Most Popular</span>
+                )}
+                <h3 className="text-sm font-bold uppercase tracking-widest text-gray-500 mb-4">{tier.tier_name}</h3>
                 <div className="flex items-baseline gap-2 mb-8">
-                  <span className="text-4xl font-bold">{tier.price}</span>
+                  <span className="text-5xl font-black tracking-tighter">{tier.price}</span>
                 </div>
-                <ul className="space-y-4 mb-8">
+                <ul className="space-y-5 mb-10 flex-grow">
                   {tier.perks.map((perk, i) => (
-                    <li key={i} className="flex gap-3">
-                      <CheckCircle2 className={`w-5 h-5 text-${color}-500 flex-shrink-0 mt-0.5`} />
-                      <span className={themeClasses.textMuted}>{perk}</span>
+                    <li key={i} className="flex gap-4">
+                      <div className={`w-6 h-6 rounded-full bg-${color}-500/10 flex items-center justify-center flex-shrink-0 mt-0.5`}>
+                        <CheckCircle2 className={`w-3.5 h-3.5 text-${color}-600`} />
+                      </div>
+                      <span className={`${themeClasses.textMuted} font-medium leading-relaxed`}>{perk}</span>
                     </li>
                   ))}
                 </ul>
                 <button className={`w-full py-4 rounded-xl font-bold text-sm uppercase tracking-wider ${
                   idx === 1 
-                    ? `bg-${color}-500 text-white hover:bg-${color}-600` 
-                    : `bg-gray-100 text-gray-900 hover:bg-gray-200`
-                } transition-colors`}>
+                    ? `bg-${color}-500 text-white hover:bg-${color}-600 shadow-xl shadow-${color}-500/20 hover:-translate-y-1` 
+                    : `bg-slate-100 text-slate-900 hover:bg-slate-200`
+                } transition-all duration-300`}>
                   Get Started
                 </button>
-              </div>
+              </motion.div>
             ))}
           </div>
         </section>
