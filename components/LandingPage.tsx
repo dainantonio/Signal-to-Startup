@@ -5,6 +5,7 @@ import { motion } from 'motion/react';
 import { auth, googleProvider, signInWithPopup, db, addDoc, collection } from '@/firebase';
 import DemoMode from '@/components/DemoMode';
 import Logo from '@/components/Logo';
+import { WorkflowInteractiveDemo } from '@/components/WorkflowInteractiveDemo';
 
 export default function LandingPage() {
   const [email, setEmail] = useState('');
@@ -241,8 +242,8 @@ export default function LandingPage() {
               {
                 icon: '🚀',
                 label: '04',
-                title: 'Signal to startup — not just idea',
-                body: 'We do not stop at the idea. Every opportunity comes with a business plan, cost breakdown in your currency, grants you can apply for today, a launch checklist, and your single next move. The goal is an actual business.',
+                title: 'The Launch Engine',
+                body: 'We do not stop at the idea. We generate a 10-slide YC Pitch Deck, deploy a Waitlist Landing Page CRM to capture leads, and gamify your launch checklist with XP streaks.',
                 highlight: true,
               },
             ].map(item => (
@@ -279,54 +280,9 @@ export default function LandingPage() {
             — and walk you all the way through.
           </p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-start">
-          {[
-            {
-              step: '01', icon: '📡', title: 'Signal found',
-              body: 'Your agent monitors markets daily and surfaces signals matched to your profile and location.',
-              color: 'border-blue-200 bg-blue-50', dark: false,
-            },
-            {
-              step: '02', icon: '⚡', title: 'Opportunities surfaced',
-              body: 'AI finds 3 business ideas hidden inside the signal — specific to your region and budget.',
-              color: 'border-purple-200 bg-purple-50', dark: false,
-            },
-            {
-              step: '03', icon: '✅', title: 'Idea validated',
-              body: 'Score 0-100 with local market conditions, competition, risks, and funding sources.',
-              color: 'border-amber-200 bg-amber-50', dark: false,
-            },
-            {
-              step: '04', icon: '📋', title: 'Full plan built',
-              body: 'Business plan, cost breakdown in your currency, grants, checklist — everything to move.',
-              color: 'border-green-200 bg-green-50', dark: false,
-            },
-            {
-              step: '05', icon: '🚀', title: 'You launch',
-              body: 'Your next move is specific and actionable. Not inspiration — a real business.',
-              color: 'border-gray-900 bg-gray-900', dark: true,
-            },
-          ].map((item, i) => (
-            <motion.div
-              key={item.step}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
-              className={`p-5 rounded-2xl border-2 ${item.color}`}
-            >
-              <div className="text-2xl mb-3">{item.icon}</div>
-              <div className={`text-xs font-mono mb-1 ${item.dark ? 'text-gray-500' : 'text-gray-400'}`}>
-                {item.step}
-              </div>
-              <h3 className={`text-sm font-semibold mb-2 ${item.dark ? 'text-white' : 'text-gray-900'}`}>
-                {item.title}
-              </h3>
-              <p className={`text-xs leading-relaxed ${item.dark ? 'text-gray-400' : 'text-gray-500'}`}>
-                {item.body}
-              </p>
-            </motion.div>
-          ))}
+
+        <div className="mt-12">
+          <WorkflowInteractiveDemo />
         </div>
         <div className="text-center mt-10">
           <button
