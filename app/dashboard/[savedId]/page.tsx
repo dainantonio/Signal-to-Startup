@@ -17,7 +17,9 @@ import {
   ChevronRight,
   Download,
   Share2,
-  X
+  X,
+  Mail,
+  UserCheck
 } from 'lucide-react';
 import Link from 'next/link';
 import Markdown from 'react-markdown';
@@ -29,8 +31,13 @@ import {
   doc,
   getDoc,
   FirebaseUser,
+  collection,
+  query,
+  where,
+  getDocs,
+  orderBy
 } from '@/firebase';
-import { SavedOpportunity } from '@/components/types';
+import { SavedOpportunity, Lead } from '@/components/types';
 import { CostEstimator } from '@/components/CostEstimator';
 import { GrantFinder } from '@/components/GrantFinder';
 import { InvestorMatch } from '@/components/InvestorMatch';
@@ -46,8 +53,9 @@ export default function SavedOpportunityPage() {
   const [savedOpp, setSavedOpp] = useState<SavedOpportunity & { id: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'plan' | 'costs' | 'grants' | 'checklist' | 'investors'>('plan');
+  const [activeTab, setActiveTab] = useState<'plan' | 'costs' | 'grants' | 'checklist' | 'investors' | 'leads'>('plan');
   const [copied, setCopied] = useState<string | null>(null);
+  const [leads, setLeads] = useState<Lead[]>([]);
 
   const { generateLandingPage, loading: lpLoading, error: lpError } = useAgentLandingPage();
 
@@ -92,6 +100,20 @@ export default function SavedOpportunityPage() {
       }
 
       setSavedOpp({ id: docSnap.id, ...data });
+
+      // Fetch Leads
+      try {
+        const leadsQuery = query(
+          collection(db, 'opportunity_leads'),
+          where('opportunityId', '==', savedId),
+          orderBy('createdAt', 'desc')
+        );
+        const leadsSnap = await getDocs(leadsQuery);
+        setLeads(leadsSnap.docs.map(d => ({ id: d.id, ...d.data() })) as Lead[]);
+      } catch (err) {
+        console.error('Failed to load leads', err);
+      }
+
     } catch (err) {
       console.error('Failed to load opportunity:', err);
       setError('Failed to load opportunity');
@@ -146,6 +168,7 @@ export default function SavedOpportunityPage() {
     { id: 'grants', label: 'Grant Finder', icon: Coins },
     { id: 'checklist', label: 'Checklist', icon: CheckSquare },
     { id: 'investors', label: 'Investor Match', icon: Users },
+    { id: 'leads', label: 'CRM Leads', icon: Mail },
   ] as const;
 
   return (
@@ -326,6 +349,65 @@ export default function SavedOpportunityPage() {
                   {activeTab === 'investors' && (
                     <motion.div key="investors" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
                       <InvestorMatch deepDiveResult={deepDive} />
+                    </motion.div>
+                  )}
+                  {activeTab === 'leads' && (
+                    <motion.div key="leads" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6">
+                      <div className="flex items-center justify-between border-b border-border/10 pb-6">
+                        <div>
+                          <h3 className="text-xl font-bold font-serif italic mb-1">Waitlist Leads</h3>
+                          <p className="text-sm text-muted">Customers who signed up on your Launchpad page.</p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            const csv = "Email,Signed Up At\\n" + leads.map(l => `${l.email},${new Date(l.createdAt).toLocaleString()}`).join("\\n");
+                            const blob = new Blob([csv], { type: 'text/csv' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `leads-${savedId}.csv`;
+                            a.click();
+                          }}
+                          disabled={leads.length === 0}
+                          className="flex items-center gap-2 px-4 py-2 bg-foreground text-background rounded-xl font-mono text-[10px] uppercase tracking-widest font-bold disabled:opacity-50 transition-colors shadow-sm cursor-pointer"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          Export CSV
+                        </button>
+                      </div>
+                      
+                      {leads.length === 0 ? (
+                        <div className="bg-gray-50 border border-gray-200 rounded-3xl p-12 text-center flex flex-col items-center shadow-sm">
+                          <UserCheck className="w-12 h-12 text-gray-300 mb-4" />
+                          <h4 className="text-lg font-bold text-gray-900 mb-2">No leads yet!</h4>
+                          <p className="text-gray-500 max-w-sm mb-6 text-sm">You haven't collected any emails. Generate a Launchpad page and share the link to get your first customers.</p>
+                          <button onClick={handleGenerateLandingPage} className="px-6 py-3 bg-amber-500 text-white rounded-xl font-mono text-[10px] uppercase font-bold tracking-widest hover:bg-amber-600 transition-colors shadow-lg shadow-amber-500/20">
+                            Launch Your Page Now
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="bg-white border text-sm border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+                          <div className="grid grid-cols-2 p-4 bg-gray-50 font-mono text-[10px] uppercase font-bold tracking-widest text-muted border-b border-gray-200">
+                            <div className="pl-2">Email Address</div>
+                            <div className="pl-2">Date Subscribed</div>
+                          </div>
+                          <div className="divide-y divide-gray-100 max-h-[500px] overflow-y-auto">
+                            {leads.map(lead => (
+                              <div key={lead.id} className="grid grid-cols-2 p-4 hover:bg-gray-50 transition-colors items-center">
+                                <div className="font-medium text-gray-900 pl-2 flex items-center gap-3">
+                                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs uppercase">
+                                    {lead.email.charAt(0)}
+                                  </div>
+                                  {lead.email}
+                                </div>
+                                <div className="text-gray-500 pl-2 text-xs font-mono">
+                                  {new Date(lead.createdAt).toLocaleDateString()} at {new Date(lead.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </motion.div>
                   )}
                 </AnimatePresence>

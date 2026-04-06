@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { motion } from 'motion/react';
-import { db, doc, getDoc } from '@/firebase';
+import { db, doc, getDoc, collection, addDoc } from '@/firebase';
 import { SavedOpportunity, LandingPageData } from '@/components/types';
 import { Target, Zap, Shield, TrendingUp, Heart, Anchor, CheckCircle2, Loader2, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
@@ -14,6 +14,30 @@ export default function LaunchpadPage() {
   const [data, setData] = useState<LandingPageData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [email, setEmail] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [subscribed, setSubscribed] = useState(false);
+
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !id) return;
+    setSubmitting(true);
+    try {
+      await addDoc(collection(db, 'opportunity_leads'), {
+        opportunityId: id,
+        email: email,
+        createdAt: new Date().toISOString()
+      });
+      setSubscribed(true);
+      setEmail('');
+    } catch (err) {
+      console.error('Failed to save lead:', err);
+      alert('Something went wrong. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   // Tailwind JIT Safelist Hack for dynamic color injection
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -99,7 +123,7 @@ export default function LaunchpadPage() {
           </div>
           <span className="font-bold tracking-tight">{data.hero_headline.split(' ')[0]} HQ</span>
         </div>
-        <button className={`px-4 py-2 bg-${color}-500 hover:bg-${color}-600 text-white text-sm font-semibold rounded-full transition-all shadow-lg shadow-${color}-500/20`}>
+        <button onClick={() => document.getElementById('waitlist-form')?.scrollIntoView({ behavior: 'smooth' })} className={`px-4 py-2 bg-${color}-500 hover:bg-${color}-600 text-white text-sm font-semibold rounded-full transition-all shadow-lg shadow-${color}-500/20`}>
           Join Waitlist
         </button>
       </header>
@@ -118,10 +142,27 @@ export default function LaunchpadPage() {
           <p className={`text-xl md:text-2xl ${themeClasses.textMuted} max-w-3xl mx-auto mb-10 leading-relaxed`}>
             {data.hero_subheadline}
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <button className={`px-8 py-4 bg-${color}-500 hover:bg-${color}-600 text-white rounded-full font-bold text-lg transition-transform hover:scale-105 shadow-xl shadow-${color}-500/25 flex items-center gap-2`}>
-              {data.cta_text} <ArrowRight className="w-5 h-5" />
-            </button>
+          <div id="waitlist-form" className="flex flex-col items-center justify-center gap-4 max-w-md mx-auto">
+            {subscribed ? (
+              <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className={`bg-${color}-500/10 text-${color}-600 border border-${color}-500/20 px-6 py-4 rounded-2xl flex items-center gap-3 font-semibold`}>
+                <CheckCircle2 className="w-5 h-5" /> You're on the list! We'll be in touch.
+              </motion.div>
+            ) : (
+              <form onSubmit={handleSubscribe} className={`w-full flex p-1.5 bg-white border border-slate-200 rounded-full shadow-xl shadow-${color}-500/10 relative z-20`}>
+                <input 
+                  type="email" 
+                  required
+                  placeholder="Enter your email to join the waitlist" 
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  className="flex-grow px-4 bg-transparent outline-none text-slate-800 placeholder:text-slate-400 min-w-0"
+                />
+                <button type="submit" disabled={submitting} className={`px-6 py-3 bg-${color}-500 hover:bg-${color}-600 text-white rounded-full font-bold transition-transform hover:scale-105 shadow-md flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50`}>
+                  {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : data.cta_text} 
+                  {!submitting && <ArrowRight className="w-4 h-4" />}
+                </button>
+              </form>
+            )}
           </div>
         </motion.div>
       </section>

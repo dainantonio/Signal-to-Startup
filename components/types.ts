@@ -142,6 +142,13 @@ export interface UserAction {
   completedAt: string; // ISO DateTime
 }
 
+export interface Lead {
+  id?: string;
+  opportunityId: string;
+  email: string;
+  createdAt: string;
+}
+
 export type SectorKey = 'ai' | 'policy' | 'markets' | 'funding' | 'sustainability' | 'realestate' | 'health' | 'ai_intelligence';
 
 export interface SectorConfig {
