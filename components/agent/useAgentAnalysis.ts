@@ -651,8 +651,10 @@ export function useAgentAnalysis(
         const msg = err instanceof Error ? err.message : String(err);
         if (msg.includes('429') || msg.toLowerCase().includes('quota') || msg.toLowerCase().includes('resource_exhausted')) {
           setError('API quota exceeded. Please try again tomorrow or upgrade your Gemini API plan at ai.google.dev.');
+        } else if (msg.includes('JSON') || msg.includes('incomplete response')) {
+          setError('The AI agent failed to format the business plan correctly. This is a known LLM issue. Please click Analyze to retry.');
         } else {
-          setError(err instanceof Error ? err.message : 'Failed to analyze signal. Please check your input and try again.');
+          setError(msg || 'Failed to analyze signal. Please check your connection and try again.');
         }
       }
     } finally {

@@ -103,7 +103,7 @@ export const PitchDeckViewer = ({ deck }: { deck: PitchDeckData }) => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            className={`w-full aspect-video rounded-[3rem] p-12 md:p-20 shadow-2xl flex flex-col justify-center relative overflow-hidden ${slide.bg} ${isTitleSlide ? 'text-center items-center' : ''}`}
+            className={`w-full min-h-[500px] md:min-h-0 md:aspect-video rounded-[2.5rem] md:rounded-[3rem] p-8 md:p-20 shadow-2xl flex flex-col justify-center relative overflow-hidden ${slide.bg} ${isTitleSlide ? 'text-center items-center' : ''}`}
           >
             {isTitleSlide && (
               <div className="absolute top-0 right-0 p-16 opacity-10 scale-150 transform translate-x-12 -translate-y-12">
@@ -117,18 +117,18 @@ export const PitchDeckViewer = ({ deck }: { deck: PitchDeckData }) => {
                   {slide.icon}
                 </div>
                 <div>
-                  <h2 className="text-3xl font-black tracking-tighter text-slate-900">{slide.title}</h2>
-                  <p className="text-slate-500 font-medium">{slide.subtitle}</p>
+                  <h2 className="text-2xl md:text-3xl font-black tracking-tighter text-slate-900">{slide.title}</h2>
+                  <p className="text-sm md:text-base text-slate-500 font-medium">{slide.subtitle}</p>
                 </div>
               </div>
             )}
 
             {isTitleSlide && (
-              <div className="relative z-10 space-y-6">
-                <h1 className="text-6xl md:text-8xl font-black tracking-tighter leading-[1.1] text-balance">
+              <div className="relative z-10 space-y-4 md:space-y-6">
+                <h1 className="text-4xl md:text-8xl font-black tracking-tighter leading-[1.1] text-balance">
                   {slide.title}
                 </h1>
-                <p className="text-2xl opacity-80 font-medium max-w-2xl mx-auto text-balance">
+                <p className="text-lg md:text-2xl opacity-80 font-medium max-w-2xl mx-auto text-balance">
                   {slide.subtitle}
                 </p>
               </div>
@@ -145,8 +145,8 @@ export const PitchDeckViewer = ({ deck }: { deck: PitchDeckData }) => {
                     transition={{ delay: 0.2 + (idx * 0.1) }}
                     className="flex items-start gap-4"
                   >
-                    <div className="w-2.5 h-2.5 rounded-full bg-black/20 mt-2.5 flex-shrink-0" />
-                    <span className="text-2xl md:text-3xl font-medium text-slate-700 leading-snug tracking-tight text-balance">
+                    <div className="w-2 md:w-2.5 h-2 md:h-2.5 rounded-full bg-black/20 mt-2 md:mt-2.5 flex-shrink-0" />
+                    <span className="text-lg md:text-3xl font-medium text-slate-700 leading-snug tracking-tight text-balance">
                       {point}
                     </span>
                   </motion.li>
@@ -155,7 +155,7 @@ export const PitchDeckViewer = ({ deck }: { deck: PitchDeckData }) => {
             )}
             
             {/* Slide Number */}
-            <div className={`absolute bottom-8 right-12 text-sm font-black tracking-widest ${isTitleSlide ? 'text-white/40' : 'text-slate-300'}`}>
+            <div className={`absolute bottom-6 right-8 md:bottom-8 md:right-12 text-xs md:text-sm font-black tracking-widest ${isTitleSlide ? 'text-white/40' : 'text-slate-300'}`}>
               {i + 1} / {slides.length}
             </div>
           </motion.div>

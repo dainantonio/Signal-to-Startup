@@ -162,7 +162,7 @@ export const WorkflowInteractiveDemo = () => {
 
           {/* STEP 4: Live Result */}
           {step === 4 && (
-            <motion.div key="step4" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="absolute inset-0 bg-gray-900 overflow-hidden rounded-[2.5rem] rounded-l-none border-l border-gray-800">
+            <motion.div key="step4" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="absolute inset-0 bg-gray-900 overflow-hidden rounded-[2.5rem] md:rounded-l-none border-t md:border-t-0 md:border-l border-gray-800">
               
               <div className="absolute top-0 inset-x-0 h-12 bg-white/5 border-b border-white/10 flex items-center px-4 gap-2">
                 <div className="flex gap-1.5"><div className="w-3 h-3 rounded-full bg-red-500/50"/><div className="w-3 h-3 rounded-full bg-amber-500/50"/><div className="w-3 h-3 rounded-full bg-emerald-500/50"/></div>
