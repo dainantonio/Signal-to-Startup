@@ -166,33 +166,17 @@ export default function LaunchpadPage() {
             )}
           </div>
 
-          {/* Abstract App Graphic */}
+          {/* Glowing Hero Icon Graphic instead of broken-looking wireframe */}
           <motion.div 
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ duration: 1, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            className={`mt-20 relative w-full max-w-4xl mx-auto rounded-3xl border ${isDark ? 'border-white/10 bg-gray-900/50' : 'border-slate-200/60 bg-white/50'} backdrop-blur-xl shadow-2xl overflow-hidden`}
+            className="mt-20 w-fit mx-auto relative group"
           >
-            <div className={`h-12 border-b ${isDark ? 'border-white/5' : 'border-slate-100'} flex items-center px-4 gap-2`}>
-              <div className="flex gap-1.5">
-                <div className="w-3 h-3 rounded-full bg-red-400" />
-                <div className="w-3 h-3 rounded-full bg-amber-400" />
-                <div className="w-3 h-3 rounded-full bg-emerald-400" />
-              </div>
-            </div>
-            <div className="p-8 grid grid-cols-3 gap-6 h-[400px]">
-              <div className={`col-span-1 border ${isDark ? 'border-white/5 bg-white/5' : 'border-slate-100 bg-slate-50/50'} rounded-2xl flex flex-col gap-4 p-4`}>
-                <div className={`w-full h-8 rounded-lg ${isDark ? 'bg-white/5' : 'bg-slate-200/50'} animate-pulse`} />
-                <div className={`w-3/4 h-4 rounded mt-4 ${isDark ? 'bg-white/5' : 'bg-slate-200/50'}`} />
-                <div className={`w-1/2 h-4 rounded ${isDark ? 'bg-white/5' : 'bg-slate-200/50'}`} />
-                <div className={`w-full h-24 rounded-lg mt-auto ${isDark ? 'bg-white/10' : 'bg-slate-200'}`} />
-              </div>
-              <div className={`col-span-2 border ${isDark ? 'border-white/5 bg-white/5' : 'border-slate-100 bg-slate-50/50'} rounded-2xl p-6 flex flex-col`}>
-                <div className={`w-1/3 h-8 rounded-lg mb-8 ${isDark ? 'bg-white/10' : 'bg-slate-200'}`} />
-                <div className={`w-full flex-grow rounded-xl bg-gradient-to-tr from-${color}-500/20 to-transparent flex items-center justify-center border ${isDark ? 'border-white/5' : 'border-slate-100'}`}>
-                   <TrendingUp className={`w-16 h-16 text-${color}-500 opacity-50`} />
-                </div>
-              </div>
+            <div className={`absolute -inset-10 bg-gradient-to-r from-${color}-500/20 to-${color}-600/20 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 pointer-events-none`} />
+            <div className={`relative w-40 h-40 md:w-56 md:h-56 rounded-full border border-${color}-500/20 bg-${color}-500/5 backdrop-blur-3xl flex items-center justify-center shadow-2xl shadow-${color}-500/10`}>
+              <div className={`absolute inset-0 rounded-full bg-gradient-to-tr from-${color}-500/10 to-transparent`} />
+              {renderIcon(data.value_proposition[0]?.icon_name || 'Zap', `w-16 h-16 md:w-24 md:h-24 text-${color}-500 relative z-10 opacity-80 group-hover:scale-110 transition-transform duration-500`)}
             </div>
           </motion.div>
         </motion.div>
