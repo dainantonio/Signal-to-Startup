@@ -27,6 +27,7 @@ export interface FetchRSSOptions {
   market: string;   // single market — 'global' | 'caribbean' | 'africa' | 'uk' | 'latam'
   sectors: string[];
   recency: string;
+  countryTags?: string[];
 }
 
 export interface FetchRSSResult {
@@ -275,7 +276,7 @@ async function fetchOneFeed(source: typeof RSS_SOURCES[0]): Promise<RSSFeedItem[
 // ---------------------------------------------------------------------------
 
 export async function fetchRSSFeeds(options: FetchRSSOptions): Promise<FetchRSSResult> {
-  const { market, sectors, recency } = options;
+  const { market, sectors, recency, countryTags = [] } = options;
 
   // Market isolation: requested market + global sources only
   const sourcesToFetch = RSS_SOURCES.filter(
@@ -319,6 +320,25 @@ export async function fetchRSSFeeds(options: FetchRSSOptions): Promise<FetchRSSR
   allItems = allItems.filter(item => {
     try { return new Date(item.publishedAt) >= cutoff; } catch { return false; }
   });
+
+  // 4.5. STRICT GEOGRAPHIC FILTERING
+  // If the user provided specific country tags AND they are NOT looking purely for "global" US trends,
+  // we force "global" sources to actually mention their local country/region to prevent US drift.
+  if (countryTags.length > 0 && market !== 'global') {
+    const geoKeywords = Array.from(new Set([
+      ...countryTags.map(t => t.toLowerCase()),
+      market.toLowerCase()
+    ]));
+    
+    allItems = allItems.filter(item => {
+      // If the source is inherently local (e.g., Vanguard Nigeria), let it through.
+      if (item.market === market && item.market !== 'global') return true;
+      
+      // If the source is global (TechCrunch), it MUST explicitly mention the target region or country.
+      const text = `${item.title} ${item.snippet}`.toLowerCase();
+      return geoKeywords.some(kw => text.includes(kw));
+    });
+  }
 
   // 5. Deduplicate
   const { deduped, removed: dedupRemoved } = deduplicateArticles(allItems);

@@ -66,11 +66,15 @@ export async function GET(req: NextRequest) {
     ? (sectorsParam.split(',').filter(s => ALL_SECTORS.includes(s as SectorKey)) as SectorKey[])
     : ALL_SECTORS;
 
+  const countryTagsParam = searchParams.get('countryTags') || '';
+  const countryTags = countryTagsParam.split(',').filter(Boolean);
+
   try {
     const feedResult = await fetchRSSFeeds({
       market: region,
       sectors: requestedSectors,
       recency,
+      countryTags,
     });
 
     if (feedResult.items.length === 0) {

@@ -134,6 +134,16 @@ export const LOADING_STAGE_LABELS = [
   'Done',
 ] as const;
 
+const getCurrencyName = (tags: string[], mode: string) => {
+  const ts = tags.map(t => t.toUpperCase());
+  if (ts.includes('US') || ts.includes('UNITED STATES') || mode === 'global') return 'USD ($)';
+  if (ts.includes('UK') || ts.includes('UNITED KINGDOM') || mode === 'europe') return 'GBP (£)';
+  if (ts.includes('NG') || ts.includes('NIGERIA') || mode === 'africa') return 'NGN (₦) or Local African Currency';
+  if (ts.includes('JM') || ts.includes('JAMAICA') || mode === 'caribbean') return 'JMD (J$) or Local Caribbean Currency';
+  if (mode === 'latam') return 'Local Latin American currency (e.g. COP, MXN, BRL)';
+  return 'Local Currency';
+};
+
 const responseSchema = {
   type: Type.OBJECT,
   properties: {
@@ -176,8 +186,8 @@ const responseSchema = {
           pricing_model: { type: Type.STRING },
           status: { type: Type.STRING, description: "Always set to 'New' for initial discovery." },
           priority: { type: Type.STRING, description: "High, Medium, or Low based on ROI and speed to launch." },
-          startup_cost: { type: Type.INTEGER, description: "Estimated startup cost in USD. MUST be under 2000." },
-          grant_eligible: { type: Type.BOOLEAN, description: "Whether this idea could qualify for local/federal government funding or grants." },
+          startup_cost: { type: Type.INTEGER, description: "Estimated startup cost mathematically converted to the requested strictly local currency integer." },
+          grant_eligible: { type: Type.BOOLEAN, description: "Whether this idea could qualify for strictly local government funding or grants." },
           speed_to_launch: { type: Type.INTEGER, description: "1-10 scale" },
           difficulty: { type: Type.INTEGER, description: "1-10 scale" },
           roi_potential: { type: Type.INTEGER, description: "1-10 scale" },
@@ -195,7 +205,7 @@ const responseSchema = {
         name: { type: Type.STRING },
         reason: { type: Type.STRING, description: "2 sentences max." },
         who_should_build: { type: Type.STRING },
-        cost_estimate: { type: Type.STRING, description: "Estimated startup cost in USD (e.g., '$500 - $1,200')." },
+        cost_estimate: { type: Type.STRING, description: "Estimated startup cost formatted beautifully in the strict requested local currency symbol." },
         speed_rating: { type: Type.STRING, description: "Speed rating (e.g., 'Fast', 'Medium', 'Slow')." },
         first_steps: {
           type: Type.ARRAY,
@@ -204,6 +214,10 @@ const responseSchema = {
         }
       },
       required: ["name", "reason", "who_should_build", "cost_estimate", "speed_rating", "first_steps"]
+    },
+    currency_used: {
+      type: Type.STRING,
+      description: "You must explicitly declare the currency symbol and ISO you are strictly using for all financial calculations in this response (e.g., 'USD ($)', 'JMD (J$)', 'NGN (₦)')."
     }
   },
   required: [
@@ -214,13 +228,15 @@ const responseSchema = {
     "affected_groups",
     "problems",
     "opportunities",
-    "best_idea"
+    "best_idea",
+    "currency_used"
   ]
 };
 
 const deepDiveSchema = {
   type: Type.OBJECT,
   properties: {
+    currency_used: { type: Type.STRING, description: "Explicitly declare the currency ISO and symbol used for all calculations." },
     business_plan: { type: Type.STRING, description: "Complete business plan with exactly 9 numbered sections as plain text." },
     cost_breakdown: {
       type: Type.ARRAY,
@@ -228,7 +244,7 @@ const deepDiveSchema = {
         type: Type.OBJECT,
         properties: {
           item: { type: Type.STRING, description: "Name of the expense item" },
-          cost: { type: Type.INTEGER, description: "Estimated cost in USD." },
+          cost: { type: Type.INTEGER, description: "Estimated mathematically converted integer cost in the strictly requested local currency." },
           type: { type: Type.STRING, description: "'one-time' or 'monthly'" },
           notes: { type: Type.STRING, description: "Optional tip, free tier info, or variation." },
           source_url: { type: Type.STRING, description: "URL to pricing page of vendor if applicable." }
@@ -241,9 +257,9 @@ const deepDiveSchema = {
       items: {
         type: Type.OBJECT,
         properties: {
-          name: { type: Type.STRING, description: "Exact name of the grant or funding program." },
+          name: { type: Type.STRING, description: "Exact name of the strictly localized grant or funding program." },
           organization: { type: Type.STRING, description: "The organization offering it." },
-          amount: { type: Type.STRING, description: "Estimated amount or range." },
+          amount: { type: Type.STRING, description: "Estimated amount in local currency." },
           who_qualifies: { type: Type.STRING, description: "Brief description of eligibility." },
           why_this_qualifies: { type: Type.STRING, description: "One sentence on why this business qualifies." },
           how_to_apply: { type: Type.STRING, description: "Short instruction or note on how to apply." },
@@ -404,6 +420,13 @@ export function useAgentAnalysis(
 
         FOCUS/NICHE:
         ${focus || 'General Business'}
+
+        CRITICAL GEOGRAPHIC CONSTRAINT:
+        The user is strictly located in: ${location || 'United States'} (Tags: ${countryTags.join(', ')}).
+        You MUST tailor EVERYTHING strictly to this demographic and location. DO NOT hallucinate global advice.
+        - All financial costs, ROI estimates, and pricing MUST be exactly formulated in: ${getCurrencyName(countryTags, selectedMode)}. 
+        - DO NOT use generic USD ($) unless the user is explicitly in the United States.
+        - Under 'grant_eligible', you MUST ONLY consider grants verifiably available to citizens of this specific region. If in Nigeria, NO US SBA loans. If in UK, use Innovate UK, etc.
 
         RULES:
         - Keep ALL text fields concise — descriptions under 2 sentences, trend under 1 sentence, today_action under 25 words
@@ -749,8 +772,16 @@ Return ONLY valid JSON in this exact structure:
 
         TASK: Provide a deep-dive execution plan.
         You MUST use the Google Search tool to browse the live internet to find real, currently operating data.
+        
+        CRITICAL GEOGRAPHIC CONSTRAINT:
+        The user is strictly located in: ${countryTags.join(', ') || 'United States'}.
+        You MUST tailor EVERYTHING strictly to this demographic and location. DO NOT hallucinate global advice.
+        - All cost logic, breakdowns, and pricing MUST be exactly formulated mathematically in: ${getCurrencyName(countryTags, selectedMode)}. 
+        - You MUST NOT use generic USD ($) unless the user is located in the US.
+        - All 'grants' MUST ONLY be funding bodies verifiably available in this specific region. Do not ever output a generic US Federal grant for a user in the Caribbean or Africa.
+
         1. BUSINESS PLAN: Write a concise 9-section plan (Problem, Solution, Market, Revenue, Marketing, Operations, Team, Risks, Milestones).
-        2. COST BREAKDOWN: Search the web for actual software/hardware/vendor pricing. Include source URLs. Total must be around ${opportunity.startup_cost} USD.
+        2. COST BREAKDOWN: Search the web for actual software/hardware/vendor pricing. Include source URLs. Total must scale properly mapping to the opportunity startup cost in the correct currency.
         3. GRANTS: Search the web for 2-3 REAL active grants, loans, or programs in ${countryTags[0] || 'the target market'} that this business could qualify for. Include the real application URL.
         4. MARKETING: 3 specific marketing tactics with effort/cost ratings.
         5. CHECKLIST: Provide a step-by-step checklist split across 4 phases to launch.
