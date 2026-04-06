@@ -295,7 +295,7 @@ export default function TrendIntelligenceAgentNewsroom() {
                     className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-xl transition-all text-sm relative"
                   >
                     <Bell className="w-4 h-4" />
-                    <span className="font-medium hidden sm:inline">Daily Brief</span>
+                    <span className="font-medium text-xs sm:text-sm">Daily Brief</span>
                     {(() => {
                       try {
                         const lastCheck = localStorage.getItem('dailyBriefLastCheck');
@@ -312,7 +312,7 @@ export default function TrendIntelligenceAgentNewsroom() {
                     className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 hover:border-gray-300 rounded-xl transition-all text-sm"
                   >
                     <History className="w-4 h-4 text-gray-500" />
-                    <span className="font-medium text-gray-700 hidden sm:inline">History</span>
+                    <span className="font-medium text-gray-700 text-xs sm:text-sm">History</span>
                     {analysis.history.length > 0 && (
                       <span className="text-xs text-gray-400">({analysis.history.length})</span>
                     )}
@@ -322,7 +322,7 @@ export default function TrendIntelligenceAgentNewsroom() {
                     className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 hover:border-gray-300 rounded-xl transition-all text-sm"
                   >
                     <LayoutDashboard className="w-4 h-4 text-gray-500" />
-                    <span className="font-medium text-gray-700 hidden sm:inline">Dashboard</span>
+                    <span className="font-medium text-gray-700 text-xs sm:text-sm">Pipeline</span>
                   </Link>
                   {user.email === 'dain.russell@gmail.com' && (
                     <Link
@@ -370,8 +370,7 @@ export default function TrendIntelligenceAgentNewsroom() {
           </div>
         </header>
 
-        {/* Workflow Stepper - Always visible when result exists */}
-        {analysis.result && <WorkflowStepper currentStep={currentStep} />}
+
 
 
         {/* Signal Desk */}
