@@ -121,7 +121,8 @@ service cloud.firestore {
     }
 
     match /saved_opportunities/{savedId} {
-      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      // Allow public read so the Launchpad can render for unauthenticated visitors
+      allow read: if true;
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
       allow update: if request.auth != null && resource.data.userId == request.auth.uid;
       allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
@@ -144,6 +145,22 @@ service cloud.firestore {
     match /waitlist/{entryId} {
       allow create: if true;
       allow read: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Phase 3: Action Center Streaks
+    match /user_actions/{actionId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    // Phase 5: Launchpad Leads
+    match /opportunity_leads/{leadId} {
+      allow create: if true; // Public visitors can submit their email
+      allow read: if isAuthenticated(); // Dashboard owner can read
+      allow update: if false;
       allow delete: if isAdmin();
     }
 
