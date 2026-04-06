@@ -46,6 +46,8 @@ interface SignalDeskNewsroomProps {
   cancelAnalysis: () => void;
   selectedMode: MarketMode;
   setSelectedMode: (mode: MarketMode) => void;
+  readingLevel: 'simple' | 'standard' | 'advanced';
+  setReadingLevel: (level: 'simple' | 'standard' | 'advanced') => void;
   countryTags: string[];
   setCountryTags: (tags: string[]) => void;
   onQuickEdit?: () => void;
@@ -67,6 +69,8 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
   cancelAnalysis,
   selectedMode,
   setSelectedMode,
+  readingLevel,
+  setReadingLevel,
   countryTags,
   setCountryTags,
   onQuickEdit,
@@ -433,7 +437,37 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
                 </div>
               </div>
 
-              <MarketModeSelector selectedMode={selectedMode} onModeChange={setSelectedMode} />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-2 uppercase tracking-wide">
+                    Market Region
+                  </label>
+                  <MarketModeSelector selectedMode={selectedMode} onModeChange={setSelectedMode} />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-2 uppercase tracking-wide">
+                    Reading Mode
+                  </label>
+                  <div className="flex rounded-xl border border-gray-200 overflow-hidden h-11">
+                    {([
+                      { value: 'simple', label: 'Simple' },
+                      { value: 'standard', label: 'Standard' },
+                      { value: 'advanced', label: 'Detailed' },
+                    ] as { value: 'simple' | 'standard' | 'advanced'; label: string }[]).map((opt, i) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => setReadingLevel(opt.value)}
+                        className={`flex-1 py-2 text-xs font-medium ${
+                          i > 0 ? 'border-l border-gray-200' : ''
+                        } ${readingLevel === opt.value ? 'bg-black text-white' : 'text-gray-600 hover:bg-gray-50'}`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -715,6 +749,27 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
               <div>
                 <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Market</p>
                 <MarketModeSelector selectedMode={selectedMode} onModeChange={setSelectedMode} />
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Reading Mode</p>
+                <div className="flex rounded-lg border border-gray-200 overflow-hidden">
+                  {([
+                    { value: 'simple', label: 'Simple' },
+                    { value: 'standard', label: 'Standard' },
+                    { value: 'advanced', label: 'Detailed' },
+                  ] as { value: 'simple' | 'standard' | 'advanced'; label: string }[]).map((opt, i) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setReadingLevel(opt.value)}
+                      className={`flex-1 py-2 text-xs font-medium ${
+                        i > 0 ? 'border-l border-gray-200' : ''
+                      } ${readingLevel === opt.value ? 'bg-black text-white' : 'text-gray-600 hover:bg-gray-50'}`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div>

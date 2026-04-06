@@ -395,6 +395,8 @@ export default function TrendIntelligenceAgentNewsroom() {
           cancelAnalysis={analysis.cancelAnalysis}
           selectedMode={selectedMode}
           setSelectedMode={handleSetSelectedMode}
+          readingLevel={readingLevel}
+          setReadingLevel={setReadingLevel}
           countryTags={countryTags}
           setCountryTags={handleSetCountryTags}
           showQuickEdit={!!analysis.result}

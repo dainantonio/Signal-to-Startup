@@ -804,6 +804,8 @@ Return ONLY valid JSON in this exact structure:
 
         TONE: Punchy, highly scannable, and extremely practical. ZERO GUESSING ON FEES OR URLS. DO NOT hallucinate URLs or grants. We must be trusted to provide accurate info.
 
+        ${READING_LEVEL_PROMPTS[readingLevel]}
+
         OUTPUT FORMAT: You MUST return RAW JSON exactly matching this schema. Do not output any markdown code blocks, backticks, or extra text.
         SCHEMA: ${JSON.stringify(deepDiveSchema)}
       `;
