@@ -650,7 +650,7 @@ export function useAgentAnalysis(
       if (!signal.aborted) {
         const msg = err instanceof Error ? err.message : String(err);
         if (msg.includes('429') || msg.toLowerCase().includes('quota') || msg.toLowerCase().includes('resource_exhausted')) {
-          setError('API quota exceeded. Please try again tomorrow or upgrade your Gemini API plan at ai.google.dev.');
+          setError('Our AI analysis engines are currently at maximum capacity. Please try again soon or contact us at hello@entrepaIneur.com.');
         } else if (msg.includes('JSON') || msg.includes('incomplete response')) {
           setError('The AI agent failed to format the business plan correctly. This is a known LLM issue. Please click Analyze to retry.');
         } else {
@@ -756,7 +756,9 @@ Return ONLY valid JSON in this exact structure:
     } catch (err) {
       console.error('[COMPOUND ANALYSIS FAILED]', err);
       const msg = err instanceof Error ? err.message : String(err);
-      if (msg.includes('JSON')) {
+      if (msg.includes('429') || msg.toLowerCase().includes('quota') || msg.toLowerCase().includes('resource_exhausted')) {
+        setError('Our AI analysis engines are currently at maximum capacity. Please try again soon or contact us at hello@entrepaIneur.com.');
+      } else if (msg.includes('JSON')) {
         setError('The AI hallucinated a response format. Please click Compare to retry.');
       } else {
         setError(err instanceof Error ? err.message : 'Compound analysis failed.');
