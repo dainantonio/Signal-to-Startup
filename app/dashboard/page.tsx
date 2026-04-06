@@ -48,7 +48,6 @@ import {
   AgentSignal 
 } from '@/components/types';
 import { COUNTRY_CONTEXT } from '@/lib/rss-sources';
-import { ActionCenter } from '@/components/ActionCenter';
 
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -317,9 +316,6 @@ export default function DashboardPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-6 py-12">
-        <div className="mb-12">
-          <ActionCenter />
-        </div>
 
         {/* Page Title */}
         <div className="mb-12 space-y-2">
@@ -704,12 +700,12 @@ function ValidationsList({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             onClick={() => onSelect?.(v.id)}
-            className={`bg-white border p-6 rounded-2xl shadow-sm hover:shadow-md transition-all relative group cursor-pointer ${
+            className={`bg-white border rounded-2xl shadow-sm hover:shadow-md transition-all relative group cursor-pointer p-6 ${
               selectedIds?.has(v.id) ? 'border-primary ring-1 ring-primary' : 'border-border/10'
             }`}
           >
             {onSelect && (
-              <div className="absolute top-4 right-4 z-10">
+              <div className="absolute top-6 left-6 z-10">
                 <div className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${
                   selectedIds?.has(v.id) ? 'bg-primary border-primary text-white' : 'border-gray-200 bg-white group-hover:border-gray-400'
                 }`}>
@@ -717,7 +713,7 @@ function ValidationsList({
                 </div>
               </div>
             )}
-            <div className="flex items-center justify-between mb-4 pr-8">
+            <div className={`flex items-center justify-between mb-4 ${onSelect ? 'pl-10' : ''}`}>
               <div className={`text-2xl font-bold border rounded-xl px-3 py-1 ${scoreColor}`}>
                 {v.validationScore}
               </div>
@@ -778,7 +774,7 @@ function KanbanCard({ opportunity, onStatusChange, isUpdating, selected, onSelec
     >
       {/* Checkbox */}
       {onSelect && (
-        <div className="absolute top-3 right-3 z-10">
+        <div className="absolute top-6 left-6 z-10">
            <div className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${
             selected ? 'bg-primary border-primary text-white' : 'border-gray-200 bg-white group-hover:border-gray-400'
           }`}>
@@ -790,9 +786,9 @@ function KanbanCard({ opportunity, onStatusChange, isUpdating, selected, onSelec
       <div className={`absolute top-0 left-0 right-0 h-1 ${priorityColor} opacity-40`} />
 
       {/* Header */}
-      <div className="flex items-start justify-between mb-4">
+      <div className={`flex items-start justify-between mb-4 ${onSelect ? 'pl-10' : ''}`}>
         <div className="flex-grow space-y-1">
-          <h3 className="font-serif italic font-bold text-base leading-tight group-hover:text-primary transition-colors pr-6">
+          <h3 className="font-serif italic font-bold text-base leading-tight group-hover:text-primary transition-colors">
             {opp.name}
           </h3>
           <div className="flex items-center gap-2">
@@ -988,7 +984,7 @@ function AgentSignalsList({
           }`}
         >
           {onSelect && (
-            <div className="absolute top-4 right-4 z-10">
+            <div className="absolute top-5 left-5 z-10">
               <div className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${
                 selectedIds?.has(signal.id!) ? 'bg-primary border-primary text-white' : 'border-gray-200 bg-white group-hover:border-gray-400'
               }`}>
@@ -996,7 +992,7 @@ function AgentSignalsList({
               </div>
             </div>
           )}
-          <div className="flex items-start justify-between gap-3 mb-3">
+          <div className={`flex items-start justify-between gap-3 mb-3 ${onSelect ? 'pl-10' : ''}`}>
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-center gap-2 mb-2">
                 <span className="text-[10px] font-mono font-bold bg-black text-white px-2 py-0.5 rounded-full">
@@ -1010,7 +1006,7 @@ function AgentSignalsList({
                   <span className="text-[9px] font-mono font-bold bg-black text-white px-1.5 py-0.5 rounded">NEW</span>
                 )}
               </div>
-              <h3 className="font-semibold text-sm leading-snug line-clamp-2 mb-1 pr-10">
+              <h3 className="font-semibold text-sm leading-snug line-clamp-2 mb-1">
                 {signal.title}
               </h3>
               {signal.snippet && (
@@ -1116,7 +1112,7 @@ function SavedArticlesList({
           }`}
         >
           {onSelect && (
-            <div className="absolute top-4 right-4 z-10">
+            <div className="absolute top-5 left-5 z-10">
               <div className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${
                 selectedIds?.has(article.id!) ? 'bg-primary border-primary text-white' : 'border-gray-200 bg-white group-hover:border-gray-400'
               }`}>
@@ -1124,9 +1120,9 @@ function SavedArticlesList({
               </div>
             </div>
           )}
-          <div className="flex items-start justify-between gap-3 mb-3">
+          <div className={`flex items-start justify-between gap-3 mb-3 ${onSelect ? 'pl-8' : ''}`}>
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-sm leading-snug line-clamp-2 mb-1 pr-10">
+              <h3 className="font-semibold text-sm leading-snug line-clamp-2 mb-1">
                 {article.title || article.url}
               </h3>
               <p className="text-[10px] font-mono text-muted truncate">{article.url}</p>
