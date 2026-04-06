@@ -545,9 +545,11 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
                 >
                   {activeDeepDiveTab === 'plan' && (
                     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                      <ReactMarkdown className="prose prose-slate prose-sm sm:prose-base max-w-none prose-headings:font-bold prose-headings:text-gray-900 prose-p:text-gray-600 prose-li:text-gray-600 prose-strong:font-bold prose-strong:text-gray-900 leading-relaxed marker:text-gray-400">
-                        {deepDiveResult.business_plan}
-                      </ReactMarkdown>
+                      <div className="prose prose-slate prose-sm sm:prose-base max-w-none prose-headings:font-bold prose-headings:text-gray-900 prose-p:text-gray-600 prose-li:text-gray-600 prose-strong:font-bold prose-strong:text-gray-900 leading-relaxed marker:text-gray-400">
+                        <ReactMarkdown>
+                          {deepDiveResult.business_plan}
+                        </ReactMarkdown>
+                      </div>
                     </div>
                   )}
 
