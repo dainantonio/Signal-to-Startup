@@ -139,6 +139,32 @@ export interface DeepDiveResult {
   grants: GrantItem[];
   checklist: ChecklistStep[];
   investors: { name: string; focus: string; stage: string; website?: string }[];
+  strategy_report?: {
+    executive_summary: string;
+    pricing_strategy: {
+      model: string;
+      tiers: Array<{
+        name: string;
+        price: string;
+        includes: string[];
+      }>;
+      rationale: string;
+    };
+    go_to_market: {
+      phase1: string;
+      phase2: string;
+      phase3: string;
+      first_customers: string;
+      channels: string[];
+    };
+    competitive_positioning: {
+      position: string;
+      key_differentiators: string[];
+      main_competitors: string[];
+      moat: string;
+    };
+    success_metrics: string[];
+  };
 }
 
 export type OpportunityStatus = 'Saved' | 'In Progress' | 'Launched';

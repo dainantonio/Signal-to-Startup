@@ -297,6 +297,14 @@ Return a JSON object with exactly these fields and strict length limits:
           parsed.opportunities = parsed.opportunities.slice(0, 3);
         }
 
+        // Hard cap money_score — AI can return values >100
+        if (Array.isArray(parsed.opportunities)) {
+          parsed.opportunities = parsed.opportunities.map((opp: any) => ({
+            ...opp,
+            money_score: Math.min(Math.round(opp.money_score || 0), 99),
+          }));
+        }
+
         // STEP 2: Save to agent_opportunities
         const opportunityRef = db.collection('agent_opportunities').doc();
         const sanitizedResult = sanitizeResult({

@@ -801,7 +801,7 @@ function KanbanCard({ opportunity, onStatusChange, isUpdating, selected, onSelec
           </h3>
           <div className="flex items-center gap-2">
             <span className="text-[9px] font-mono uppercase font-bold text-muted bg-gray-50 px-2 py-0.5 rounded border border-border/5">
-              Score: {Math.round(opp.money_score)}
+              Score: {Math.min(Math.round(opp.money_score || 0), 99)}
             </span>
           </div>
         </div>
@@ -1004,7 +1004,7 @@ function AgentSignalsList({
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-center gap-2 mb-2">
                 <span className="text-[10px] font-mono font-bold bg-black text-white px-2 py-0.5 rounded-full">
-                  Score {signal.userScore}
+                  Score {Math.min(signal.userScore || 0, 99)}
                 </span>
                 <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${sectorColor[signal.sector] ?? 'bg-gray-50 text-gray-600'}`}>
                   {signal.sector}

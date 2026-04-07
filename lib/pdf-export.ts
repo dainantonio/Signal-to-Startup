@@ -30,6 +30,26 @@ export interface PDFExportData {
     stage: string;
     website?: string;
   }>;
+  strategyReport?: {
+    executive_summary: string;
+    pricing_strategy: {
+      model: string;
+      tiers: Array<{ name: string; price: string; includes: string[] }>;
+      rationale: string;
+    };
+    go_to_market: {
+      phase1: string;
+      phase2: string;
+      phase3: string;
+      first_customers: string;
+    };
+    competitive_positioning: {
+      position: string;
+      key_differentiators: string[];
+      moat: string;
+    };
+    success_metrics: string[];
+  };
   generatedAt: string;
 }
 
@@ -377,6 +397,59 @@ export async function exportToPDF(data: PDFExportData): Promise<void> {
       yPos += focusLines.length * 4 + 6;
 
       addDivider();
+    }
+  }
+
+  // ─── STRATEGY REPORT ──────────────────────
+
+  if (data.strategyReport) {
+    const sr = data.strategyReport;
+    addPage();
+    addSectionHeader('Strategy Report');
+
+    // Executive Summary
+    addText('Executive Summary', 10, 'bold', [30, 30, 30]);
+    addText(sr.executive_summary, 9, 'normal', [80, 80, 80]);
+    yPos += 4;
+
+    // Pricing
+    addText(`Pricing Model: ${sr.pricing_strategy.model}`, 10, 'bold', [30, 30, 30]);
+    for (const tier of sr.pricing_strategy.tiers) {
+      checkPageBreak(20);
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(30, 30, 30);
+      pdf.text(`${tier.name} — ${tier.price}`, margin, yPos);
+      yPos += 5;
+      for (const inc of tier.includes.slice(0, 3)) {
+        pdf.setFontSize(8);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(100, 100, 100);
+        pdf.text(`  ✓ ${inc}`, margin + 3, yPos);
+        yPos += 4;
+      }
+    }
+    addText(sr.pricing_strategy.rationale, 8, 'normal', [120, 120, 120]);
+    yPos += 4;
+
+    // GTM
+    addText('Go-to-Market', 10, 'bold', [30, 30, 30]);
+    addText(`Phase 1: ${sr.go_to_market.phase1}`, 9, 'normal', [80, 80, 80]);
+    addText(`Phase 2: ${sr.go_to_market.phase2}`, 9, 'normal', [80, 80, 80]);
+    addText(`Phase 3: ${sr.go_to_market.phase3}`, 9, 'normal', [80, 80, 80]);
+    addText(`First 10 customers: ${sr.go_to_market.first_customers}`, 9, 'normal', [80, 80, 80]);
+    yPos += 4;
+
+    // Competitive Positioning
+    addText('Competitive Position', 10, 'bold', [30, 30, 30]);
+    addText(sr.competitive_positioning.position, 9, 'normal', [80, 80, 80]);
+    addText(`Moat: ${sr.competitive_positioning.moat}`, 9, 'normal', [80, 80, 80]);
+    yPos += 4;
+
+    // Top metrics
+    addText('Success Metrics', 10, 'bold', [30, 30, 30]);
+    for (const metric of sr.success_metrics.slice(0, 3)) {
+      addText(`• ${metric}`, 9, 'normal', [80, 80, 80]);
     }
   }
 

@@ -124,7 +124,7 @@ export const OpportunityCard: React.FC<OpportunityCardProps> = ({
             <div className="min-w-0">
               <p className="text-xs text-gray-500 mb-1 font-medium truncate">ROI</p>
               <p className="text-sm md:text-base font-bold text-gray-900">
-                {Math.round(opp.money_score)}
+                {Math.min(Math.round(opp.money_score || 0), 99)}
               </p>
             </div>
           </div>

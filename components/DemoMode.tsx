@@ -541,7 +541,7 @@ Return ONLY this JSON with NO extra text:
                           : 'text-gray-600'
                       }`}
                     >
-                      {opp.money_score}
+                      {Math.min(opp.money_score, 99)}
                     </div>
                     <div className="text-xs text-gray-400">score</div>
                   </div>

@@ -43,8 +43,8 @@ interface DeepDiveModalProps {
   cancelDeepDive: () => void;
   deepDiveLoading: boolean;
   deepDiveResult: DeepDiveResult | null;
-  activeDeepDiveTab: 'plan' | 'costs' | 'grants' | 'checklist' | 'investors';
-  setActiveDeepDiveTab: (tab: 'plan' | 'costs' | 'grants' | 'checklist' | 'investors') => void;
+  activeDeepDiveTab: 'plan' | 'costs' | 'grants' | 'checklist' | 'investors' | 'strategy';
+  setActiveDeepDiveTab: (tab: 'plan' | 'costs' | 'grants' | 'checklist' | 'investors' | 'strategy') => void;
   generateDeepDive: (opp: Opportunity) => void;
   copyToClipboard: (text: string, id: string) => void;
   copied: string | null;
@@ -255,6 +255,17 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           website: (inv as any).website || undefined,
         })),
+        strategyReport: deepDiveResult.strategy_report ? {
+          executive_summary: deepDiveResult.strategy_report.executive_summary,
+          pricing_strategy: deepDiveResult.strategy_report.pricing_strategy,
+          go_to_market: deepDiveResult.strategy_report.go_to_market,
+          competitive_positioning: {
+            position: deepDiveResult.strategy_report.competitive_positioning.position,
+            key_differentiators: deepDiveResult.strategy_report.competitive_positioning.key_differentiators,
+            moat: deepDiveResult.strategy_report.competitive_positioning.moat,
+          },
+          success_metrics: deepDiveResult.strategy_report.success_metrics,
+        } : undefined,
         generatedAt: new Date().toISOString(),
       };
       await exportToPDF(data);
@@ -266,12 +277,13 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
     }
   };
 
-  const tabs: { id: 'plan' | 'costs' | 'grants' | 'checklist' | 'investors'; label: string; icon: string }[] = [
+  const tabs: { id: 'plan' | 'costs' | 'grants' | 'checklist' | 'investors' | 'strategy'; label: string; icon: string }[] = [
     { id: 'plan', label: labels.businessPlan, icon: '📄' },
     { id: 'costs', label: labels.startupCosts, icon: '💰' },
     { id: 'grants', label: labels.fundingGrants, icon: '🏦' },
     { id: 'checklist', label: labels.checklist, icon: '✅' },
     { id: 'investors', label: labels.investorMatch, icon: '🤝' },
+    { id: 'strategy', label: 'Strategy', icon: '🎯' },
   ];
 
   return (
@@ -590,6 +602,107 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
                         <span className="text-[10px] font-mono uppercase font-bold tracking-widest">Potential Investor Match</span>
                       </div>
                       <InvestorMatch deepDiveResult={deepDiveResult} />
+                    </div>
+                  )}
+
+                  {activeDeepDiveTab === 'strategy' && (
+                    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                      <div className="flex items-center gap-3 text-primary bg-primary/5 px-4 py-2 rounded-full w-fit">
+                        <span className="text-base leading-none">🎯</span>
+                        <span className="text-[10px] font-mono uppercase font-bold tracking-widest">Strategy Report</span>
+                      </div>
+
+                      {!deepDiveResult.strategy_report ? (
+                        <div className="text-center py-12">
+                          <p className="text-sm text-gray-500">Regenerate the execution suite to get your strategy report.</p>
+                        </div>
+                      ) : (
+                        <>
+                          {/* Executive Summary */}
+                          <div className="p-4 bg-gray-50 rounded-xl">
+                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-2">Executive Summary</p>
+                            <p className="text-sm text-gray-700 leading-relaxed">{deepDiveResult.strategy_report.executive_summary}</p>
+                          </div>
+
+                          {/* Pricing */}
+                          <div className="space-y-3">
+                            <p className="text-sm font-semibold text-gray-900">Pricing Strategy</p>
+                            <p className="text-xs text-gray-500">Model: {deepDiveResult.strategy_report.pricing_strategy.model}</p>
+                            <div className="grid grid-cols-1 gap-3">
+                              {deepDiveResult.strategy_report.pricing_strategy.tiers.map((tier, i) => (
+                                <div key={i} className="p-4 border border-gray-200 rounded-xl">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <p className="text-sm font-semibold text-gray-900">{tier.name}</p>
+                                    <p className="text-sm font-bold text-green-700">{tier.price}</p>
+                                  </div>
+                                  <ul className="space-y-1">
+                                    {tier.includes.map((item, j) => (
+                                      <li key={j} className="text-xs text-gray-600 flex items-start gap-1.5">
+                                        <span className="text-green-500 flex-shrink-0">✓</span>
+                                        {item}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              ))}
+                            </div>
+                            <p className="text-xs text-gray-500 italic leading-relaxed">{deepDiveResult.strategy_report.pricing_strategy.rationale}</p>
+                          </div>
+
+                          {/* Go to Market */}
+                          <div className="space-y-3">
+                            <p className="text-sm font-semibold text-gray-900">Go-to-Market Plan</p>
+                            {[
+                              { label: 'Phase 1', value: deepDiveResult.strategy_report.go_to_market.phase1, color: 'bg-blue-50 border-blue-200' },
+                              { label: 'Phase 2', value: deepDiveResult.strategy_report.go_to_market.phase2, color: 'bg-purple-50 border-purple-200' },
+                              { label: 'Phase 3', value: deepDiveResult.strategy_report.go_to_market.phase3, color: 'bg-green-50 border-green-200' },
+                            ].map((phase, i) => (
+                              <div key={i} className={`p-3 rounded-xl border ${phase.color}`}>
+                                <p className="text-xs font-bold text-gray-700 mb-1">{phase.label}</p>
+                                <p className="text-xs text-gray-600 leading-relaxed">{phase.value}</p>
+                              </div>
+                            ))}
+                            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                              <p className="text-xs font-bold text-amber-800 mb-1">First 10 Customers</p>
+                              <p className="text-xs text-amber-700 leading-relaxed">{deepDiveResult.strategy_report.go_to_market.first_customers}</p>
+                            </div>
+                          </div>
+
+                          {/* Competitive Positioning */}
+                          <div className="space-y-3">
+                            <p className="text-sm font-semibold text-gray-900">Competitive Position</p>
+                            <p className="text-xs text-gray-600 leading-relaxed">{deepDiveResult.strategy_report.competitive_positioning.position}</p>
+                            <div className="space-y-2">
+                              <p className="text-xs font-medium text-gray-700">Key differentiators:</p>
+                              {deepDiveResult.strategy_report.competitive_positioning.key_differentiators.map((d, i) => (
+                                <div key={i} className="flex items-start gap-2 text-xs text-gray-600">
+                                  <span className="text-blue-500 flex-shrink-0">→</span>
+                                  {d}
+                                </div>
+                              ))}
+                            </div>
+                            <div className="p-3 bg-gray-50 rounded-xl">
+                              <p className="text-xs font-medium text-gray-700 mb-1">Your moat:</p>
+                              <p className="text-xs text-gray-600 leading-relaxed">{deepDiveResult.strategy_report.competitive_positioning.moat}</p>
+                            </div>
+                          </div>
+
+                          {/* Success Metrics */}
+                          <div className="space-y-2">
+                            <p className="text-sm font-semibold text-gray-900">Success Metrics</p>
+                            {deepDiveResult.strategy_report.success_metrics.map((metric, i) => (
+                              <div key={i} className="flex items-start gap-2 p-3 bg-gray-50 rounded-lg">
+                                <span className="text-xs font-mono text-gray-400 flex-shrink-0 mt-0.5">{String(i + 1).padStart(2, '0')}</span>
+                                <p className="text-xs text-gray-700 leading-relaxed">{metric}</p>
+                              </div>
+                            ))}
+                          </div>
+
+                          <div className="text-center pt-2">
+                            <p className="text-xs text-gray-400">Export this report as PDF using the download button above</p>
+                          </div>
+                        </>
+                      )}
                     </div>
                   )}
                 </motion.div>

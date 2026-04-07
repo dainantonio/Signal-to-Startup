@@ -78,31 +78,80 @@ export async function GET(request: NextRequest) {
 
         const signals = signalsSnapshot.docs.map(d => d.data());
 
-        const signalCards = signals
-          .map(
-            s => `
-          <div style="border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin-bottom:12px;background:#ffffff;">
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-              <span style="font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">
-                ${s.source}
-              </span>
-              <span style="font-size:11px;color:#ffffff;background:#0f0f0f;padding:2px 8px;border-radius:20px;">
-                Score: ${s.userScore}
-              </span>
+        // Enrich signals with pre-analyzed opportunities where available
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        type EnrichedSignal = Record<string, any> & { topOpportunity: any; todayAction: any };
+        const enrichedSignals: EnrichedSignal[] = await Promise.all(
+          signals.map(async (signal): Promise<EnrichedSignal> => {
+            if (signal.analyzed && signal.opportunityId) {
+              try {
+                const oppDoc = await db
+                  .collection('agent_opportunities')
+                  .doc(signal.opportunityId)
+                  .get();
+                if (oppDoc.exists) {
+                  const oppData = oppDoc.data();
+                  const topOpp = oppData?.result?.opportunities?.[0];
+                  const todayAction = oppData?.result?.today_action;
+                  return { ...signal, topOpportunity: topOpp ?? null, todayAction: todayAction ?? null };
+                }
+              } catch (err) {
+                console.warn('[DIGEST] Failed to fetch opportunity:', err);
+              }
+            }
+            return { ...signal, topOpportunity: null, todayAction: null };
+          })
+        );
+
+        const analyzedCount = enrichedSignals.filter(s => s.topOpportunity).length;
+
+        const signalCards = enrichedSignals.map(signal => `
+          <div style="margin:16px 0;padding:20px;background:#fff;border-radius:12px;border:1px solid #e5e7eb;">
+            <p style="margin:0 0 4px;font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.05em;font-weight:600;">
+              ${signal.source} · Score ${Math.min(signal.userScore || 0, 99)}
+            </p>
+            <p style="margin:0 0 12px;font-size:15px;font-weight:600;color:#111;line-height:1.4;">
+              ${signal.title}
+            </p>
+            ${signal.topOpportunity ? `
+            <div style="padding:14px;background:#f0fdf4;border-radius:8px;border:1px solid #86efac;margin-bottom:12px;">
+              <p style="margin:0 0 4px;font-size:10px;color:#15803d;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;">
+                ⚡ Top Opportunity — Already Analyzed
+              </p>
+              <p style="margin:0 0 6px;font-size:14px;font-weight:700;color:#111;">
+                ${signal.topOpportunity.name}
+              </p>
+              <p style="margin:0 0 8px;font-size:13px;color:#374151;line-height:1.5;">
+                ${String(signal.topOpportunity.description || '').substring(0, 120)}...
+              </p>
+              <p style="margin:0;font-size:12px;color:#6b7280;">
+                💰 Startup cost: $${(signal.topOpportunity.startup_cost || 0).toLocaleString()} · 🚀 Speed: ${signal.topOpportunity.speed_to_launch || '—'}/10
+              </p>
             </div>
-            <p style="margin:0 0 12px;font-size:14px;font-weight:600;color:#0f0f0f;line-height:1.4;">
-              ${s.title}
-            </p>
+            ${signal.todayAction ? `
+            <div style="padding:12px;background:#fefce8;border-radius:8px;border:1px solid #fde047;margin-bottom:12px;">
+              <p style="margin:0 0 4px;font-size:10px;color:#854d0e;font-weight:700;text-transform:uppercase;">
+                Your move today
+              </p>
+              <p style="margin:0;font-size:13px;color:#713f12;line-height:1.5;">
+                ${signal.todayAction}
+              </p>
+            </div>
+            ` : ''}
+            <a href="${APP_URL}?opportunity=${signal.opportunityId}"
+              style="display:inline-block;padding:10px 20px;background:#000;color:#fff;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none;">
+              View full analysis →
+            </a>
+            ` : `
             <p style="margin:0 0 12px;font-size:13px;color:#6b7280;line-height:1.5;">
-              ${String(s.snippet ?? '').substring(0, 150)}...
+              ${String(signal.snippet ?? '').substring(0, 150)}...
             </p>
-            <a href="${APP_URL}?signal=${encodeURIComponent(String(s.url))}"
-              style="display:inline-block;background:#0f0f0f;color:#ffffff;text-decoration:none;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;">
+            <a href="${APP_URL}"
+              style="display:inline-block;padding:10px 20px;background:#000;color:#fff;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none;">
               Analyze this signal →
             </a>
-          </div>`
-          )
-          .join('');
+            `}
+          </div>`).join('');
 
         const countryDisplay = prefs.countryTag ? ` · ${prefs.countryTag}` : '';
         const marketDisplay = (prefs.marketMode as string) || 'Global';
@@ -111,14 +160,20 @@ export async function GET(request: NextRequest) {
           month: 'long',
           day: 'numeric',
         });
+        const weekdayDisplay = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+
+        const subject = analyzedCount > 0
+          ? `⚡ ${analyzedCount} opportunit${analyzedCount > 1 ? 'ies' : 'y'} pre-analyzed for you — ${weekdayDisplay}`
+          : `📡 Your ${signals.length} signals for ${weekdayDisplay}`;
 
         console.log('[DIGEST] Sending to:', email);
         console.log('[DIGEST] From:', 'onboarding@resend.dev');
+        console.log('[DIGEST] Pre-analyzed count:', analyzedCount);
 
         await resend.emails.send({
           from: 'Signal to Startup <onboarding@resend.dev>',
           to: email,
-          subject: `${signals.length} new signal${signals.length > 1 ? 's' : ''} matched your profile today`,
+          subject,
           html: `<!DOCTYPE html>
 <html>
 <head>

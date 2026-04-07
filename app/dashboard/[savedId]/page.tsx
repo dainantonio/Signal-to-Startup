@@ -195,7 +195,7 @@ export default function SavedOpportunityPage() {
           <div className="flex items-center gap-4">
             <h1 className="hidden md:block text-lg font-serif italic font-bold tracking-tight">{opp.name}</h1>
             <div className="bg-primary text-white text-[10px] font-mono font-bold px-3 py-1.5 rounded-lg shadow-lg shadow-primary/20">
-              SCORE: {Math.round(opp.money_score)}
+              SCORE: {Math.min(Math.round(opp.money_score || 0), 99)}
             </div>
           </div>
         </div>
@@ -211,7 +211,7 @@ export default function SavedOpportunityPage() {
                   <Sparkles className="w-4 h-4" />
                   <span className="text-[9px] font-mono uppercase font-bold tracking-widest">Opportunity Score</span>
                 </div>
-                <div className="text-4xl font-bold font-serif italic">{Math.round(opp.money_score)}<span className="text-sm font-sans font-normal opacity-30 ml-1">/100</span></div>
+                <div className="text-4xl font-bold font-serif italic">{Math.min(Math.round(opp.money_score || 0), 99)}<span className="text-sm font-sans font-normal opacity-30 ml-1">/100</span></div>
               </div>
 
               <div className="space-y-4 pt-6 border-t border-border/5">

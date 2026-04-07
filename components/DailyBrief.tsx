@@ -146,7 +146,7 @@ export const DailyBrief: React.FC<DailyBriefProps> = ({ isOpen, onClose, onAnaly
                             <div className="flex-shrink-0">
                               {sig.signalScore && (
                                 <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm">
-                                  {sig.signalScore}
+                                  {Math.min(sig.signalScore, 99)}
                                 </div>
                               )}
                             </div>

@@ -376,7 +376,7 @@ export default function AdminPage() {
                               : (signal.userScore as number) >= 60 ? 'text-amber-600'
                               : 'text-gray-500'
                           }`}>
-                            {signal.userScore as number}
+                            {Math.min(signal.userScore as number, 99)}
                           </span>
                         </td>
                         <td className="px-4 py-3">

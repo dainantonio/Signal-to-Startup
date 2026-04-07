@@ -199,7 +199,7 @@ export async function GET(request: NextRequest) {
                     <p style="font-size:16px;color:#444;line-height:1.6;margin-bottom:24px;">${signal.snippet}</p>
                     <div style="background:#f9f9f9;padding:16px;border-radius:8px;margin-bottom:24px;border-left:4px solid #000;">
                       <p style="margin:0;font-weight:bold;">Why this is strong:</p>
-                      <p style="margin:4px 0 0;color:#666;">This signal matches your profile with a score of ${signal.userScore}/100 and shows early trend clustering ${newStrongSignals.length > 1 ? `(part of ${newStrongSignals.length} related reports)` : ''}.</p>
+                      <p style="margin:4px 0 0;color:#666;">This signal matches your profile with a score of ${Math.min(signal.userScore || 0, 99)}/100 and shows early trend clustering ${newStrongSignals.length > 1 ? `(part of ${newStrongSignals.length} related reports)` : ''}.</p>
                     </div>
                     <a href="${APP_URL}?signal=${encodeURIComponent(signal.url)}" 
                        style="display:inline-block;background:#000;color:#fff;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:bold;font-size:16px;">

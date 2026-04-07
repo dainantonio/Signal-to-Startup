@@ -68,7 +68,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
         `Why now: ${opp.why_now}`,
         `Monetization: ${opp.monetization}`,
         `Startup cost: $${opp.startup_cost.toLocaleString()}`,
-        `Money score: ${opp.money_score}/100`,
+        `Money score: ${Math.min(Math.round(opp.money_score || 0), 99)}/100`,
         `Speed to launch: ${opp.speed_to_launch}/10`,
       ]),
       '',
@@ -600,7 +600,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
             <p><strong>{i + 1}. {opp.name}</strong></p>
             <p>{opp.description}</p>
             <p>Target: {opp.target_customer} · Why now: {opp.why_now}</p>
-            <p>Monetization: {opp.monetization} · Cost: ${opp.startup_cost.toLocaleString()} · Score: {opp.money_score}/100</p>
+            <p>Monetization: {opp.monetization} · Cost: ${opp.startup_cost.toLocaleString()} · Score: {Math.min(Math.round(opp.money_score || 0), 99)}/100</p>
           </div>
         ))}
         <h2>Best Idea: {result.best_idea.name}</h2>

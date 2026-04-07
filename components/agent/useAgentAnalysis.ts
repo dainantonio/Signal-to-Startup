@@ -307,9 +307,58 @@ const deepDiveSchema = {
         },
         required: ["name", "focus", "stage"]
       }
+    },
+    strategy_report: {
+      type: Type.OBJECT,
+      properties: {
+        executive_summary: { type: Type.STRING, description: "2-3 sentence strategy overview." },
+        pricing_strategy: {
+          type: Type.OBJECT,
+          properties: {
+            model: { type: Type.STRING, description: "Freemium | Subscription | One-time | Service fee | Commission" },
+            tiers: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  name: { type: Type.STRING },
+                  price: { type: Type.STRING },
+                  includes: { type: Type.ARRAY, items: { type: Type.STRING } }
+                },
+                required: ["name", "price", "includes"]
+              }
+            },
+            rationale: { type: Type.STRING, description: "Why this pricing works for this market." }
+          },
+          required: ["model", "tiers", "rationale"]
+        },
+        go_to_market: {
+          type: Type.OBJECT,
+          properties: {
+            phase1: { type: Type.STRING, description: "Month 1-2 specific actions." },
+            phase2: { type: Type.STRING, description: "Month 3-6 specific actions." },
+            phase3: { type: Type.STRING, description: "Month 7-12 specific actions." },
+            first_customers: { type: Type.STRING, description: "Exactly how to get first 10 paying customers." },
+            channels: { type: Type.ARRAY, items: { type: Type.STRING } }
+          },
+          required: ["phase1", "phase2", "phase3", "first_customers", "channels"]
+        },
+        competitive_positioning: {
+          type: Type.OBJECT,
+          properties: {
+            position: { type: Type.STRING },
+            key_differentiators: { type: Type.ARRAY, items: { type: Type.STRING } },
+            main_competitors: { type: Type.ARRAY, items: { type: Type.STRING } },
+            moat: { type: Type.STRING, description: "What makes this hard to copy." }
+          },
+          required: ["position", "key_differentiators", "main_competitors", "moat"]
+        },
+        success_metrics: { type: Type.ARRAY, items: { type: Type.STRING } }
+      },
+      required: ["executive_summary", "pricing_strategy", "go_to_market", "competitive_positioning", "success_metrics"]
     }
   },
-  required: ["business_plan", "cost_breakdown", "grants", "marketing_strategy", "checklist", "investors"]
+  required: ["business_plan", "cost_breakdown", "grants", "marketing_strategy", "checklist", "investors", "strategy_report"]
 };
 
 // ---------------------------------------------------------------------------
@@ -342,7 +391,7 @@ export function useAgentAnalysis(
   const [selectedOpportunity, setSelectedOpportunity] = useState<Opportunity | null>(null);
   const [deepDiveLoading, setDeepDiveLoading] = useState(false);
   const [deepDiveResult, setDeepDiveResult] = useState<DeepDiveResult | null>(null);
-  const [activeDeepDiveTab, setActiveDeepDiveTab] = useState<'plan' | 'costs' | 'grants' | 'checklist' | 'investors'>('plan');
+  const [activeDeepDiveTab, setActiveDeepDiveTab] = useState<'plan' | 'costs' | 'grants' | 'checklist' | 'investors' | 'strategy'>('plan');
 
   // Filter state
   const [filterType, setFilterType] = useState<'top' | 'hot' | 'fast'>('top');
@@ -579,6 +628,13 @@ export function useAgentAnalysis(
       // Trim to exactly 3
       parsedResult.opportunities = parsedResult.opportunities.slice(0, 3);
 
+      // Hard cap all scores — AI can return values >100
+      parsedResult.opportunities = parsedResult.opportunities.map((opp: Opportunity) => ({
+        ...opp,
+        money_score: Math.min(Math.round(opp.money_score || 0), 99),
+        startup_cost: Math.max(opp.startup_cost || 0, 0),
+      }));
+
       // Evict oldest cache entry if at capacity
       if (analysisCache.size >= MAX_CACHE_SIZE) {
         const firstKey = analysisCache.keys().next().value;
@@ -801,6 +857,7 @@ Return ONLY valid JSON in this exact structure:
         4. MARKETING: 3 specific marketing tactics with effort/cost ratings.
         5. CHECKLIST: Provide a step-by-step checklist split across 4 phases to launch.
         6. INVESTORS: Search the web to find 2-3 REAL local investor firms, accelerators or angels that invest in this space/region. IF YOU CANNOT FIND A VERIFIABLE REAL-WORLD URL, YOU MUST OUTPUT "Data not found online" INSTEAD OF GUESSING.
+        7. STRATEGY REPORT: Provide a complete strategy_report with: executive_summary (2-3 sentences), pricing_strategy (model, 2-3 tiers with pricing and what's included, rationale), go_to_market (3 phases month-by-month, exactly how to get first 10 customers, channels), competitive_positioning (position statement, 3 key differentiators, main competitors, moat), and 4-5 success_metrics to track.
 
         TONE: Punchy, highly scannable, and extremely practical. ZERO GUESSING ON FEES OR URLS. DO NOT hallucinate URLs or grants. We must be trusted to provide accurate info.
 
