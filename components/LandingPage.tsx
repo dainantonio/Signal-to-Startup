@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import { auth, googleProvider, signInWithPopup, db, addDoc, collection } from '@/firebase';
+import { auth, googleProvider, signInWithPopup, signInWithRedirect, db, addDoc, collection } from '@/firebase';
 import DemoMode from '@/components/DemoMode';
 import Logo from '@/components/Logo';
 import { WorkflowInteractiveDemo } from '@/components/WorkflowInteractiveDemo';
@@ -46,8 +46,15 @@ export default function LandingPage() {
 
   const handleSignIn = async () => {
     try {
-      await signInWithPopup(auth, googleProvider);
-    } catch (err) {
+      const isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
+      if (isMobile) {
+        await signInWithRedirect(auth, googleProvider);
+      } else {
+        await signInWithPopup(auth, googleProvider);
+      }
+    } catch (err: any) {
+      if (err?.code === 'auth/cancelled-popup-request') return;
+      if (err?.code === 'auth/popup-closed-by-user') return;
       console.error('Sign in failed:', err);
     }
   };

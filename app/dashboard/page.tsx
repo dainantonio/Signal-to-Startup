@@ -37,6 +37,7 @@ import {
   doc,
   FirebaseUser,
   signInWithPopup,
+  signInWithRedirect,
   googleProvider,
   limit,
 } from '@/firebase';
@@ -257,9 +258,16 @@ export default function DashboardPage() {
 
   const login = async () => {
     try {
-      await signInWithPopup(auth, googleProvider);
-    } catch (err) {
-      console.error("Login failed", err);
+      const isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
+      if (isMobile) {
+        await signInWithRedirect(auth, googleProvider);
+      } else {
+        await signInWithPopup(auth, googleProvider);
+      }
+    } catch (err: any) {
+      if (err?.code === 'auth/cancelled-popup-request') return;
+      if (err?.code === 'auth/popup-closed-by-user') return;
+      console.error('Login failed', err);
     }
   };
 

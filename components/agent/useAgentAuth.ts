@@ -5,6 +5,8 @@ import {
   auth,
   googleProvider,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signOut,
   onAuthStateChanged,
   FirebaseUser,
@@ -38,6 +40,20 @@ export function useAgentAuth() {
   const [loginError, setLoginError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Handle redirect result first (mobile sign-in returns here)
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result?.user) {
+          console.log('[AUTH] Redirect sign-in successful:', result.user.email);
+          ensureUserDocument(result.user);
+        }
+      })
+      .catch((err: { code?: string }) => {
+        if (err?.code !== 'auth/cancelled-popup-request') {
+          console.error('[AUTH] Redirect error:', err);
+        }
+      });
+
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
         ensureUserDocument(firebaseUser);
@@ -52,14 +68,18 @@ export function useAgentAuth() {
   const login = async () => {
     setLoginError(null);
     try {
-      await signInWithPopup(auth, googleProvider);
+      const isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
+      if (isMobile) {
+        await signInWithRedirect(auth, googleProvider);
+      } else {
+        await signInWithPopup(auth, googleProvider);
+      }
     } catch (err: unknown) {
       const code = (err as { code?: string }).code;
-      // popup-closed-by-user and popup-blocked are expected user actions — don't show an error
-      if (code !== 'auth/popup-closed-by-user' && code !== 'auth/cancelled-popup-request') {
-        setLoginError('Sign-in failed. Please try again.');
-        console.error('Login failed', err);
-      }
+      if (code === 'auth/cancelled-popup-request') return;
+      if (code === 'auth/popup-closed-by-user') return;
+      setLoginError('Sign-in failed. Please try again.');
+      console.error('Login failed', err);
     }
   };
 
