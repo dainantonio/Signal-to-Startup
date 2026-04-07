@@ -1,0 +1,20 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+
+Sitemap: https://signal-to-startup.vercel.app/sitemap.xml
+
+# ──────────────────────────────────────
+# Hello, curious human. 👋
+#
+# Signal to Startup turns today's news
+# into tomorrow's business opportunity.
+#
+# Built for entrepreneurs in Atlanta,
+# Kingston, Lagos, London, and beyond.
+#
+# Not for Silicon Valley. For everyone else.
+#
+# → signal-to-startup.vercel.app
+# → hello@entrepaIneur.com
+# ──────────────────────────────────────

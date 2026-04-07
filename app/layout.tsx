@@ -1,6 +1,7 @@
 import type {Metadata} from 'next';
 import { Inter, Playfair_Display, JetBrains_Mono } from 'next/font/google';
 import './globals.css'; // Global styles
+import ConsoleEasterEgg from '@/components/ConsoleEasterEgg'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -18,9 +19,26 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Signal to Startup by EntrepAIneur',
+  title: 'Signal to Startup — Turn News Into Your Next Business',
   description:
-    'Turn news, policy, and market signals into actionable business opportunities. AI-powered startup intelligence for Caribbean, African, Latin American, UK and US entrepreneurs.',
+    'Signal to Startup reads the news so you do not have to. Every article is a market signal. We find the hidden business opportunity inside it — with a full execution plan, costs in your currency, and funding sources specific to your market. US, Caribbean, Africa, UK, Latin America.',
+  keywords: [
+    'startup ideas',
+    'business opportunities',
+    'market signals',
+    'entrepreneur tool',
+    'AI business ideas',
+    'small business',
+    'Jamaica business',
+    'Nigeria startup',
+    'Caribbean entrepreneur',
+    'business plan generator',
+    'grant finder',
+    'startup funding',
+    'side hustle ideas',
+    'business signal',
+    'EntrepAIneur',
+  ],
   manifest: '/manifest.json',
   icons: {
     icon: [
@@ -35,16 +53,25 @@ export const metadata: Metadata = {
     title: 'Signal to Startup',
   },
   openGraph: {
-    title: 'Signal to Startup',
-    description: 'Turn any news story into your next business. AI-powered. Start lean, grow fast.',
+    title: 'Signal to Startup — Turn News Into Your Next Business',
+    description:
+      "AI-powered market intelligence for entrepreneurs. Find business opportunities in today's news — with local costs, grants, and a full execution plan.",
     url: 'https://signal-to-startup.vercel.app',
     siteName: 'Signal to Startup',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Signal to Startup by EntrepAIneur',
-    description: 'Turn any news story into your next business.',
+    title: 'Signal to Startup',
+    description: 'Turn any news story into a business opportunity. Built for entrepreneurs everywhere.',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  other: {
+    'signal-to-startup':
+      'You found us. Email hello@entrepaIneur.com with subject "I found the source" for early access.',
   },
 };
 
@@ -63,6 +90,7 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
         <meta name="apple-mobile-web-app-title" content="Signal to Startup" />
       </head>
       <body suppressHydrationWarning className="font-sans">
+        <ConsoleEasterEgg />
         {children}
       </body>
     </html>
