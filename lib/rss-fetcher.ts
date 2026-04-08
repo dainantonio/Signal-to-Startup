@@ -327,9 +327,24 @@ export async function fetchRSSFeeds(options: FetchRSSOptions): Promise<FetchRSSR
   const results = await Promise.allSettled(activeSources.map(fetchOneFeed));
 
   let allItems: RSSFeedItem[] = [];
-  for (const result of results) {
-    if (result.status === 'fulfilled') allItems.push(...result.value);
+  const successfulSources: string[] = [];
+  const failedSources: string[] = [];
+
+  for (let i = 0; i < results.length; i++) {
+    const result = results[i];
+    const sourceName = activeSources[i].name;
+    if (result.status === 'fulfilled') {
+      allItems.push(...result.value);
+      successfulSources.push(`${sourceName}(${result.value.length})`);
+    } else {
+      failedSources.push(`${sourceName}:${String(result.reason).substring(0, 40)}`);
+    }
   }
+
+  console.log('[RSS] Market:', market, '| Recency:', recency);
+  console.log('[RSS] Sources fetched:', successfulSources.join(', '));
+  if (failedSources.length > 0) console.log('[RSS] Sources failed:', failedSources.join(', '));
+  console.log('[RSS] Total before filter:', allItems.length);
 
   // 1. Block by domain
   allItems = allItems.filter(item => {
@@ -359,11 +374,11 @@ export async function fetchRSSFeeds(options: FetchRSSOptions): Promise<FetchRSSR
   }));
 
   // 6. Market isolation: for non-global modes keep local articles first,
-  //    then global with score >= 60, and drop articles from other markets
+  //    then global with score >= 45, and drop articles from other markets
   //    unless they score >= 85
   if (market !== 'global') {
-    const localItems       = items.filter(i => i.market === market);
-    const relevantGlobal   = items.filter(i => i.market === 'global' && (i.signalScore ?? 0) >= 60);
+    const localItems        = items.filter(i => i.market === market);
+    const relevantGlobal    = items.filter(i => i.market === 'global' && (i.signalScore ?? 0) >= 45);
     const highRelevantOther = items.filter(
       i => i.market !== market && i.market !== 'global' && (i.signalScore ?? 0) >= 85
     );
@@ -371,8 +386,8 @@ export async function fetchRSSFeeds(options: FetchRSSOptions): Promise<FetchRSSR
   }
 
   // 7. Minimum quality gate — remove very short snippets / titles
-  items = items.filter(i => (i.snippet?.length ?? 0) >= 80);
-  items = items.filter(i => (i.title?.length ?? 0) >= 25);
+  items = items.filter(i => (i.snippet?.length ?? 0) >= 40);
+  items = items.filter(i => (i.title?.length ?? 0) >= 15);
 
   // 8. Business relevance — must contain at least one stem
   items = items.filter(item => {
@@ -380,9 +395,11 @@ export async function fetchRSSFeeds(options: FetchRSSOptions): Promise<FetchRSSR
     return BUSINESS_REQUIRED.some(k => text.includes(k));
   });
 
-  // 9. Sort by score and cap at 40
+  // 9. Sort by score and cap at 50
   items.sort((a, b) => (b.signalScore ?? 0) - (a.signalScore ?? 0));
-  items = items.slice(0, 40);
+  items = items.slice(0, 50);
+
+  console.log('[RSS] Total after filter:', items.length);
 
   return { items, duplicatesRemoved: dedupRemoved };
 }

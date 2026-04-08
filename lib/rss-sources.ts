@@ -49,6 +49,13 @@ export const SPAM_TITLE_PATTERNS = [
   'unveiled', 'exposed', 'leaked',
   "you won't believe", 'shocking',
   'vs reality', 'the truth about',
+  // Crime / courts (not business signals)
+  'granted bail', 'conspiracy charges',
+  'arrested', 'charged with',
+  'murder', 'shooting', 'robbery',
+  'crime', 'police', 'court hearing',
+  'sentenced to', 'pleaded guilty',
+  'drug bust', 'smuggling charges',
   // Sports
   'eligibility lawsuit', 'ncaa',
   'college athlete', 'defensive lineman',
@@ -117,14 +124,17 @@ export const RSS_SOURCES: RSSSource[] = [
   { url: 'https://www.inman.com/feed/',                                market: 'global', sector: 'realestate',     name: 'Inman Real Estate',          tier: 2 },
 
   // ── CARIBBEAN ─────────────────────────────────────────────────────────
+  // ── CARIBBEAN — verified working 2026-04-08 ──────────────────────────
   { url: 'https://www.jamaicaobserver.com/feed/',                      market: 'caribbean', sector: 'markets',     name: 'Jamaica Observer',           tier: 1 },
-  { url: 'https://jamaica-gleaner.com/feed',                           market: 'caribbean', sector: 'markets',     name: 'Jamaica Gleaner',            tier: 1 },
-  { url: 'https://loopjamaica.com/rss.xml',                            market: 'caribbean', sector: 'markets',     name: 'Loop Jamaica',               tier: 1 },
+  { url: 'https://jamaica-gleaner.com/rss.xml',                        market: 'caribbean', sector: 'markets',     name: 'Jamaica Gleaner',            tier: 1 },
   { url: 'https://caribbeanbusinessreport.com/feed/',                  market: 'caribbean', sector: 'markets',     name: 'Caribbean Business Report',  tier: 1 },
-  { url: 'https://www.trinidadexpress.com/feed/',                      market: 'caribbean', sector: 'markets',     name: 'Trinidad Express',           tier: 1 },
-  { url: 'https://www.barbadostoday.bb/feed/',                         market: 'caribbean', sector: 'markets',     name: 'Barbados Today',             tier: 2 },
-  { url: 'https://www.stabroeknews.com/feed/',                         market: 'caribbean', sector: 'markets',     name: 'Stabroek News Guyana',       tier: 2 },
+  { url: 'https://www.trinidadexpress.com/search/?f=rss',              market: 'caribbean', sector: 'markets',     name: 'Trinidad Express',           tier: 1 },
+  { url: 'https://www.caribbean360.com/feed/',                         market: 'caribbean', sector: 'markets',     name: 'Caribbean360',               tier: 1 },
+  { url: 'https://www.nationnews.com/feed/',                           market: 'caribbean', sector: 'markets',     name: 'Nation News Barbados',       tier: 2 },
+  { url: 'https://iwnsvg.com/feed/',                                   market: 'caribbean', sector: 'markets',     name: 'iWitness News SVG',          tier: 2 },
   { url: 'https://www.jamaicaobserver.com/category/business/feed/',    market: 'caribbean', sector: 'funding',     name: 'Jamaica Observer Business',  tier: 1 },
+  { url: 'https://jis.gov.jm/feed/',                                   market: 'caribbean', sector: 'policy',      name: 'Jamaica Information Service', tier: 1 },
+  { url: 'https://blogs.iadb.org/caribbean-dev-trends/en/feed/',       market: 'caribbean', sector: 'funding',     name: 'IDB Caribbean Dev',          tier: 1 },
 
   // ── AFRICA ────────────────────────────────────────────────────────────
   { url: 'https://techcabal.com/feed/',                                market: 'africa',    sector: 'ai',          name: 'TechCabal',                  tier: 1 },
@@ -171,7 +181,7 @@ export const RSS_SOURCES: RSSSource[] = [
   { url: 'https://caribbeanjournal.com/feed/',                          market: 'caribbean', sector: 'tourism',     name: 'Caribbean Journal',          tier: 1 },
 
   // ── CARIBBEAN — Agriculture ───────────────────────────────────────────
-  { url: 'https://www.jamaicaobserver.com/category/business/feed/',     market: 'caribbean', sector: 'agriculture', name: 'Jamaica Observer Business',  tier: 1 },
+  { url: 'https://www.caribbean360.com/feed/',                          market: 'caribbean', sector: 'agriculture', name: 'Caribbean360 Agriculture',   tier: 2 },
 
   // ── CARIBBEAN — Remittances ───────────────────────────────────────────
   { url: 'https://www.centralbanking.com/rss',                          market: 'caribbean', sector: 'remittances', name: 'Central Banking',            tier: 2 },
