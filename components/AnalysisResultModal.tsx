@@ -119,6 +119,30 @@ export const AnalysisResultModal: React.FC<AnalysisResultModalProps> = ({
                 </div>
               )}
               <div className="p-4 md:p-8 space-y-6 md:space-y-12">
+                {/* Your Next Move */}
+                {result.today_action && (
+                  <div className="p-5 bg-emerald-50 border-2 border-emerald-200 rounded-2xl">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-lg">
+                        {result.today_action_type === 'talk' ? '💬'
+                          : result.today_action_type === 'research' ? '🔍'
+                          : result.today_action_type === 'build' ? '🔨'
+                          : result.today_action_type === 'apply' ? '📝'
+                          : '🧪'}
+                      </span>
+                      <span className="text-xs font-bold uppercase tracking-widest text-emerald-700">
+                        Your Next Move
+                      </span>
+                      <span className="ml-auto text-xs px-2 py-0.5 bg-emerald-200 text-emerald-800 rounded-full font-medium">
+                        Do this today
+                      </span>
+                    </div>
+                    <p className="text-sm font-medium text-gray-900 leading-relaxed">
+                      {result.today_action}
+                    </p>
+                  </div>
+                )}
+
                 {/* Briefing Columns - Mobile Stacked */}
                 <section>
                   <h3 className="text-xl md:text-2xl font-serif font-bold text-gray-900 mb-4 md:mb-6 px-2">
