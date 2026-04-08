@@ -247,7 +247,7 @@ export interface PitchDeckData {
   };
 }
 
-export type SectorKey = 'ai' | 'policy' | 'markets' | 'funding' | 'sustainability' | 'realestate' | 'health' | 'ai_intelligence';
+export type SectorKey = 'ai' | 'policy' | 'markets' | 'funding' | 'sustainability' | 'realestate' | 'health' | 'ai_intelligence' | 'retail' | 'food' | 'workforce' | 'agriculture' | 'tourism' | 'remittances';
 
 export interface SectorConfig {
   key: SectorKey;
@@ -268,7 +268,13 @@ export const SECTOR_CONFIGS: Record<SectorKey, SectorConfig> = {
   sustainability: { key: 'sustainability', label: 'Sustainability',   color: 'teal',    borderColor: 'border-teal-300',    bgColor: 'bg-teal-50',     textColor: 'text-teal-700',    badgeBg: 'bg-teal-100',     badgeText: 'text-teal-800'    },
   realestate:     { key: 'realestate',     label: 'Real Estate',      color: 'orange',  borderColor: 'border-orange-300',  bgColor: 'bg-orange-50',   textColor: 'text-orange-700',  badgeBg: 'bg-orange-100',   badgeText: 'text-orange-800'  },
   health:         { key: 'health',         label: 'Health',           color: 'pink',    borderColor: 'border-pink-300',    bgColor: 'bg-pink-50',     textColor: 'text-pink-700',    badgeBg: 'bg-pink-100',     badgeText: 'text-pink-800'    },
-  ai_intelligence: { key: 'ai_intelligence', label: 'AI Intelligence', color: 'violet', borderColor: 'border-violet-300', bgColor: 'bg-violet-50', textColor: 'text-violet-700', badgeBg: 'bg-violet-100', badgeText: 'text-violet-800' },
+  ai_intelligence: { key: 'ai_intelligence', label: 'AI Intelligence',        color: 'violet',  borderColor: 'border-violet-300',  bgColor: 'bg-violet-50',   textColor: 'text-violet-700',  badgeBg: 'bg-violet-100',  badgeText: 'text-violet-800'  },
+  retail:          { key: 'retail',          label: 'Retail & E-commerce',     color: 'orange',  borderColor: 'border-orange-300',  bgColor: 'bg-orange-50',   textColor: 'text-orange-700',  badgeBg: 'bg-orange-100',  badgeText: 'text-orange-800'  },
+  food:            { key: 'food',            label: 'Food & Beverage',         color: 'yellow',  borderColor: 'border-yellow-300',  bgColor: 'bg-yellow-50',   textColor: 'text-yellow-700',  badgeBg: 'bg-yellow-100',  badgeText: 'text-yellow-800'  },
+  workforce:       { key: 'workforce',       label: 'Workforce & Hiring',      color: 'sky',     borderColor: 'border-sky-300',     bgColor: 'bg-sky-50',      textColor: 'text-sky-700',     badgeBg: 'bg-sky-100',     badgeText: 'text-sky-800'     },
+  agriculture:     { key: 'agriculture',     label: 'Agriculture',             color: 'lime',    borderColor: 'border-lime-300',    bgColor: 'bg-lime-50',     textColor: 'text-lime-700',    badgeBg: 'bg-lime-100',    badgeText: 'text-lime-800'    },
+  tourism:         { key: 'tourism',         label: 'Tourism',                 color: 'cyan',    borderColor: 'border-cyan-300',    bgColor: 'bg-cyan-50',     textColor: 'text-cyan-700',    badgeBg: 'bg-cyan-100',    badgeText: 'text-cyan-800'    },
+  remittances:     { key: 'remittances',     label: 'Remittances & Mobile Money', color: 'emerald', borderColor: 'border-emerald-300', bgColor: 'bg-emerald-50', textColor: 'text-emerald-700', badgeBg: 'bg-emerald-100', badgeText: 'text-emerald-800' },
 };
 
 export interface FeedSignal {

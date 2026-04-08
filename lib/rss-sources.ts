@@ -5,7 +5,7 @@
 export interface RSSSource {
   url: string;
   market: 'global' | 'caribbean' | 'africa' | 'uk' | 'latam';
-  sector: 'ai' | 'policy' | 'markets' | 'funding' | 'sustainability' | 'realestate' | 'health' | 'ai_intelligence';
+  sector: 'ai' | 'policy' | 'markets' | 'funding' | 'sustainability' | 'realestate' | 'health' | 'ai_intelligence' | 'retail' | 'food' | 'workforce' | 'agriculture' | 'tourism' | 'remittances';
   name: string;
   tier: 1 | 2 | 3;
 }
@@ -121,6 +121,43 @@ export const RSS_SOURCES: RSSSource[] = [
   { url: 'https://newsletter.pragmaticengineer.com/feed',                 market: 'global', sector: 'ai_intelligence', name: 'Pragmatic Engineer',     tier: 1 },
   { url: 'https://feeds.feedburner.com/venturebeat/SZYF',                 market: 'global', sector: 'ai_intelligence', name: 'VentureBeat AI',         tier: 1 },
   { url: 'https://techcrunch.com/category/artificial-intelligence/feed/', market: 'global', sector: 'ai_intelligence', name: 'TechCrunch AI',          tier: 1 },
+
+  // ── US — Retail & E-commerce ──────────────────────────────────────────
+  { url: 'https://feeds.retaildive.com/~/t/0/0/retaildive/~retaildive.com', market: 'global', sector: 'retail',  name: 'Retail Dive',                tier: 1 },
+  { url: 'https://www.pymnts.com/feed/',                                market: 'global',    sector: 'retail',      name: 'PYMNTS',                     tier: 1 },
+
+  // ── US — Food & Beverage ──────────────────────────────────────────────
+  { url: 'https://www.fooddive.com/feeds/news/',                        market: 'global',    sector: 'food',        name: 'Food Dive',                  tier: 1 },
+  { url: 'https://www.nrn.com/rss.xml',                                 market: 'global',    sector: 'food',        name: "Nation's Restaurant News",   tier: 1 },
+
+  // ── US — Workforce ────────────────────────────────────────────────────
+  { url: 'https://www.shrm.org/rss/pages/rss.aspx',                    market: 'global',    sector: 'workforce',   name: 'SHRM',                       tier: 1 },
+  { url: 'https://www.hrdive.com/feeds/news/',                          market: 'global',    sector: 'workforce',   name: 'HR Dive',                    tier: 2 },
+
+  // ── CARIBBEAN — Tourism ───────────────────────────────────────────────
+  { url: 'https://www.travelweekly.com/rss',                            market: 'caribbean', sector: 'tourism',     name: 'Travel Weekly',              tier: 2 },
+  { url: 'https://caribbeanjournal.com/feed/',                          market: 'caribbean', sector: 'tourism',     name: 'Caribbean Journal',          tier: 1 },
+
+  // ── CARIBBEAN — Agriculture ───────────────────────────────────────────
+  { url: 'https://www.jamaicaobserver.com/category/business/feed/',     market: 'caribbean', sector: 'agriculture', name: 'Jamaica Observer Business',  tier: 1 },
+
+  // ── CARIBBEAN — Remittances ───────────────────────────────────────────
+  { url: 'https://www.centralbanking.com/rss',                          market: 'caribbean', sector: 'remittances', name: 'Central Banking',            tier: 2 },
+
+  // ── AFRICA — Agriculture ──────────────────────────────────────────────
+  { url: 'https://www.agrilinks.org/rss.xml',                           market: 'africa',    sector: 'agriculture', name: 'Agrilinks',                  tier: 2 },
+  { url: 'https://africabusiness.com/feed/',                            market: 'africa',    sector: 'agriculture', name: 'Africa Business',            tier: 1 },
+
+  // ── AFRICA — Mobile Money & Remittances ───────────────────────────────
+  { url: 'https://nairametrics.com/feed/',                              market: 'africa',    sector: 'remittances', name: 'Nairametrics',               tier: 1 },
+  { url: 'https://techpoint.africa/feed/',                              market: 'africa',    sector: 'remittances', name: 'Techpoint Africa',           tier: 1 },
+
+  // ── AFRICA — Better sources ───────────────────────────────────────────
+  { url: 'https://theexchangeafrica.com/feed/',                         market: 'africa',    sector: 'markets',     name: 'The Exchange Africa',        tier: 1 },
+  { url: 'https://disrupt-africa.com/feed/',                            market: 'africa',    sector: 'funding',     name: 'Disrupt Africa',             tier: 1 },
+
+  // ── LATAM — Better sources ────────────────────────────────────────────
+  { url: 'https://iupana.com/feed/',                                    market: 'latam',     sector: 'remittances', name: 'Iupana LatAm Fintech',       tier: 1 },
 
   // ── LATIN AMERICA ─────────────────────────────────────────────────────
   { url: 'https://www.contxto.com/en/feed/',                           market: 'latam',     sector: 'ai',          name: 'Contxto LatAm Tech',         tier: 1 },

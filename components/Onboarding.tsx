@@ -29,7 +29,8 @@ interface OnboardingProps {
 
 const ALL_SECTORS: SectorKey[] = [
   'ai', 'policy', 'markets', 'funding',
-  'sustainability', 'realestate', 'health', 'ai_intelligence'
+  'sustainability', 'realestate', 'health', 'ai_intelligence',
+  'retail', 'food', 'workforce', 'agriculture', 'tourism', 'remittances',
 ];
 
 const SECTOR_LABELS: Record<SectorKey, string> = {
@@ -41,6 +42,12 @@ const SECTOR_LABELS: Record<SectorKey, string> = {
   realestate: 'Real Estate',
   health: 'Health',
   ai_intelligence: 'AI Intelligence',
+  retail: 'Retail & E-commerce',
+  food: 'Food & Beverage',
+  workforce: 'Workforce & Hiring',
+  agriculture: 'Agriculture',
+  tourism: 'Tourism',
+  remittances: 'Remittances & Mobile Money',
 };
 
 const SECTOR_ICONS: Record<SectorKey, string> = {
@@ -52,6 +59,12 @@ const SECTOR_ICONS: Record<SectorKey, string> = {
   realestate: '🏠',
   health: '❤️',
   ai_intelligence: '🧠',
+  retail: '🛍',
+  food: '🍽',
+  workforce: '👷',
+  agriculture: '🌾',
+  tourism: '✈️',
+  remittances: '💸',
 };
 
 const BUSINESS_TYPES = [

@@ -28,7 +28,7 @@ import { useAgentAnalysis } from './useAgentAnalysis';
 import { ValidateMode } from '../ValidateMode';
 import Logo from '../Logo';
 import NotificationBell from '../NotificationBell';
-import { auth, db, doc, setDoc } from '@/firebase';
+import { auth, db, doc, setDoc, getDoc } from '@/firebase';
 
 type AppMode = 'discover' | 'validate';
 
@@ -194,6 +194,36 @@ export default function TrendIntelligenceAgent() {
     load();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Deep link from digest email: ?opportunity=<opportunityId>
+  React.useEffect(() => {
+    if (!user) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const opportunityId = params.get('opportunity');
+    if (!opportunityId) return;
+
+    // Clear the URL param immediately
+    const url = new URL(window.location.href);
+    url.searchParams.delete('opportunity');
+    window.history.replaceState({}, '', url);
+
+    const loadOpportunity = async () => {
+      try {
+        const oppDoc = await getDoc(doc(db, 'agent_opportunities', opportunityId));
+        if (oppDoc.exists()) {
+          const data = oppDoc.data();
+          analysis.setResult(data.result);
+          setIsAgentResult(true);
+        }
+      } catch (err) {
+        console.error('[AGENT] Failed to load opportunity from URL:', err);
+      }
+    };
+
+    loadOpportunity();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   // Pick up shared article from /share page and auto-analyze
   React.useEffect(() => {

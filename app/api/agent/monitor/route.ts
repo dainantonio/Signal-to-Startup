@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
     let allArticles: ReturnType<typeof Array.prototype.slice> = [];
     try {
       const feedResult = await fetchAllMarkets({
-        sectors: ['ai', 'policy', 'markets', 'funding', 'sustainability', 'realestate', 'health'],
+        sectors: ['ai', 'policy', 'markets', 'funding', 'sustainability', 'realestate', 'health', 'ai_intelligence', 'retail', 'food', 'workforce', 'agriculture', 'tourism', 'remittances'],
         recency: '24h',
       });
       allArticles = feedResult.items;
