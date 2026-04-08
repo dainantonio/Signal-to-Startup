@@ -178,12 +178,12 @@ const responseSchema = {
       items: {
         type: Type.OBJECT,
         properties: {
-          name: { type: Type.STRING },
+          name: { type: Type.STRING, description: "Max 6 words." },
           description: { type: Type.STRING, description: "Max 2 sentences." },
-          target_customer: { type: Type.STRING },
+          target_customer: { type: Type.STRING, description: "One sentence max." },
           why_now: { type: Type.STRING, description: "One sentence max." },
-          monetization: { type: Type.STRING },
-          pricing_model: { type: Type.STRING },
+          monetization: { type: Type.STRING, description: "One sentence max." },
+          pricing_model: { type: Type.STRING, description: "One sentence max." },
           status: { type: Type.STRING, description: "Always set to 'New' for initial discovery." },
           priority: { type: Type.STRING, description: "High, Medium, or Low based on ROI and speed to launch." },
           startup_cost: { type: Type.INTEGER, description: "Estimated startup cost mathematically converted to the requested strictly local currency integer." },
@@ -202,9 +202,9 @@ const responseSchema = {
     best_idea: {
       type: Type.OBJECT,
       properties: {
-        name: { type: Type.STRING },
+        name: { type: Type.STRING, description: "Max 6 words." },
         reason: { type: Type.STRING, description: "2 sentences max." },
-        who_should_build: { type: Type.STRING },
+        who_should_build: { type: Type.STRING, description: "One sentence max." },
         cost_estimate: { type: Type.STRING, description: "Estimated startup cost formatted beautifully in the strict requested local currency symbol." },
         speed_rating: { type: Type.STRING, description: "Speed rating (e.g., 'Fast', 'Medium', 'Slow')." },
         first_steps: {
@@ -478,7 +478,11 @@ export function useAgentAnalysis(
         - Under 'grant_eligible', you MUST ONLY consider grants verifiably available to citizens of this specific region. If in Nigeria, NO US SBA loans. If in UK, use Innovate UK, etc.
 
         RULES:
-        - Keep ALL text fields concise — descriptions under 2 sentences, trend under 1 sentence, today_action under 25 words
+        - Return today_action FIRST in your JSON response — it is the most important field
+        - today_action must be ONE sentence only, under 25 words, starts with a verb, free to do today
+        - today_action must be specific — not 'research the market' but 'Search Google for [specific thing] and write down [what]'
+        - Tailor today_action to the user's country and market context
+        - Keep ALL text fields concise — descriptions under 2 sentences, trend under 1 sentence
         - You MUST return EXACTLY 3 opportunities. Not 2, not 4, not 5. EXACTLY 3.
         - Each opportunity must be a distinct business model.
         - If the signal only supports 1-2 strong ideas, create adjacent opportunities in the same space.
@@ -494,12 +498,10 @@ export function useAgentAnalysis(
         - Tailor at least 2 ideas to the provided location (${location || 'United States'})
         - Heavily weight opportunities toward the specified focus: ${focus || 'General Business'}
         - For 'best_idea', provide a realistic 'cost_estimate' and 'speed_rating' (Fast, Medium, Slow).
-        - today_action must be ONE sentence only
-        - today_action must start with a verb
-        - today_action must be free to do
-        - today_action must be completable today
-        - today_action must be specific — not 'research the market' but 'Search Google for [specific thing] and write down [what]'
-        - Tailor today_action to the user's country and market context
+        - opportunity descriptions: max 2 sentences
+        - best_idea reason: max 2 sentences
+        - summary: max 2 sentences
+        - trend: max 1 sentence
 
         MARKET CONTEXT:
         ${marketModeConfigs[selectedMode].promptContext}
@@ -594,9 +596,12 @@ export function useAgentAnalysis(
         console.error('[RAW RESPONSE]', accumulated.slice(0, 500));
         throw new Error('The AI returned an incomplete response. Please try again.');
       }
-      console.log('[ANALYSIS] today_action present:', !!parsedResult?.today_action, parsedResult?.today_action?.slice(0, 50));
+      console.log('[TODAY_ACTION]',
+        parsedResult?.today_action
+          ? 'FOUND: ' + parsedResult.today_action.slice(0, 60)
+          : 'MISSING — schema order issue'
+      );
       console.log('[6] parsed result — trend:', parsedResult?.trend, '| opportunities:', parsedResult?.opportunities?.length);
-      console.log('[ANALYSIS] today_action:', parsedResult?.today_action?.slice(0, 80));
 
       // Enforce exactly 3 opportunities
       if (!parsedResult.opportunities || parsedResult.opportunities.length < 2) {
