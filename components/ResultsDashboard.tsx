@@ -198,6 +198,20 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
       transition={{ duration: 0.4 }}
       className="space-y-12"
     >
+      {/* TEMP DEBUG — remove after confirming */}
+      <div style={{
+        background: 'red',
+        color: 'white',
+        padding: '12px',
+        fontSize: '14px',
+        fontWeight: 'bold',
+        borderRadius: '8px',
+      }}>
+        DEBUG: today_action = {result.today_action ? result.today_action.slice(0, 50) : 'MISSING'}
+        {' | '}readingLevel = {readingLevel}
+        {' | '}isSimple = {String(readingLevel === 'simple')}
+      </div>
+
       {/* Agent-discovered badge */}
       {isAgentResult && (
         <div className="flex items-center gap-2 px-4 py-2.5 bg-purple-50 rounded-xl border border-purple-200">
