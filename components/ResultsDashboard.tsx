@@ -139,93 +139,57 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
 
   // ── Your Next Move card ──────────────────────────────────────────────────
   const nextMoveCard = result.today_action ? (
-    <section className="px-4 md:px-0 mb-8">
-      <div className={`rounded-2xl border-2 overflow-hidden ${
-        isSimple ? 'border-black bg-gray-950' : 'border-emerald-200 bg-emerald-50'
-      }`}>
-        {/* Header */}
-        <div className={`px-6 py-4 flex items-center gap-3 border-b ${
-          isSimple ? 'border-white/10 bg-black' : 'border-emerald-200 bg-emerald-100'
-        }`}>
-          <span className="text-xl">
-            {result.today_action_type === 'talk' ? '💬'
-              : result.today_action_type === 'research' ? '🔍'
-              : result.today_action_type === 'build' ? '🔨'
-              : result.today_action_type === 'apply' ? '📝'
-              : '🧪'}
-          </span>
-          <div>
-            <p className={`text-xs font-bold uppercase tracking-widest ${
-              isSimple ? 'text-emerald-400' : 'text-emerald-700'
-            }`}>
-              {isSimple ? 'Your move today' : 'Your Next Move'}
-            </p>
-            <p className={`text-xs ${isSimple ? 'text-gray-400' : 'text-emerald-600'}`}>
-              One thing. Free. Do it today.
-            </p>
-          </div>
-          <div className={`ml-auto px-2 py-1 rounded-full text-xs font-medium ${
-            isSimple ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-200 text-emerald-700'
-          }`}>
-            Today
-          </div>
-        </div>
-
-        {/* Action */}
-        <div className="px-6 py-5">
-          <p className={`text-base leading-relaxed font-medium ${
-            isSimple ? 'text-white' : 'text-gray-900'
-          }`}>
-            {result.today_action}
-          </p>
-
-          <div className="mt-4 flex items-center gap-3">
-            {!nextMoveDone ? (
-              <button
-                onClick={async () => {
-                  try {
-                    // Confetti burst
-                    confetti({
-                      particleCount: 100,
-                      spread: 70,
-                      origin: { y: 0.6 },
-                      colors: ['#10B981', '#34D399', '#059669', '#FCD34D']
-                    });
-
-                    if (auth.currentUser && result.today_action) {
-                      await addDoc(collection(db, 'user_actions'), {
-                        userId: auth.currentUser.uid,
-                        actionText: result.today_action,
-                        actionType: 'next_move',
-                        completedAt: new Date().toISOString()
-                      });
-                    } else {
-                      const key = `s2s_next_move_done_${result.trend?.slice(0, 20)}`;
-                      localStorage.setItem(key, 'true');
-                    }
-                  } catch (err) {
-                    console.error('Failed to save action', err);
-                  }
-                  setNextMoveDone(true);
-                }}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-                  isSimple
-                    ? 'bg-emerald-500 text-white hover:bg-emerald-400'
-                    : 'bg-emerald-600 text-white hover:bg-emerald-700'
-                }`}
-              >
-                ✓ I did this
-              </button>
-            ) : (
-              <span className="text-xs text-emerald-600 font-medium">
-                Nice work. Check your dashboard for the full plan. 🚀
-              </span>
-            )}
-          </div>
-        </div>
+    <div className="mx-4 md:mx-0 mb-8 p-5 bg-emerald-50 border-2 border-emerald-200 rounded-2xl">
+      <div className="flex items-center gap-2 mb-3">
+        <span className="text-lg">
+          {result.today_action_type === 'talk' ? '💬'
+            : result.today_action_type === 'research' ? '🔍'
+            : result.today_action_type === 'build' ? '🔨'
+            : result.today_action_type === 'apply' ? '📝'
+            : '🧪'}
+        </span>
+        <span className="text-xs font-bold uppercase tracking-widest text-emerald-700">
+          Your Next Move
+        </span>
+        <span className="ml-auto text-xs px-2 py-0.5 bg-emerald-200 text-emerald-800 rounded-full font-medium">
+          Do this today
+        </span>
       </div>
-    </section>
+      <p className="text-sm font-medium text-gray-900 leading-relaxed mb-4">
+        {result.today_action}
+      </p>
+      <button
+        onClick={async () => {
+          try {
+            confetti({
+              particleCount: 100,
+              spread: 70,
+              origin: { y: 0.6 },
+              colors: ['#10B981', '#34D399', '#059669', '#FCD34D']
+            });
+            if (auth.currentUser && result.today_action) {
+              await addDoc(collection(db, 'user_actions'), {
+                userId: auth.currentUser.uid,
+                actionText: result.today_action,
+                actionType: 'next_move',
+                completedAt: new Date().toISOString()
+              });
+            } else {
+              const key = `s2s_next_move_done_${result.trend?.slice(0, 20)}`;
+              localStorage.setItem(key, 'true');
+            }
+          } catch (err) {
+            console.error('Failed to save action', err);
+          }
+          setNextMoveDone(true);
+        }}
+        className="text-xs px-4 py-2 bg-emerald-600 text-white rounded-lg font-semibold hover:bg-emerald-700 transition-colors"
+      >
+        {nextMoveDone ? '✓ Done!' : '✓ I did this'}
+      </button>
+    </div>
   ) : null;
+  console.log('[NEXT_MOVE_CARD]', 'today_action:', result?.today_action?.slice(0, 40), 'card is null:', nextMoveCard === null);
 
   return (
     <motion.div
