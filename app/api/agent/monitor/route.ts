@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebase-admin';
 import { fetchAllMarkets } from '@/lib/rss-fetcher';
-import { COUNTRY_CONTEXT } from '@/lib/rss-sources';
+import { COUNTRY_CONTEXT, MARKET_KEYWORDS } from '@/lib/rss-sources';
 import { identifyStrongSignals } from '@/lib/signal-analyzer';
 import { Resend } from 'resend';
 
@@ -73,11 +73,21 @@ export async function GET(request: NextRequest) {
         console.log('[AGENT] Market filtered articles:', marketArticles.length);
 
         // Score each article for this user
+        const marketKeywords = MARKET_KEYWORDS[userMarket] ?? [];
+
         const scoredArticles = marketArticles
           .map((article: { title: string; snippet: string; sector: string; market: string; signalScore?: number; url: string; source: string; publishedAt: string }) => {
             let score = article.signalScore ?? 50;
 
             if (userSectors.includes(article.sector)) score += 15;
+
+            // Market keyword relevance boost
+            if (marketKeywords.length > 0) {
+              const text = `${article.title} ${article.snippet}`.toLowerCase();
+              const hits = marketKeywords.filter((k: string) => text.includes(k)).length;
+              const marketScore = hits >= 2 ? 25 : hits === 1 ? 12 : article.market === userMarket ? 0 : -15;
+              score += marketScore;
+            }
 
             if (userCountry) {
               const countryConfig = COUNTRY_CONTEXT[userCountry.toLowerCase()];

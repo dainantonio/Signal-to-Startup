@@ -25,6 +25,14 @@ export const BLOCKED_DOMAINS = [
   'on3.com', 'espn.com', 'si.com',
   'bleacherreport.com', 'theathletic.com',
   'cbssports.com', 'nbcsports.com',
+  'sportingnews.com', 'goal.com',
+  'skysports.com', 'espn.go.com',
+  'covers.com', 'draftkings.com', 'fanduel.com',
+  // Entertainment
+  'tmz.com', 'eonline.com', 'people.com',
+  'usmagazine.com', 'rollingstone.com',
+  'billboard.com', 'hollywoodreporter.com',
+  'variety.com',
   // Low quality / spam / academic (not business-relevant)
   'whatjapanthinks.com',
   'nature.com',
@@ -34,15 +42,39 @@ export const BLOCKED_DOMAINS = [
 // Spam title patterns — SEO bait, scam-review sites
 // ---------------------------------------------------------------------------
 export const SPAM_TITLE_PATTERNS = [
+  // Scam / SEO bait
   'review:', 'scam?', 'facts uncovered',
   'claims vs reality', 'real or fake',
   'legit or scam', 'is it legit',
   'unveiled', 'exposed', 'leaked',
   "you won't believe", 'shocking',
   'vs reality', 'the truth about',
+  // Sports
   'eligibility lawsuit', 'ncaa',
   'college athlete', 'defensive lineman',
   'transfer portal', 'athletic eligibility',
+  'nfl', 'nba', 'mlb', 'nhl', 'fifa',
+  'premier league', 'champions league',
+  'transfer window', 'match preview',
+  'injury update', 'game recap',
+  'fantasy sports', 'betting odds',
+  'sports betting', 'nfl draft',
+  // Entertainment
+  'celebrity', 'kardashian', 'taylor swift',
+  'box office', 'album drops', 'concert',
+  'red carpet', 'grammy', 'oscar',
+  'emmy', 'reality tv', 'dating show',
+  // Crypto noise
+  'price prediction', 'bull run',
+  'to the moon', 'presale', 'meme coin',
+  '100x', 'get rich', 'passive income crypto',
+  'nft drop', 'web3 game',
+  // General noise
+  'horoscope', 'zodiac', 'recipe',
+  'weather', 'traffic', 'obituary',
+  'wedding announcement', 'sports score',
+  'listicle', 'quiz:', 'ranked:',
+  'worst movies', 'best restaurants',
 ];
 
 // ---------------------------------------------------------------------------
@@ -191,3 +223,86 @@ export const COUNTRY_CONTEXT: Record<string, { name: string; flag: string; curre
 export function getCountryConfig(country: string) {
   return COUNTRY_CONTEXT[country.toLowerCase()] ?? null;
 }
+
+// ---------------------------------------------------------------------------
+// Market keyword lists — used for relevance scoring
+// ---------------------------------------------------------------------------
+export const MARKET_KEYWORDS: Record<string, string[]> = {
+  caribbean: [
+    // Jamaica
+    'jamaica', 'jamaican', 'kingston', 'montego bay', 'ocho rios', 'portmore',
+    'spanish town', 'mandeville', 'jps', 'dbj', 'jbdc', 'jmd', 'petrojam',
+    'ncb', 'scotiabank jamaica', 'planning institute', 'pioj',
+    'ministry of finance jamaica',
+    // Trinidad
+    'trinidad', 'tobago', 'port of spain', 'ttd', 'ngc', 'bptt',
+    // Barbados
+    'barbados', 'bridgetown', 'bbd', 'central bank of barbados',
+    // Guyana
+    'guyana', 'georgetown', 'gyd', 'exxon guyana', 'oil guyana',
+    // Regional
+    'caribbean', 'caricom', 'carifta', 'oecs', 'caribbean development bank',
+    'cdb', 'idb caribbean', 'acp', 'west indies', 'antilles',
+    'caribbean sea', 'island nation', 'small island', 'tourism caribbean',
+    'remittance caribbean', 'diaspora caribbean',
+  ],
+  africa: [
+    // Nigeria
+    'nigeria', 'nigerian', 'lagos', 'abuja', 'naira', 'ngn', 'cbn',
+    'access bank', 'gtbank', 'zenith bank', 'flutterwave', 'paystack', 'kuda',
+    'tef', 'tony elumelu', 'dangote', 'nse', 'nigerian stock',
+    // Ghana
+    'ghana', 'ghanaian', 'accra', 'tema', 'cedi', 'ghs', 'bank of ghana',
+    'momo ghana', 'vodafone ghana',
+    // Kenya
+    'kenya', 'kenyan', 'nairobi', 'shilling', 'kes', 'mpesa', 'm-pesa',
+    'safaricom', 'equity bank kenya', 'i-hub', 'silicon savannah',
+    // South Africa
+    'south africa', 'johannesburg', 'cape town', 'rand', 'zar',
+    'jse', 'absa', 'standard bank',
+    // Rwanda
+    'rwanda', 'kigali', 'rwf', 'bank of kigali', 'mtn rwanda',
+    // Ethiopia
+    'ethiopia', 'addis ababa', 'birr', 'commercial bank ethiopia',
+    // Regional
+    'africa', 'african', 'sub-saharan', 'west africa', 'east africa',
+    'southern africa', 'afcfta', 'african union', 'au summit',
+    'afdb', 'african development bank', 'mastercard foundation',
+    'mobile money africa', 'fintech africa', 'startup africa', 'tech africa',
+    'agritech africa', 'healthtech africa',
+  ],
+  uk: [
+    // UK specific
+    'united kingdom', 'uk', 'britain', 'british', 'england', 'scotland',
+    'wales', 'northern ireland', 'london', 'manchester', 'birmingham',
+    'leeds', 'bristol', 'glasgow', 'gbp', 'pound sterling',
+    'bank of england', 'hmrc', 'companies house', 'fca',
+    'innovate uk', 'british business bank', 'startup loans uk',
+    'prince trust', 'enterprise nation',
+    // EU relevance
+    'europe', 'european', 'eu', 'eurozone', 'ecb',
+  ],
+  latam: [
+    // Mexico
+    'mexico', 'mexican', 'ciudad de mexico', 'cdmx', 'guadalajara',
+    'monterrey', 'peso mexicano', 'mxn', 'banxico',
+    'innpulsa mexico', 'nacional financiera',
+    // Brazil
+    'brazil', 'brazilian', 'sao paulo', 'rio de janeiro', 'brasilia',
+    'real', 'brl', 'banco do brasil', 'bndes', 'sebrae', 'fintechs brasil',
+    // Colombia
+    'colombia', 'colombian', 'bogota', 'medellin', 'cali', 'cop',
+    'bancolombia', 'innpulsa colombia',
+    // Argentina
+    'argentina', 'buenos aires', 'ars', 'bcra', 'mercadolibre',
+    // Chile
+    'chile', 'santiago', 'clp', 'corfo', 'startup chile',
+    // Peru
+    'peru', 'lima', 'sol', 'pen',
+    // Regional
+    'latin america', 'latam', 'latinoamerica', 'idb',
+    'inter-american development', 'caf development bank',
+    'latin american startup', 'fintech latam', 'ecommerce latam',
+  ],
+  global: [], // no keyword filter for global
+};

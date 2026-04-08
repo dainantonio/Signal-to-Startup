@@ -1,5 +1,5 @@
 import { XMLParser } from 'fast-xml-parser';
-import { RSS_SOURCES, BLOCKED_DOMAINS, SPAM_TITLE_PATTERNS } from './rss-sources';
+import { RSS_SOURCES, BLOCKED_DOMAINS, SPAM_TITLE_PATTERNS, MARKET_KEYWORDS } from './rss-sources';
 import { cleanText } from './text-cleaner';
 import type { SectorKey } from '@/components/types';
 
@@ -272,11 +272,44 @@ async function fetchOneFeed(source: typeof RSS_SOURCES[0]): Promise<RSSFeedItem[
 }
 
 // ---------------------------------------------------------------------------
+// Market relevance scoring
+// ---------------------------------------------------------------------------
+
+const BUSINESS_REQUIRED = [
+  'business', 'startup', 'entrepreneur', 'market', 'invest', 'fund',
+  'revenue', 'growth', 'launch', 'compan', 'industr', 'econom', 'polic',
+  'innovat', 'grant', 'loan', 'capital', 'venture', 'found', 'product',
+  'service', 'consumer', 'demand', 'opportun', 'trade', 'employ', 'tech',
+  'digital', 'mobile', 'platform', 'sector', 'reform', 'develop', 'agri',
+  'tourism', 'remit', 'financ', 'bank', 'insur', 'retail', 'export', 'import',
+];
+
+function scoreForMarket(item: RSSFeedItem, market: string): number {
+  if (market === 'global') return item.signalScore ?? 50;
+
+  const keywords = MARKET_KEYWORDS[market] ?? [];
+  if (keywords.length === 0) return item.signalScore ?? 50;
+
+  const text = (
+    (item.title ?? '') + ' ' + (item.snippet ?? '') + ' ' + (item.source ?? '')
+  ).toLowerCase();
+
+  const hits = keywords.filter(k => text.includes(k.toLowerCase())).length;
+  const base = item.signalScore ?? 50;
+
+  if (hits >= 3) return Math.min(base + 30, 99);
+  if (hits >= 2) return Math.min(base + 20, 99);
+  if (hits === 1) return Math.min(base + 10, 99);
+  if (item.market === market) return base;          // local source, no keyword match
+  return Math.max(base - 20, 10);                   // global article, no relevance
+}
+
+// ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
 
 export async function fetchRSSFeeds(options: FetchRSSOptions): Promise<FetchRSSResult> {
-  const { market, sectors, recency, countryTags = [] } = options;
+  const { market, sectors, recency } = options;
 
   // Market isolation: requested market + global sources only
   const sourcesToFetch = RSS_SOURCES.filter(
@@ -310,45 +343,48 @@ export async function fetchRSSFeeds(options: FetchRSSOptions): Promise<FetchRSSR
     return !SPAM_TITLE_PATTERNS.some(p => title.includes(p));
   });
 
-  // 3. Business relevance — must have at least one keyword
-  allItems = allItems.filter(item => {
-    const text = `${item.title} ${item.snippet}`.toLowerCase();
-    return BUSINESS_KEYWORDS.some(k => text.includes(k));
-  });
-
-  // 4. Recency window
+  // 3. Recency window
   allItems = allItems.filter(item => {
     try { return new Date(item.publishedAt) >= cutoff; } catch { return false; }
   });
 
-  // 4.5. STRICT GEOGRAPHIC FILTERING
-  // If the user provided specific country tags AND they are NOT looking purely for "global" US trends,
-  // we force "global" sources to actually mention their local country/region to prevent US drift.
-  if (countryTags.length > 0 && market !== 'global') {
-    const geoKeywords = Array.from(new Set([
-      ...countryTags.map(t => t.toLowerCase()),
-      market.toLowerCase()
-    ]));
-    
-    allItems = allItems.filter(item => {
-      // If the source is inherently local (e.g., Vanguard Nigeria), let it through.
-      if (item.market === market && item.market !== 'global') return true;
-      
-      // If the source is global (TechCrunch), it MUST explicitly mention the target region or country.
-      const text = `${item.title} ${item.snippet}`.toLowerCase();
-      return geoKeywords.some(kw => text.includes(kw));
-    });
-  }
-
-  // 5. Deduplicate
+  // 4. Deduplicate
   const { deduped, removed: dedupRemoved } = deduplicateArticles(allItems);
 
-  // 6. Sort by signalScore descending, cap at 30
-  const sorted = deduped
-    .sort((a, b) => (b.signalScore ?? 0) - (a.signalScore ?? 0))
-    .slice(0, 30);
+  // 5. Apply market relevance scoring
+  let items: RSSFeedItem[] = deduped.map(item => ({
+    ...item,
+    signalScore: Math.min(scoreForMarket(item, market), 99),
+    isLocalSource: item.market === market,
+  }));
 
-  return { items: sorted, duplicatesRemoved: dedupRemoved };
+  // 6. Market isolation: for non-global modes keep local articles first,
+  //    then global with score >= 60, and drop articles from other markets
+  //    unless they score >= 85
+  if (market !== 'global') {
+    const localItems       = items.filter(i => i.market === market);
+    const relevantGlobal   = items.filter(i => i.market === 'global' && (i.signalScore ?? 0) >= 60);
+    const highRelevantOther = items.filter(
+      i => i.market !== market && i.market !== 'global' && (i.signalScore ?? 0) >= 85
+    );
+    items = [...localItems, ...relevantGlobal, ...highRelevantOther];
+  }
+
+  // 7. Minimum quality gate — remove very short snippets / titles
+  items = items.filter(i => (i.snippet?.length ?? 0) >= 80);
+  items = items.filter(i => (i.title?.length ?? 0) >= 25);
+
+  // 8. Business relevance — must contain at least one stem
+  items = items.filter(item => {
+    const text = ((item.title ?? '') + ' ' + (item.snippet ?? '')).toLowerCase();
+    return BUSINESS_REQUIRED.some(k => text.includes(k));
+  });
+
+  // 9. Sort by score and cap at 40
+  items.sort((a, b) => (b.signalScore ?? 0) - (a.signalScore ?? 0));
+  items = items.slice(0, 40);
+
+  return { items, duplicatesRemoved: dedupRemoved };
 }
 
 // Convenience: fetch all markets at once (used by the monitor agent)
