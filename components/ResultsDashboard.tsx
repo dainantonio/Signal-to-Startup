@@ -139,7 +139,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
 
   // ── Your Next Move card ──────────────────────────────────────────────────
   const nextMoveCard = result.today_action ? (
-    <div className="mx-4 md:mx-0 mb-8 p-5 bg-emerald-50 border-2 border-emerald-200 rounded-2xl">
+    <div style={{ border: '3px solid red' }} className="mx-4 md:mx-0 mb-8 p-5 bg-emerald-50 border-2 border-emerald-200 rounded-2xl">
       <div className="flex items-center gap-2 mb-3">
         <span className="text-lg">
           {result.today_action_type === 'talk' ? '💬'
@@ -286,6 +286,10 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
             </div>
           )}
 
+          {/* Your Next Move — before Intelligence Briefing */}
+          {console.log('[RENDER] placing nextMoveCard, value:', nextMoveCard !== null) as unknown as null}
+          {nextMoveCard}
+
           {/* Intelligence Briefing */}
           <section id="step-2" className="scroll-mt-24">
             {/* AI Verdict Banner */}
@@ -411,9 +415,6 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
               </div>
             </div>
           </section>
-
-          {/* Your Next Move — after briefing, before opportunities */}
-          {nextMoveCard}
 
           {/* Opportunity Matrix */}
           <section id="step-3" className="scroll-mt-24">
