@@ -1,6 +1,6 @@
 {
   "name": "Signal to Startup",
-  "short_name": "SignalOS",
+  "short_name": "S2S",
   "description": "Turn market signals into startup opportunities",
   "start_url": "/",
   "display": "standalone",
