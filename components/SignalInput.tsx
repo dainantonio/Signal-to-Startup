@@ -851,47 +851,51 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                                 Analyze
                               </button>
 
-                              {/* Watch button */}
-                              <div className="relative">
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setShowWatchMenu(showWatchMenu === sig.url ? null : sig.url);
-                                  }}
-                                  className={`flex items-center gap-1 px-3 py-2.5 rounded-xl border text-xs font-medium transition-all ${
-                                    watching === sig.url
-                                      ? 'bg-amber-500 text-white border-amber-500'
-                                      : 'border-gray-200 text-gray-500 hover:border-amber-400 hover:text-amber-600'
-                                  }`}
-                                  title="Watch this signal"
-                                >
-                                  {watching === sig.url ? '👁 Added' : '👁 W'}
-                                </button>
-
-                                {/* Duration picker */}
-                                {showWatchMenu === sig.url && (
-                                  <div className="absolute bottom-full right-0 mb-2 w-44 bg-white border border-gray-200 rounded-xl shadow-xl p-2 z-50">
-                                    <p className="text-xs font-semibold text-gray-600 px-2 py-1.5">Watch for how long?</p>
-                                    {[3, 5, 7, 14].map(days => (
-                                      <button
-                                        key={days}
-                                        type="button"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          addToWatchlist(sig, days);
-                                        }}
-                                        className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-amber-50 hover:text-amber-700 rounded-lg transition-colors flex items-center justify-between"
-                                      >
-                                        <span>{days} days</span>
-                                        {days === 7 && (
-                                          <span className="text-amber-500 text-xs">recommended</span>
-                                        )}
-                                      </button>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
+                              {/* Watch button — inline, no state dependency */}
+                              <button
+                                type="button"
+                                style={{
+                                  padding: '8px 12px',
+                                  borderRadius: '12px',
+                                  border: '1px solid #e5e7eb',
+                                  fontSize: '12px',
+                                  fontWeight: 500,
+                                  color: '#6b7280',
+                                  background: 'white',
+                                  cursor: 'pointer',
+                                  flexShrink: 0,
+                                }}
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  const { auth: fbAuth, db: fbDb, addDoc: fbAdd, collection: fbCol } = await import('@/firebase');
+                                  if (!fbAuth.currentUser) {
+                                    alert('Sign in to use watchlist');
+                                    return;
+                                  }
+                                  const exp = new Date();
+                                  exp.setDate(exp.getDate() + 7);
+                                  await fbAdd(fbCol(fbDb, 'signal_watchlist'), {
+                                    userId: fbAuth.currentUser.uid,
+                                    seedSignal: {
+                                      title: sig.title,
+                                      snippet: sig.snippet || '',
+                                      url: sig.url,
+                                      source: sig.source,
+                                      sector: sig.sector,
+                                      signalScore: sig.signalScore || 50,
+                                    },
+                                    watchDays: 7,
+                                    expiresAt: exp.toISOString(),
+                                    createdAt: new Date().toISOString(),
+                                    status: 'active',
+                                    matchedSignals: [],
+                                    convergenceScore: 0,
+                                  });
+                                  alert('Added to watchlist for 7 days!');
+                                }}
+                              >
+                                👁 Watch
+                              </button>
                             </div>
                           )}
                         </div>
