@@ -7,6 +7,7 @@ import { MarketMode, FeedSignal, SectorKey, RecencyFilter, FeedFilters, SECTOR_C
 import { LOADING_STAGE_LABELS } from './agent/useAgentAnalysis';
 import { MarketModeSelector } from './MarketModeSelector';
 import { COUNTRY_CONTEXT } from '@/lib/rss-sources';
+import { auth, db, collection, addDoc } from '@/firebase';
 
 const capitalize = (s: string) => s.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 
@@ -106,6 +107,40 @@ export const SignalInput: React.FC<SignalInputProps> = ({
   const [showFilterDrawer, setShowFilterDrawer] = useState(false);
   const [multiSelectMode, setMultiSelectMode] = useState(false);
   const [selectedArticles, setSelectedArticles] = useState<FeedSignal[]>([]);
+
+  // Watchlist state
+  const [watching, setWatching] = useState<string | null>(null);
+  const [watchDays, setWatchDays] = useState(7);
+  const [showWatchMenu, setShowWatchMenu] = useState<string | null>(null);
+
+  const addToWatchlist = async (article: FeedSignal, days: number) => {
+    if (!auth.currentUser) return;
+    try {
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + days);
+      await addDoc(collection(db, 'signal_watchlist'), {
+        userId: auth.currentUser.uid,
+        seedSignal: {
+          title: article.title,
+          snippet: article.snippet || '',
+          url: article.url,
+          source: article.source,
+          sector: article.sector,
+          signalScore: article.signalScore || 50,
+        },
+        watchDays: days,
+        expiresAt: expiresAt.toISOString(),
+        createdAt: new Date().toISOString(),
+        status: 'active',
+        matchedSignals: [],
+        convergenceScore: 0,
+      });
+      setWatching(article.url);
+      setTimeout(() => setWatching(null), 3000);
+    } catch (err) {
+      console.error('Watch failed:', err);
+    }
+  };
   const [filters, setFilters] = useState<FeedFilters>(() => {
     try {
       const saved = localStorage.getItem('userPreferences');
@@ -790,18 +825,62 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                           <p className="text-sm font-semibold leading-snug line-clamp-2">{sig.title}</p>
                           {/* Snippet */}
                           <p className="text-xs text-muted leading-relaxed line-clamp-2 flex-1">{sig.snippet}</p>
-                          {/* Analyze button */}
+                          {/* Analyze + Watch buttons */}
                           {!multiSelectMode && (
-                            <button
-                              type="button"
-                              onClick={() => onAnalyzeSignal(sig)}
-                              disabled={!!analyzingUrl}
-                              aria-label={`Analyze: ${sig.title}`}
-                              className="w-full flex items-center justify-center gap-2 py-2.5 bg-foreground text-background rounded-xl font-mono text-[10px] uppercase tracking-widest hover:bg-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                            >
-                              <Zap className="w-3.5 h-3.5 fill-current" />
-                              Analyze signal
-                            </button>
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => onAnalyzeSignal(sig)}
+                                disabled={!!analyzingUrl}
+                                aria-label={`Analyze: ${sig.title}`}
+                                className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-foreground text-background rounded-xl font-mono text-[10px] uppercase tracking-widest hover:bg-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                              >
+                                <Zap className="w-3.5 h-3.5 fill-current" />
+                                Analyze
+                              </button>
+
+                              {/* Watch button */}
+                              <div className="relative">
+                                <button
+                                  type="button"
+                                  onClick={() => setShowWatchMenu(
+                                    showWatchMenu === sig.url ? null : sig.url
+                                  )}
+                                  className={`flex items-center gap-1 px-3 py-2.5 rounded-xl border text-[10px] font-mono uppercase tracking-widest transition-all ${
+                                    watching === sig.url
+                                      ? 'bg-amber-500 text-white border-amber-500'
+                                      : 'border-gray-200 text-gray-500 hover:border-amber-400 hover:text-amber-600'
+                                  }`}
+                                  title="Watch this signal"
+                                >
+                                  {watching === sig.url ? '👁 On' : '👁'}
+                                </button>
+
+                                {/* Duration picker */}
+                                {showWatchMenu === sig.url && (
+                                  <div className="absolute bottom-full right-0 mb-2 bg-white border border-gray-200 rounded-xl shadow-lg p-3 z-50 min-w-[160px]">
+                                    <p className="text-xs font-semibold text-gray-700 mb-2">Watch for how long?</p>
+                                    {[3, 5, 7, 14].map(days => (
+                                      <button
+                                        key={days}
+                                        type="button"
+                                        onClick={() => {
+                                          setWatchDays(days);
+                                          setShowWatchMenu(null);
+                                          addToWatchlist(sig, days);
+                                        }}
+                                        className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 rounded-lg transition-colors flex items-center justify-between"
+                                      >
+                                        <span>{days} days</span>
+                                        {days === 7 && (
+                                          <span className="text-[10px] text-amber-500 font-medium">recommended</span>
+                                        )}
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
                           )}
                         </div>
                       )}

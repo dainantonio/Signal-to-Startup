@@ -76,7 +76,9 @@ export default function DashboardPage() {
   const [agentSignals, setAgentSignals] = useState<AgentSignal[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
-  const [dashboardTab, setDashboardTab] = useState<'opportunities' | 'validations' | 'articles' | 'signals' | 'archive'>('opportunities');
+  const [dashboardTab, setDashboardTab] = useState<'opportunities' | 'validations' | 'articles' | 'signals' | 'watchlist' | 'archive'>('opportunities');
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [watchlist, setWatchlist] = useState<any[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkProcessing, setBulkProcessing] = useState(false);
 
@@ -86,12 +88,27 @@ export default function DashboardPage() {
       setUser(user);
       if (user) {
         loadSavedOpportunities(user.uid);
+        loadWatchlist(user.uid);
       } else {
         setLoading(false);
       }
     });
     return () => unsubscribe();
   }, []);
+
+  const loadWatchlist = async (uid: string) => {
+    try {
+      const snap = await getDocs(query(
+        collection(db, 'signal_watchlist'),
+        where('userId', '==', uid),
+        orderBy('createdAt', 'desc'),
+        limit(20)
+      ));
+      setWatchlist(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    } catch (err) {
+      console.error('[DASHBOARD] Failed to load watchlist:', err);
+    }
+  };
 
   const loadSavedOpportunities = async (uid: string) => {
     try {
@@ -133,7 +150,8 @@ export default function DashboardPage() {
         validations: 'idea_validations',
         articles: 'saved_articles',
         signals: 'agent_signals',
-        archive: '' // Archive tab won't have own collection
+        watchlist: 'signal_watchlist',
+        archive: '',
       };
 
       const ids = Array.from(selectedIds);
@@ -175,7 +193,8 @@ export default function DashboardPage() {
         validations: 'idea_validations',
         articles: 'saved_articles',
         signals: 'agent_signals',
-        archive: ''
+        watchlist: 'signal_watchlist',
+        archive: '',
       };
 
       const ids = Array.from(selectedIds);
@@ -230,6 +249,7 @@ export default function DashboardPage() {
       case 'validations': return validations.filter(v => !v.archived);
       case 'articles': return savedArticles.filter(a => !a.archived);
       case 'signals': return agentSignals.filter(s => !s.archived);
+      case 'watchlist': return watchlist;
       case 'archive': return [
         ...savedOpportunities.filter(o => o.archived),
         ...validations.filter(v => v.archived),
@@ -341,6 +361,7 @@ export default function DashboardPage() {
             ['validations', '💡 Validations'],
             ['articles', '🔖 Saved Articles'],
             ['signals', `🤖 Agent Signals${agentSignals.filter(s => !s.read && !s.archived).length > 0 ? ` (${agentSignals.filter(s => !s.read && !s.archived).length})` : ''}`],
+            ['watchlist', `👁 Watchlist${watchlist.filter(w => w.status === 'triggered').length > 0 ? ` 🔥` : ''}`],
             ['archive', '📦 Archive'],
           ] as const).map(([tab, label]) => (
             <button
@@ -511,6 +532,125 @@ export default function DashboardPage() {
               }
             }}
           />
+        ) : dashboardTab === 'watchlist' ? (
+          <div className="space-y-4">
+            {watchlist.length === 0 ? (
+              <div className="text-center py-16 space-y-3">
+                <div className="text-4xl">👁</div>
+                <p className="text-base font-medium text-gray-700">No active watchlists</p>
+                <p className="text-sm text-gray-500 max-w-xs mx-auto">
+                  Click the Watch button on any feed signal to track it. We&apos;ll alert you when new signals strengthen your thesis.
+                </p>
+              </div>
+            ) : (
+              watchlist.map((watch) => {
+                const isExpired  = watch.status === 'expired';
+                const isTriggered = watch.status === 'triggered';
+                const daysLeft = Math.max(0, Math.ceil(
+                  (new Date(watch.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+                ));
+
+                return (
+                  <div
+                    key={watch.id}
+                    className={`p-4 rounded-xl border-2 transition-all ${
+                      isTriggered
+                        ? 'border-amber-300 bg-amber-50'
+                        : isExpired
+                        ? 'border-gray-100 bg-gray-50 opacity-60'
+                        : 'border-gray-200 bg-white'
+                    }`}
+                  >
+                    {/* Status badge */}
+                    <div className="flex items-center justify-between mb-3">
+                      <span className={`text-xs font-bold px-2 py-1 rounded-full uppercase tracking-wide ${
+                        isTriggered
+                          ? 'bg-amber-200 text-amber-800'
+                          : isExpired
+                          ? 'bg-gray-200 text-gray-600'
+                          : 'bg-green-100 text-green-700'
+                      }`}>
+                        {isTriggered ? '🔥 Signals converging' : isExpired ? 'Expired' : `👁 Watching · ${daysLeft}d left`}
+                      </span>
+                      {watch.convergenceScore > 0 && (
+                        <span className="text-sm font-bold text-amber-600">
+                          {watch.convergenceScore}% convergence
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Seed signal */}
+                    <p className="text-sm font-semibold text-gray-900 leading-snug mb-1">
+                      {watch.seedSignal?.title}
+                    </p>
+                    <p className="text-xs text-gray-500 mb-3">
+                      {watch.seedSignal?.source} · Watching since{' '}
+                      {new Date(watch.createdAt).toLocaleDateString()}
+                    </p>
+
+                    {/* Matched signals */}
+                    {watch.matchedSignals?.length > 0 && (
+                      <div className="space-y-2 mb-3">
+                        <p className="text-xs font-semibold text-gray-600">
+                          {watch.matchedSignals.length} supporting signal{watch.matchedSignals.length > 1 ? 's' : ''}:
+                        </p>
+                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                        {watch.matchedSignals.slice(0, 3).map((match: any, i: number) => (
+                          <div key={i} className="flex items-start gap-2 p-2 bg-white rounded-lg border border-gray-100">
+                            <span className="text-xs font-bold text-amber-600 flex-shrink-0 mt-0.5">
+                              {match.matchScore}%
+                            </span>
+                            <p className="text-xs text-gray-700 leading-snug">{match.title}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Actions */}
+                    <div className="flex gap-2">
+                      {watch.matchedSignals?.length >= 1 && (
+                        <button
+                          onClick={() => {
+                            const articles = [
+                              {
+                                title: watch.seedSignal.title,
+                                snippet: watch.seedSignal.snippet,
+                                source: watch.seedSignal.source,
+                                url: watch.seedSignal.url,
+                                sector: watch.seedSignal.sector,
+                              },
+                              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                              ...watch.matchedSignals.slice(0, 4).map((m: any) => ({
+                                title: m.title,
+                                snippet: m.snippet,
+                                source: m.source,
+                                url: m.url,
+                                sector: watch.seedSignal.sector,
+                              })),
+                            ];
+                            sessionStorage.setItem('compoundArticles', JSON.stringify(articles));
+                            router.push('/');
+                          }}
+                          className="flex-1 py-2 bg-black text-white rounded-xl text-xs font-semibold hover:bg-gray-900 transition-colors"
+                        >
+                          ⚡ Run compound analysis
+                        </button>
+                      )}
+                      <button
+                        onClick={async () => {
+                          await updateDoc(doc(db, 'signal_watchlist', watch.id), { status: 'expired' });
+                          loadWatchlist(user!.uid);
+                        }}
+                        className="px-3 py-2 border border-gray-200 rounded-xl text-xs text-gray-500 hover:border-gray-400 transition-colors"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
         ) : dashboardTab === 'archive' ? (
           <div className="space-y-12">
             <div className="bg-gray-50 border border-border/10 p-6 rounded-2xl">

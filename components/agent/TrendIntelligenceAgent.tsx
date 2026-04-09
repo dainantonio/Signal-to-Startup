@@ -225,6 +225,23 @@ export default function TrendIntelligenceAgent() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
+  // Compound analysis triggered from Watchlist dashboard tab
+  React.useEffect(() => {
+    if (!user) return;
+    const stored = sessionStorage.getItem('compoundArticles');
+    if (!stored) return;
+    try {
+      sessionStorage.removeItem('compoundArticles');
+      const articles = JSON.parse(stored);
+      if (Array.isArray(articles) && articles.length >= 2) {
+        analysis.analyzeCompoundSignal(articles);
+      }
+    } catch (err) {
+      console.error('[AGENT] Compound from watchlist failed:', err);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
   // Pick up shared article from /share page and auto-analyze
   React.useEffect(() => {
     try {

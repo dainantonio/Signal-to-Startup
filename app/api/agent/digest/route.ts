@@ -74,7 +74,16 @@ export async function GET(request: NextRequest) {
 
         console.log('[DIGEST] Signals for user:', signalsSnapshot.size);
 
-        if (signalsSnapshot.empty) continue;
+        // Get triggered watchlists for this user
+        const watchlistSnap = await db
+          .collection('signal_watchlist')
+          .where('userId', '==', userId)
+          .where('status', '==', 'triggered')
+          .get();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const triggeredWatches: any[] = watchlistSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+        if (signalsSnapshot.empty && triggeredWatches.length === 0) continue;
 
         const signals = signalsSnapshot.docs.map(d => d.data());
 
@@ -207,6 +216,28 @@ export async function GET(request: NextRequest) {
         <p style="margin:0;font-size:15px;color:#111;line-height:1.5;font-weight:500;">
           ${signals[0].todayAction}
         </p>
+      </div>
+      ` : ''}
+
+      ${triggeredWatches.length > 0 ? `
+      <div style="margin:24px 0;padding:20px;background:#fffbeb;border-radius:12px;border:2px solid #fbbf24;">
+        <p style="margin:0 0 12px;font-size:13px;font-weight:700;color:#92400e;">
+          🔥 Your watchlist is heating up
+        </p>
+        ${triggeredWatches.map((w) => `
+          <div style="margin-bottom:12px;padding:12px;background:white;border-radius:8px;">
+            <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:#111;">
+              ${String(w.seedSignal?.title || '').substring(0, 80)}
+            </p>
+            <p style="margin:0 0 8px;font-size:12px;color:#666;">
+              ${w.matchedSignals?.length || 0} supporting signal${(w.matchedSignals?.length || 0) > 1 ? 's' : ''} · ${w.convergenceScore}% convergence
+            </p>
+            <a href="${APP_URL}/dashboard?tab=watchlist"
+              style="font-size:12px;font-weight:600;color:#d97706;text-decoration:none;">
+              Run compound analysis →
+            </a>
+          </div>
+        `).join('')}
       </div>
       ` : ''}
 

@@ -5,6 +5,10 @@
       "schedule": "0 7 * * *"
     },
     {
+      "path": "/api/agent/watcher",
+      "schedule": "0 8 * * *"
+    },
+    {
       "path": "/api/agent/scout",
       "schedule": "0 8 * * *"
     },
