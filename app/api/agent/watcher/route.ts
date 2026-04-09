@@ -16,6 +16,7 @@ export async function GET(request: NextRequest) {
   console.log('[WATCHER] NODE_ENV:', process.env.NODE_ENV);
   console.log('[WATCHER] Auth header received:', !!authHeader);
   console.log('[WATCHER] CRON_SECRET present:', !!process.env.CRON_SECRET);
+  console.log('[WATCHER] Secret first 4 chars:', process.env.CRON_SECRET?.slice(0, 4));
   console.log('[WATCHER] Auth match:', authHeader === expectedAuth);
 
   if (
