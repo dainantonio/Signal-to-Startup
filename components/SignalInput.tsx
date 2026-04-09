@@ -8,6 +8,7 @@ import { LOADING_STAGE_LABELS } from './agent/useAgentAnalysis';
 import { MarketModeSelector } from './MarketModeSelector';
 import { COUNTRY_CONTEXT } from '@/lib/rss-sources';
 import { auth, db, collection, addDoc } from '@/firebase';
+import WatchButton from './WatchButton';
 
 const capitalize = (s: string) => s.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 
@@ -851,51 +852,7 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                                 Analyze 🔥
                               </button>
 
-                              {/* Watch button — inline, no state dependency */}
-                              <button
-                                type="button"
-                                style={{
-                                  padding: '8px 12px',
-                                  borderRadius: '12px',
-                                  border: '1px solid #e5e7eb',
-                                  fontSize: '12px',
-                                  fontWeight: 500,
-                                  color: '#6b7280',
-                                  background: 'white',
-                                  cursor: 'pointer',
-                                  flexShrink: 0,
-                                }}
-                                onClick={async (e) => {
-                                  e.stopPropagation();
-                                  const { auth: fbAuth, db: fbDb, addDoc: fbAdd, collection: fbCol } = await import('@/firebase');
-                                  if (!fbAuth.currentUser) {
-                                    alert('Sign in to use watchlist');
-                                    return;
-                                  }
-                                  const exp = new Date();
-                                  exp.setDate(exp.getDate() + 7);
-                                  await fbAdd(fbCol(fbDb, 'signal_watchlist'), {
-                                    userId: fbAuth.currentUser.uid,
-                                    seedSignal: {
-                                      title: sig.title,
-                                      snippet: sig.snippet || '',
-                                      url: sig.url,
-                                      source: sig.source,
-                                      sector: sig.sector,
-                                      signalScore: sig.signalScore || 50,
-                                    },
-                                    watchDays: 7,
-                                    expiresAt: exp.toISOString(),
-                                    createdAt: new Date().toISOString(),
-                                    status: 'active',
-                                    matchedSignals: [],
-                                    convergenceScore: 0,
-                                  });
-                                  alert('Added to watchlist for 7 days!');
-                                }}
-                              >
-                                👁 Watch
-                              </button>
+                              <WatchButton article={sig} />
                             </div>
                           )}
                         </div>

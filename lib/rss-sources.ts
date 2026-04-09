@@ -82,6 +82,17 @@ export const SPAM_TITLE_PATTERNS = [
   'wedding announcement', 'sports score',
   'listicle', 'quiz:', 'ranked:',
   'worst movies', 'best restaurants',
+  // Consumer deals / shopping noise
+  'best deals', 'deals available',
+  'right now', 'sale ends', 'discount',
+  'coupon', 'promo code', 'buy now',
+  'limited time', 'cheap', 'affordable',
+  'budget', 'under $', 'save money',
+  'best buy', 'shopping guide',
+  'gift guide', 'holiday deals',
+  'black friday', 'cyber monday',
+  'prime day', 'best apple',
+  'best samsung', 'best iphone',
 ];
 
 // ---------------------------------------------------------------------------
