@@ -110,11 +110,21 @@ export const SignalInput: React.FC<SignalInputProps> = ({
 
   // Watchlist state
   const [watching, setWatching] = useState<string | null>(null);
-  const [watchDays, setWatchDays] = useState(7);
   const [showWatchMenu, setShowWatchMenu] = useState<string | null>(null);
 
+  // Close watch menu on outside click
+  useEffect(() => {
+    if (!showWatchMenu) return;
+    const handleClickOutside = () => setShowWatchMenu(null);
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [showWatchMenu]);
+
   const addToWatchlist = async (article: FeedSignal, days: number) => {
-    if (!auth.currentUser) return;
+    if (!auth.currentUser) {
+      alert('Sign in to use watchlist');
+      return;
+    }
     try {
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + days);
@@ -136,6 +146,7 @@ export const SignalInput: React.FC<SignalInputProps> = ({
         convergenceScore: 0,
       });
       setWatching(article.url);
+      setShowWatchMenu(null);
       setTimeout(() => setWatching(null), 3000);
     } catch (err) {
       console.error('Watch failed:', err);
@@ -843,37 +854,37 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                               <div className="relative">
                                 <button
                                   type="button"
-                                  onClick={() => setShowWatchMenu(
-                                    showWatchMenu === sig.url ? null : sig.url
-                                  )}
-                                  className={`flex items-center gap-1 px-3 py-2.5 rounded-xl border text-[10px] font-mono uppercase tracking-widest transition-all ${
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setShowWatchMenu(showWatchMenu === sig.url ? null : sig.url);
+                                  }}
+                                  className={`flex items-center gap-1 px-3 py-2.5 rounded-xl border text-xs font-medium transition-all ${
                                     watching === sig.url
                                       ? 'bg-amber-500 text-white border-amber-500'
                                       : 'border-gray-200 text-gray-500 hover:border-amber-400 hover:text-amber-600'
                                   }`}
                                   title="Watch this signal"
                                 >
-                                  {watching === sig.url ? '👁 On' : '👁'}
+                                  {watching === sig.url ? '👁 Added' : '👁'}
                                 </button>
 
                                 {/* Duration picker */}
                                 {showWatchMenu === sig.url && (
-                                  <div className="absolute bottom-full right-0 mb-2 bg-white border border-gray-200 rounded-xl shadow-lg p-3 z-50 min-w-[160px]">
-                                    <p className="text-xs font-semibold text-gray-700 mb-2">Watch for how long?</p>
+                                  <div className="absolute bottom-full right-0 mb-2 w-44 bg-white border border-gray-200 rounded-xl shadow-xl p-2 z-50">
+                                    <p className="text-xs font-semibold text-gray-600 px-2 py-1.5">Watch for how long?</p>
                                     {[3, 5, 7, 14].map(days => (
                                       <button
                                         key={days}
                                         type="button"
-                                        onClick={() => {
-                                          setWatchDays(days);
-                                          setShowWatchMenu(null);
+                                        onClick={(e) => {
+                                          e.stopPropagation();
                                           addToWatchlist(sig, days);
                                         }}
-                                        className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 rounded-lg transition-colors flex items-center justify-between"
+                                        className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-amber-50 hover:text-amber-700 rounded-lg transition-colors flex items-center justify-between"
                                       >
                                         <span>{days} days</span>
                                         {days === 7 && (
-                                          <span className="text-[10px] text-amber-500 font-medium">recommended</span>
+                                          <span className="text-amber-500 text-xs">recommended</span>
                                         )}
                                       </button>
                                     ))}

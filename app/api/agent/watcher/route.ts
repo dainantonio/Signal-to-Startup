@@ -11,10 +11,18 @@ const STOP_WORDS = [
 
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get('authorization');
+  const expectedAuth = `Bearer ${process.env.CRON_SECRET}`;
+
+  console.log('[WATCHER] NODE_ENV:', process.env.NODE_ENV);
+  console.log('[WATCHER] Auth header received:', !!authHeader);
+  console.log('[WATCHER] CRON_SECRET present:', !!process.env.CRON_SECRET);
+  console.log('[WATCHER] Auth match:', authHeader === expectedAuth);
+
   if (
     process.env.NODE_ENV === 'production' &&
-    authHeader !== `Bearer ${process.env.CRON_SECRET}`
+    authHeader !== expectedAuth
   ) {
+    console.log('[WATCHER] Unauthorized - rejecting');
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
