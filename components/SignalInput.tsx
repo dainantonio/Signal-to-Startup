@@ -8,7 +8,6 @@ import { LOADING_STAGE_LABELS } from './agent/useAgentAnalysis';
 import { MarketModeSelector } from './MarketModeSelector';
 import { COUNTRY_CONTEXT } from '@/lib/rss-sources';
 import { auth, db, collection, addDoc } from '@/firebase';
-import WatchButton from './WatchButton';
 
 const capitalize = (s: string) => s.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 
@@ -852,7 +851,24 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                                 Analyze 🔥
                               </button>
 
-                              <WatchButton article={sig} />
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); addToWatchlist(sig, 7); }}
+                                style={{
+                                  padding: '10px 14px',
+                                  background: watching === sig.url ? '#f59e0b' : 'white',
+                                  color: watching === sig.url ? 'white' : '#92400e',
+                                  border: '2px solid #fbbf24',
+                                  borderRadius: '12px',
+                                  fontSize: '13px',
+                                  fontWeight: 600,
+                                  cursor: 'pointer',
+                                  whiteSpace: 'nowrap',
+                                  flexShrink: 0,
+                                }}
+                              >
+                                {watching === sig.url ? '👁 Added' : '👁 Watch'}
+                              </button>
                             </div>
                           )}
                         </div>
