@@ -837,6 +837,7 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                           {/* Snippet */}
                           <p className="text-xs text-muted leading-relaxed line-clamp-2 flex-1">{sig.snippet}</p>
                           {/* Analyze + Watch buttons */}
+                          {console.log('[FEED] rendering buttons, multiSelectMode:', multiSelectMode, 'signals:', signals.length) as unknown as null}
                           {!multiSelectMode && (
                             <div className="flex gap-2">
                               <button
@@ -865,7 +866,7 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                                   }`}
                                   title="Watch this signal"
                                 >
-                                  {watching === sig.url ? '👁 Added' : '👁'}
+                                  {watching === sig.url ? '👁 Added' : '👁 W'}
                                 </button>
 
                                 {/* Duration picker */}
