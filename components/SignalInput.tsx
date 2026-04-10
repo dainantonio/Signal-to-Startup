@@ -861,18 +861,9 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                               <button
                                 type="button"
                                 onClick={(e) => { e.stopPropagation(); addToWatchlist(sig, 7); }}
-                                style={{
-                                  padding: '10px 14px',
-                                  background: watching === sig.url ? '#fffbeb' : 'white',
-                                  color: watching === sig.url ? '#b45309' : '#374151',
-                                  border: watching === sig.url ? '1px solid #fde68a' : '1px solid #e5e7eb',
-                                  borderRadius: '12px',
-                                  fontSize: '12px',
-                                  fontWeight: 500,
-                                  cursor: 'pointer',
-                                  whiteSpace: 'nowrap',
-                                  flexShrink: 0,
-                                }}
+                                className={watching === sig.url
+                                  ? 'px-3 py-2 rounded-xl border border-amber-200 text-xs font-medium text-amber-700 bg-amber-50 whitespace-nowrap'
+                                  : 'px-3 py-2 rounded-xl border border-gray-200 text-xs font-medium text-gray-600 hover:border-amber-400 hover:text-amber-700 bg-white transition-all whitespace-nowrap'}
                               >
                                 {watching === sig.url ? 'Watching ✓' : 'Watch'}
                               </button>

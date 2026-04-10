@@ -46,7 +46,7 @@ export default function WatchButton({ article }: WatchButtonProps) {
 
   if (added) {
     return (
-      <span className="flex items-center gap-1 px-3 py-2 text-xs font-medium text-amber-700 bg-amber-50 rounded-xl border border-amber-200">
+      <span className="px-3 py-2 rounded-xl border border-amber-200 text-xs font-medium text-amber-700 bg-amber-50 whitespace-nowrap">
         Watching ✓
       </span>
     );
@@ -60,7 +60,7 @@ export default function WatchButton({ article }: WatchButtonProps) {
           e.stopPropagation();
           setShowMenu(!showMenu);
         }}
-        className="flex items-center gap-1 px-3 py-2 rounded-xl border border-gray-200 text-xs font-medium text-gray-500 hover:border-amber-400 hover:text-amber-600 bg-white transition-all"
+        className="px-3 py-2 rounded-xl border border-gray-200 text-xs font-medium text-gray-600 hover:border-amber-400 hover:text-amber-700 bg-white transition-all whitespace-nowrap"
       >
         Watch
       </button>
