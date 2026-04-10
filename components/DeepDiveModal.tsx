@@ -2,7 +2,6 @@ import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import { motion, AnimatePresence } from 'motion/react';
 import {
-  ArrowLeft,
   RefreshCcw,
   X,
   Loader2,
@@ -334,13 +333,6 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
       >
         {/* Modal Header - Mobile First */}
         <div className="border-b border-border/10 p-3 md:p-6 flex items-center gap-2 md:gap-3 bg-white/80 backdrop-blur-md sticky top-0 z-20 no-print">
-          <button
-            onClick={() => setSelectedOpportunity(null)}
-            className="p-2 hover:bg-gray-100 rounded-xl transition-colors flex-shrink-0"
-            aria-label="Back to opportunities list"
-          >
-            <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" />
-          </button>
           <div className="flex-1 min-w-0 overflow-hidden">
             <h2 className="font-sans font-semibold text-sm md:text-base leading-snug truncate break-words">{selectedOpportunity.name}</h2>
             <p className="text-[9px] md:text-[10px] font-mono uppercase text-muted tracking-widest">Execution Suite</p>

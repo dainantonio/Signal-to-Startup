@@ -46,8 +46,8 @@ export default function WatchButton({ article }: WatchButtonProps) {
 
   if (added) {
     return (
-      <span className="flex items-center gap-1 px-3 py-2 text-xs font-medium text-amber-600 bg-amber-50 rounded-xl border border-amber-200">
-        👁 Watching
+      <span className="flex items-center gap-1 px-3 py-2 text-xs font-medium text-amber-700 bg-amber-50 rounded-xl border border-amber-200">
+        Watching ✓
       </span>
     );
   }
@@ -62,7 +62,7 @@ export default function WatchButton({ article }: WatchButtonProps) {
         }}
         className="flex items-center gap-1 px-3 py-2 rounded-xl border border-gray-200 text-xs font-medium text-gray-500 hover:border-amber-400 hover:text-amber-600 bg-white transition-all"
       >
-        👁 Watch
+        Watch
       </button>
 
       {showMenu && (
