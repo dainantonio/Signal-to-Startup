@@ -814,50 +814,47 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                         </div>
                       ) : (
                         /* ── NORMAL STATE ── */
-                        <div className="p-5 flex flex-col gap-3">
-                          {/* Header row */}
+                        <div className="p-4 flex flex-col gap-3 flex-1">
+                          {/* Meta row */}
                           <div className="flex items-center gap-2 flex-wrap">
                             {multiSelectMode && (
-                              <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${
+                              <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all flex-shrink-0 ${
                                 isSelected ? 'bg-black border-black' : 'border-gray-300'
                               }`}>
                                 {isSelected && <span className="text-white text-[10px]">✓</span>}
                               </div>
                             )}
-                            <span className="text-[9px] font-mono font-bold text-muted uppercase tracking-wider truncate">{sig.source}</span>
+                            <span className="text-[9px] font-mono font-bold text-gray-400 uppercase tracking-wider truncate max-w-[100px]">{sig.source}</span>
                             <span className={`px-2 py-0.5 text-[9px] font-mono uppercase font-bold rounded-md ${cfg.badgeBg} ${cfg.badgeText}`}>{cfg.label}</span>
                             {sig.isLocalSource && (
                               <span className="px-2 py-0.5 text-[9px] font-mono uppercase font-bold rounded-md bg-green-100 text-green-700">Local</span>
                             )}
                             {sig.isGlobalMention && (
-                              <span className="px-2 py-0.5 text-[9px] font-mono uppercase font-bold rounded-md bg-blue-100 text-blue-700">Global mention</span>
+                              <span className="px-2 py-0.5 text-[9px] font-mono uppercase font-bold rounded-md bg-blue-100 text-blue-700">Global</span>
                             )}
-                            <div className="ml-auto flex items-center gap-1.5 flex-shrink-0">
-                              <SignalScoreBadge score={sig.signalScore} publishedAt={sig.publishedAt} />
-                              {sig.url && sig.url !== '#' && (
-                                <a href={sig.url} target="_blank" rel="noopener noreferrer" aria-label={`Read full article: ${sig.title}`} className="text-[9px] font-mono text-primary hover:underline" onClick={e => e.stopPropagation()}>↗</a>
-                              )}
+                            <div className="ml-auto flex items-center gap-1 px-2 py-0.5 bg-amber-50 border border-amber-200 rounded-lg flex-shrink-0">
+                              <span className="text-amber-500 text-[9px]">⚡</span>
+                              <span className="text-[10px] font-bold font-mono text-amber-700">{Math.min(sig.signalScore || 0, 99)}</span>
                             </div>
                           </div>
                           {/* Title */}
-                          <p className="text-sm font-semibold leading-snug line-clamp-2">{sig.title}</p>
+                          <h3 className="text-sm font-semibold text-gray-900 leading-snug line-clamp-2">{sig.title}</h3>
                           {/* Snippet */}
-                          <p className="text-xs text-muted leading-relaxed line-clamp-2 flex-1">{sig.snippet}</p>
-                          {/* Analyze + Watch buttons */}
+                          <p className="text-xs text-gray-500 leading-relaxed line-clamp-2 flex-1">{sig.snippet}</p>
+                          {/* Action buttons */}
                           {!multiSelectMode && (
-                            <div className="flex flex-col sm:flex-row gap-2">
+                            <div className="flex gap-2 pt-1">
                               <button
                                 type="button"
                                 onClick={() => onAnalyzeSignal(sig)}
                                 disabled={!!analyzingUrl}
                                 aria-label={`Analyze: ${sig.title}`}
-                                className="w-full sm:flex-1 min-h-10 flex items-center justify-center gap-2 py-2.5 bg-foreground text-background rounded-xl font-mono text-[10px] uppercase tracking-widest hover:bg-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-gray-900 text-white rounded-xl text-xs font-semibold hover:bg-gray-700 disabled:opacity-40 transition-colors"
                               >
-                                <Zap className="w-3.5 h-3.5 fill-current" />
-                                Analyze 🔥
+                                ⚡ Analyze
                               </button>
 
-                              <div className="relative w-full sm:w-auto">
+                              <div className="relative">
                                 <button
                                   type="button"
                                   onClick={(e) => {
@@ -866,15 +863,14 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                                     setShowWatchMenu(prev => prev === sig.url ? null : sig.url);
                                   }}
                                   className={watching === sig.url
-                                    ? 'w-full sm:w-auto min-h-10 px-3 py-2 rounded-xl border border-amber-200 text-xs font-semibold text-amber-700 bg-amber-50 whitespace-nowrap shadow-sm'
-                                    : 'w-full sm:w-auto min-h-10 px-3 py-2 rounded-xl border border-gray-200 text-xs font-semibold text-gray-600 hover:border-amber-400 hover:text-amber-700 bg-white transition-all whitespace-nowrap shadow-sm hover:shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300'}
+                                    ? 'px-3 py-2.5 rounded-xl border border-amber-200 text-xs font-medium text-amber-700 bg-amber-50 whitespace-nowrap'
+                                    : 'px-3 py-2.5 rounded-xl border border-gray-200 text-xs font-medium text-gray-500 hover:border-amber-400 hover:text-amber-700 bg-white transition-colors whitespace-nowrap'}
                                 >
                                   {watching === sig.url ? 'Watching ✓' : 'Watch'}
                                 </button>
-
                                 {showWatchMenu === sig.url && (
                                   <div
-                                    className="absolute bottom-full right-0 sm:right-0 left-0 sm:left-auto mb-2 w-full sm:w-48 bg-white border border-gray-200 rounded-2xl shadow-xl p-2 z-50"
+                                    className="absolute bottom-full right-0 mb-2 w-44 bg-white border border-gray-200 rounded-2xl shadow-xl p-2 z-50"
                                     onClick={(e) => e.stopPropagation()}
                                   >
                                     <p className="text-xs font-semibold text-gray-600 px-2 py-1.5">Watch for how long?</p>
@@ -882,21 +878,27 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                                       <button
                                         key={days}
                                         type="button"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          addToWatchlist(sig, days);
-                                        }}
-                                        className="w-full text-left px-3 py-2.5 text-xs text-gray-700 hover:bg-amber-50 hover:text-amber-700 rounded-xl transition-colors flex items-center justify-between"
+                                        onClick={(e) => { e.stopPropagation(); addToWatchlist(sig, days); }}
+                                        className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-amber-50 hover:text-amber-700 rounded-xl transition-colors flex items-center justify-between"
                                       >
                                         <span>{days} days</span>
-                                        {days === 7 && (
-                                          <span className="text-amber-500">recommended</span>
-                                        )}
+                                        {days === 7 && <span className="text-amber-500">recommended</span>}
                                       </button>
                                     ))}
                                   </div>
                                 )}
                               </div>
+                              {sig.url && sig.url !== '#' && (
+                                <a
+                                  href={sig.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={e => e.stopPropagation()}
+                                  className="p-2.5 rounded-xl border border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-300 transition-colors text-sm flex items-center"
+                                >
+                                  ↗
+                                </a>
+                              )}
                             </div>
                           )}
                         </div>

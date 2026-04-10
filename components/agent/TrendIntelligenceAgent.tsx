@@ -368,7 +368,7 @@ export default function TrendIntelligenceAgent() {
   return (
     <>
       {/* Left sidebar - desktop only */}
-      <aside className="hidden md:block fixed left-0 top-[52px] w-[200px] h-[calc(100vh-52px)] bg-white border-r border-gray-100 overflow-y-auto z-40 py-3">
+      <aside className="hidden md:block fixed left-0 top-[52px] w-[220px] h-[calc(100vh-52px)] bg-white border-r border-gray-100 overflow-y-auto z-40 py-3">
         <p className="text-[9px] font-bold text-gray-400 tracking-[2px] uppercase px-4 pb-3">Market</p>
         {([
           ['global','🌎','Global / US'],
@@ -392,10 +392,35 @@ export default function TrendIntelligenceAgent() {
         <a href="/dashboard?tab=watchlist" className="w-full flex items-center gap-2 px-4 py-2 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors">
           <span className="text-sm">👓</span>Watchlist
         </a>
+        <div className="border-t border-gray-100 mx-3 my-2"/>
+        <p className="text-[9px] font-bold text-gray-400 tracking-[2px] uppercase px-4 pb-2">Sectors</p>
+        {[
+          {id:'ai',icon:'🤖',label:'AI & Tech'},
+          {id:'markets',icon:'📈',label:'Markets'},
+          {id:'funding',icon:'💰',label:'Funding'},
+          {id:'policy',icon:'📋',label:'Policy'},
+          {id:'retail',icon:'🛍',label:'Retail'},
+          {id:'food',icon:'🍽',label:'Food'},
+          {id:'workforce',icon:'👷',label:'Workforce'},
+          {id:'agriculture',icon:'🌾',label:'Agriculture'},
+          {id:'tourism',icon:'✈️',label:'Tourism'},
+          {id:'remittances',icon:'💸',label:'Remittances'},
+        ].map((s) => (
+          <button key={s.id}
+            onClick={() => toggleSector(s.id)}
+            className={`w-full flex items-center gap-2 px-4 py-1.5 text-xs font-medium transition-colors text-left rounded-lg mx-1 ${
+              selectedSectors.includes(s.id)
+                ? 'bg-gray-100 text-gray-900 font-semibold'
+                : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
+            }`}>
+            <span style={{fontSize:'11px'}}>{s.icon}</span>
+            {s.label}
+          </button>
+        ))}
       </aside>
 
       {/* Right panel - desktop only */}
-      <aside className="hidden md:block fixed right-0 top-[52px] w-[240px] h-[calc(100vh-52px)] bg-white border-l border-gray-100 overflow-y-auto z-40 p-3">
+      <aside className="hidden md:block fixed right-0 top-[52px] w-[260px] h-[calc(100vh-52px)] bg-white border-l border-gray-100 overflow-y-auto z-40 p-3">
         <p className="text-[9px] font-bold text-gray-400 tracking-[2px] uppercase mb-3">Agent Status</p>
         {[
           ['Signal Monitor','7:00 AM'],
@@ -413,8 +438,7 @@ export default function TrendIntelligenceAgent() {
         ))}
       </aside>
 
-      <div className="md:ml-[200px] md:mr-[240px]">
-      <div className="min-h-screen bg-gray-50 selection:bg-primary/20">
+      <div className="min-h-screen bg-gray-50 selection:bg-primary/20 md:ml-[220px] md:mr-[260px]">
 
       {/* ── Compact header ── */}
       <header className="sticky top-0 z-50 h-[52px] bg-white border-b border-gray-100 flex items-center justify-between px-4 md:px-5">
@@ -731,7 +755,6 @@ export default function TrendIntelligenceAgent() {
       </AnimatePresence>
 
     </div>
-      </div>
     </>
   );
 }
