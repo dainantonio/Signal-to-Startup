@@ -508,17 +508,18 @@ export default function TrendIntelligenceAgent() {
       </AnimatePresence>
 
       {/* ── 3-column body ── */}
-      <div
-        className="md:grid"
-        style={{
-          gridTemplateColumns: '200px 1fr 260px',
-        }}
-      >
-        {/* LEFT SIDEBAR — desktop only */}
+      <div>
+        {/* LEFT SIDEBAR — fixed, desktop only */}
         <aside className="hidden md:block" style={{
+          position: 'fixed',
+          left: 0,
+          top: '52px',
+          width: '200px',
+          height: 'calc(100vh - 52px)',
           background: 'white',
           borderRight: '0.5px solid #e5e7eb',
           overflowY: 'auto',
+          zIndex: 40,
           padding: '12px 8px',
         }}>
           <p style={{fontSize:'9px',fontWeight:600,color:'#9ca3af',letterSpacing:'1.5px',textTransform:'uppercase',padding:'4px 8px 8px',margin:0}}>Market</p>
@@ -565,7 +566,7 @@ export default function TrendIntelligenceAgent() {
         </aside>
 
         {/* MAIN CONTENT — always visible */}
-        <main className="overflow-y-auto" style={{minHeight:0}}>
+        <main className="md:ml-[200px] md:mr-[240px]">
           <div className="max-w-4xl mx-auto px-4 md:px-6 py-6">
 
             {/* App mode toggle */}
@@ -707,8 +708,8 @@ export default function TrendIntelligenceAgent() {
           </div>
         </main>
 
-        {/* RIGHT PANEL — desktop only */}
-        <aside className="hidden md:block" style={{background:'white',borderLeft:'0.5px solid #e5e7eb',overflowY:'auto',padding:'12px',display:'flex',flexDirection:'column',gap:'12px'}}>
+        {/* RIGHT PANEL — fixed, desktop only */}
+        <aside className="hidden md:block" style={{position:'fixed',right:0,top:'52px',width:'240px',height:'calc(100vh - 52px)',background:'white',borderLeft:'0.5px solid #e5e7eb',overflowY:'auto',zIndex:40,padding:'12px',display:'flex',flexDirection:'column',gap:'12px'}}>
           {analysis.result?.today_action && (
             <div style={{background:'#f0fdf4',border:'0.5px solid #86efac',borderRadius:'12px',padding:'14px'}}>
               <p style={{fontSize:'9px',fontWeight:700,color:'#15803d',letterSpacing:'1.5px',textTransform:'uppercase',marginBottom:'8px',margin:'0 0 8px'}}>Your Next Move</p>
