@@ -844,38 +844,59 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                           {/* Snippet */}
                           <p className="text-xs text-muted leading-relaxed line-clamp-2 flex-1">{sig.snippet}</p>
                           {/* Analyze + Watch buttons */}
-                          {console.log('[FEED] rendering buttons, multiSelectMode:', multiSelectMode, 'signals:', signals.length) as unknown as null}
                           {!multiSelectMode && (
-                            <div className="flex gap-2">
+                            <div className="flex flex-col sm:flex-row gap-2">
                               <button
                                 type="button"
                                 onClick={() => onAnalyzeSignal(sig)}
                                 disabled={!!analyzingUrl}
                                 aria-label={`Analyze: ${sig.title}`}
-                                className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-foreground text-background rounded-xl font-mono text-[10px] uppercase tracking-widest hover:bg-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                className="w-full sm:flex-1 min-h-10 flex items-center justify-center gap-2 py-2.5 bg-foreground text-background rounded-xl font-mono text-[10px] uppercase tracking-widest hover:bg-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                               >
                                 <Zap className="w-3.5 h-3.5 fill-current" />
                                 Analyze 🔥
                               </button>
 
-                              <button
-                                type="button"
-                                onClick={(e) => { e.stopPropagation(); addToWatchlist(sig, 7); }}
-                                style={{
-                                  padding: '10px 14px',
-                                  background: watching === sig.url ? '#fffbeb' : 'white',
-                                  color: watching === sig.url ? '#b45309' : '#374151',
-                                  border: watching === sig.url ? '1px solid #fde68a' : '1px solid #e5e7eb',
-                                  borderRadius: '12px',
-                                  fontSize: '12px',
-                                  fontWeight: 500,
-                                  cursor: 'pointer',
-                                  whiteSpace: 'nowrap',
-                                  flexShrink: 0,
-                                }}
-                              >
-                                {watching === sig.url ? 'Watching ✓' : 'Watch'}
-                              </button>
+                              <div className="relative w-full sm:w-auto">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (watching === sig.url) return;
+                                    setShowWatchMenu(prev => prev === sig.url ? null : sig.url);
+                                  }}
+                                  className={watching === sig.url
+                                    ? 'w-full sm:w-auto min-h-10 px-3 py-2 rounded-xl border border-amber-200 text-xs font-semibold text-amber-700 bg-amber-50 whitespace-nowrap shadow-sm'
+                                    : 'w-full sm:w-auto min-h-10 px-3 py-2 rounded-xl border border-gray-200 text-xs font-semibold text-gray-600 hover:border-amber-400 hover:text-amber-700 bg-white transition-all whitespace-nowrap shadow-sm hover:shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300'}
+                                >
+                                  {watching === sig.url ? 'Watching ✓' : 'Watch'}
+                                </button>
+
+                                {showWatchMenu === sig.url && (
+                                  <div
+                                    className="absolute bottom-full right-0 sm:right-0 left-0 sm:left-auto mb-2 w-full sm:w-48 bg-white border border-gray-200 rounded-2xl shadow-xl p-2 z-50"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <p className="text-xs font-semibold text-gray-600 px-2 py-1.5">Watch for how long?</p>
+                                    {[3, 5, 7, 14].map(days => (
+                                      <button
+                                        key={days}
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          addToWatchlist(sig, days);
+                                        }}
+                                        className="w-full text-left px-3 py-2.5 text-xs text-gray-700 hover:bg-amber-50 hover:text-amber-700 rounded-xl transition-colors flex items-center justify-between"
+                                      >
+                                        <span>{days} days</span>
+                                        {days === 7 && (
+                                          <span className="text-amber-500">recommended</span>
+                                        )}
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           )}
                         </div>
