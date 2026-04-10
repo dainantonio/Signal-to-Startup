@@ -45,6 +45,7 @@ interface SignalInputProps {
   setSelectedMode: (mode: MarketMode) => void;
   countryTags: string[];
   setCountryTags: (tags: string[]) => void;
+  selectedSectors?: string[];
 }
 
 export const SignalInput: React.FC<SignalInputProps> = ({
@@ -54,6 +55,7 @@ export const SignalInput: React.FC<SignalInputProps> = ({
   result, analyzeSignal, analyzeCompoundSignal, cancelAnalysis,
   countryTags, setCountryTags,
   selectedMode, setSelectedMode,
+  selectedSectors = [],
 }) => {
   const [inputMode, setInputMode] = useState<'paste' | 'feed'>('paste');
   const [pdfLoading, setPdfLoading] = useState(false);
@@ -714,9 +716,14 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                     <div className="h-9 bg-gray-100 rounded-xl" />
                   </div>
                 ))
-              : signals.length === 0
-              ? <div className="col-span-2 text-center py-16 text-muted font-mono text-xs uppercase tracking-widest">No signals found. Try widening your filters.</div>
-              : signals.map((sig, i) => {
+              : (() => {
+                  const displaySignals = selectedSectors.length > 0
+                    ? signals.filter(s => selectedSectors.includes(s.sector))
+                    : signals;
+                  if (displaySignals.length === 0) {
+                    return <div className="col-span-2 text-center py-16 text-muted font-mono text-xs uppercase tracking-widest">No signals found. Try widening your filters.</div>;
+                  }
+                  return displaySignals.map((sig, i) => {
                   const cfg = SECTOR_CONFIGS[sig.sector] ?? SECTOR_CONFIGS.markets;
                   const key = sig.url ?? sig.title;
                   const isAnalyzing = analyzingUrl === key;
@@ -889,7 +896,8 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                       </AnimatePresence>
                     </motion.div>
                   );
-                })
+                  });
+                })()
             }
           </div>
 

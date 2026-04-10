@@ -16,6 +16,11 @@
   --font-mono: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
+:root {
+  --font-ui: 'DM Sans', system-ui, sans-serif;
+  --font-mono-ui: 'DM Mono', monospace;
+}
+
 @layer base {
   html, body {
     @apply overflow-x-hidden;

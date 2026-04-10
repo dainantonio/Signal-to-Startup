@@ -9,11 +9,9 @@ import {
   X,
   User as UserIcon,
   Trash2,
-  LayoutDashboard,
   ArrowLeft,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import Link from 'next/link';
 import { MarketMode } from '../types';
 import { COUNTRY_CONTEXT } from '@/lib/rss-sources';
 import { SignalInput } from '../SignalInput';
@@ -28,7 +26,9 @@ import { useAgentAnalysis } from './useAgentAnalysis';
 import { ValidateMode } from '../ValidateMode';
 import Logo from '../Logo';
 import NotificationBell from '../NotificationBell';
-import { auth, db, doc, setDoc, getDoc } from '@/firebase';
+import LeftSidebar from '../LeftSidebar';
+import RightPanel from '../RightPanel';
+import { auth, db, doc, setDoc, getDoc, getDocs, query, where, collection } from '@/firebase';
 
 type AppMode = 'discover' | 'validate';
 
@@ -57,11 +57,29 @@ export default function TrendIntelligenceAgent() {
   const [readingLevel] = useState<'simple' | 'standard' | 'advanced'>(() => {
     try { return (localStorage.getItem('s2s_reading_level') as 'simple' | 'standard' | 'advanced') || 'standard'; } catch { return 'standard'; }
   });
+  const [watchlistCount, setWatchlistCount] = useState(0);
+  const [selectedSectors, setSelectedSectors] = useState<string[]>([]);
+
+  const toggleSector = useCallback((sector: string) => {
+    setSelectedSectors(prev =>
+      prev.includes(sector) ? prev.filter(s => s !== sector) : [...prev, sector]
+    );
+  }, []);
 
   // Persist country tags
   React.useEffect(() => {
     try { localStorage.setItem('s2s_country_tags', JSON.stringify(countryTags)); } catch {}
   }, [countryTags]);
+
+  // Load watchlist count for sidebar badge
+  React.useEffect(() => {
+    if (!user) return;
+    getDocs(query(
+      collection(db, 'signal_watchlist'),
+      where('userId', '==', user.uid),
+      where('status', '==', 'active')
+    )).then(snap => setWatchlistCount(snap.size)).catch(() => {});
+  }, [user]);
 
   // Sync preference changes to Firestore so the agent can read them
   const syncPrefsToFirestore = useCallback(
@@ -348,451 +366,351 @@ export default function TrendIntelligenceAgent() {
   }
 
   return (
-    <div className="min-h-screen-safe bg-background text-foreground p-4 md:p-8 font-sans selection:bg-primary/20">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <header className="mb-8 md:mb-12 border-b border-border/10 pb-6 flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div className="space-y-2">
-            <Logo size="lg" showWordmark showSubbrand theme="light" />
-            <p className="text-xs md:text-sm uppercase tracking-widest text-muted font-medium max-w-xl leading-relaxed">
-              Turn news, policy, and market signals into actionable business opportunities.
-            </p>
-          </div>
-          <div className="flex items-center gap-3 self-start md:self-auto">
-            <div className="hidden sm:flex items-center gap-2 text-[10px] font-mono bg-secondary/10 text-secondary px-3 py-1.5 rounded-full border border-secondary/20">
-              <span className="w-1.5 h-1.5 bg-secondary rounded-full animate-pulse" />
-              LIVE FEED ACTIVE
-            </div>
+    <div className="min-h-screen bg-gray-50 selection:bg-primary/20">
 
-            {user ? (
-              <div className="flex items-center gap-2">
-                <NotificationBell />
-                <button
-                  onClick={() => setShowHistory(!showHistory)}
-                  aria-expanded={showHistory}
-                  aria-label="Toggle analysis history"
-                  className="flex items-center gap-2 px-3 py-2 bg-white border border-border/10 hover:border-border/30 hover:bg-gray-50 transition-all shadow-sm rounded-lg relative group"
-                >
-                  <History className="w-4 h-4 text-muted group-hover:text-foreground transition-colors" />
-                  <span className="text-[10px] font-mono uppercase font-bold hidden sm:inline">History ({analysis.history.length})</span>
-                </button>
-                <Link
-                  href="/dashboard"
-                  className="flex items-center gap-2 px-3 py-2 bg-white border border-border/10 hover:border-border/30 hover:bg-gray-50 transition-all shadow-sm rounded-lg group"
-                  title="Your Pipeline"
-                >
-                  <LayoutDashboard className="w-4 h-4 text-muted group-hover:text-foreground transition-colors" />
-                  <span className="text-[10px] font-mono uppercase font-bold hidden sm:inline">Pipeline</span>
-                </Link>
-                <div className="flex items-center gap-2 bg-white border border-border/10 px-3 py-2 shadow-sm rounded-lg">
-                  <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                    <UserIcon className="w-3 h-3" />
-                  </div>
-                  <span className="text-[10px] font-mono uppercase font-bold hidden sm:inline">{user.displayName?.split(' ')[0]}</span>
-                  <button onClick={logout} aria-label="Sign out" className="ml-1 text-muted hover:text-red-500 transition-colors">
-                    <LogOut className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    localStorage.removeItem('onboardingComplete');
-                    localStorage.removeItem('userPreferences');
-                    window.location.reload();
-                  }}
-                  className="text-xs text-gray-400 hover:text-black transition-colors hidden sm:block"
-                >
-                  Reset preferences
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setShowHistory(!showHistory)}
-                  aria-expanded={showHistory}
-                  aria-label="Toggle analysis history"
-                  className="p-2.5 bg-white border border-border/10 hover:bg-gray-50 rounded-lg transition-all shadow-sm"
-                >
-                  <History className="w-5 h-5 text-muted" />
-                </button>
-                <div className="flex flex-col items-end gap-1">
-                  <button
-                    onClick={login}
-                    className="flex items-center gap-2 bg-foreground text-background px-5 py-2.5 text-[10px] font-mono uppercase tracking-widest hover:bg-foreground/90 transition-all shadow-lg shadow-foreground/10 rounded-lg"
-                  >
-                    <LogIn className="w-3.5 h-3.5" />
-                    Login to Save
-                  </button>
-                  {loginError && (
-                    <p className="text-[10px] font-mono text-red-500">{loginError}</p>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        </header>
-
-        {/* History Panel */}
-        <AnimatePresence>
-          {showHistory && (
-            <>
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setShowHistory(false)}
-                className="fixed inset-0 bg-[#141414]/40 backdrop-blur-sm z-50"
-              />
-
-              <motion.div
-                initial={{ x: '100%' }}
-                animate={{ x: 0 }}
-                exit={{ x: '100%' }}
-                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                className="fixed right-0 top-0 bottom-0 w-full md:w-96 bg-background border-l border-border/10 z-50 flex flex-col shadow-2xl"
+      {/* ── Compact header ── */}
+      <header className="sticky top-0 z-50 h-[52px] bg-white border-b border-gray-100 flex items-center justify-between px-4 md:px-5">
+        <Logo size="sm" showWordmark showSubbrand={false} theme="light" />
+        <div className="flex items-center gap-2">
+          <NotificationBell />
+          <button
+            onClick={() => setShowHistory(!showHistory)}
+            aria-label="Toggle analysis history"
+            className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+          >
+            History
+            <span className="text-gray-400 font-mono text-xs ml-1">({analysis.history.length})</span>
+          </button>
+          {user ? (
+            <button
+              onClick={logout}
+              title={`${user.email} — click to sign out`}
+              className="w-7 h-7 rounded-full bg-gray-900 text-white text-xs font-medium flex items-center justify-center hover:bg-gray-700 transition-colors"
+            >
+              {(user.email?.[0] ?? user.displayName?.[0] ?? 'U').toUpperCase()}
+            </button>
+          ) : (
+            <div className="flex flex-col items-end">
+              <button
+                onClick={login}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-900 text-white rounded-lg text-xs font-medium hover:bg-gray-700 transition-colors"
               >
-                <div className="p-6 border-b border-border/10 flex items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-10">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center text-primary">
-                      <History className="w-4 h-4" />
-                    </div>
-                    <h3 className="text-sm font-mono uppercase font-bold tracking-widest">Intelligence History</h3>
+                <LogIn className="w-3 h-3" />
+                Sign in
+              </button>
+              {loginError && <p className="text-[10px] font-mono text-red-500">{loginError}</p>}
+            </div>
+          )}
+        </div>
+      </header>
+
+      {/* ── History panel (fixed overlay — lives outside grid) ── */}
+      <AnimatePresence>
+        {showHistory && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowHistory(false)}
+              className="fixed inset-0 bg-[#141414]/40 backdrop-blur-sm z-50"
+            />
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed right-0 top-0 bottom-0 w-full md:w-96 bg-background border-l border-border/10 z-50 flex flex-col shadow-2xl"
+            >
+              <div className="p-6 border-b border-border/10 flex items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-10">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center text-primary">
+                    <History className="w-4 h-4" />
                   </div>
-                  <button
-                    onClick={() => setShowHistory(false)}
-                    aria-label="Close history panel"
-                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
+                  <h3 className="text-sm font-mono uppercase font-bold tracking-widest">Intelligence History</h3>
                 </div>
-
-                <div className="flex-grow overflow-y-auto p-6 space-y-4">
-                  {!user ? (
-                    <div className="bg-white border border-border/10 p-8 text-center space-y-6 rounded-2xl shadow-sm">
-                      <div className="w-16 h-16 bg-primary/5 rounded-full flex items-center justify-center mx-auto">
-                        <LogIn className="w-8 h-8 text-primary" />
-                      </div>
-                      <div className="space-y-2">
-                        <p className="font-serif italic text-xl font-bold">Sign in to save history</p>
-                        <p className="text-xs text-muted leading-relaxed">Keep track of your market signals and execution plans across sessions.</p>
-                      </div>
-                      <button
-                        onClick={login}
-                        className="w-full flex items-center justify-center gap-2 bg-foreground text-background px-4 py-3.5 text-[10px] font-mono uppercase tracking-widest hover:bg-foreground/90 transition-all rounded-xl shadow-lg shadow-foreground/10"
-                      >
-                        <Globe className="w-4 h-4" />
-                        Sign in with Google
-                      </button>
-                      {loginError && (
-                        <p className="text-[10px] font-mono text-red-500 text-center">{loginError}</p>
-                      )}
+                <button onClick={() => setShowHistory(false)} aria-label="Close history" className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="flex-grow overflow-y-auto p-6 space-y-4">
+                {!user ? (
+                  <div className="bg-white border border-border/10 p-8 text-center space-y-6 rounded-2xl shadow-sm">
+                    <div className="w-16 h-16 bg-primary/5 rounded-full flex items-center justify-center mx-auto">
+                      <LogIn className="w-8 h-8 text-primary" />
                     </div>
-                  ) : analysis.history.length > 0 ? (
-                    analysis.history.map((item) => (
-                      <div
-                        key={item.id}
-                        className="group relative bg-white border border-border/10 p-5 hover:border-primary/30 hover:shadow-md transition-all cursor-pointer rounded-xl"
-                        onClick={() => {
-                          analysis.setResult(item);
-                          if (item.marketMode) {
-                            setSelectedMode(item.marketMode);
-                          }
-                          setShowHistory(false);
-                          window.scrollTo({ top: 0, behavior: 'smooth' });
-                        }}
-                      >
-                        <div className="flex justify-between items-start mb-3">
-                          <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-mono uppercase font-bold text-primary bg-primary/5 px-2 py-0.5 rounded">
-                              {item.createdAt ? new Date(item.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Unknown'}
+                    <div className="space-y-2">
+                      <p className="font-serif italic text-xl font-bold">Sign in to save history</p>
+                      <p className="text-xs text-muted leading-relaxed">Keep track of your market signals and execution plans across sessions.</p>
+                    </div>
+                    <button onClick={login} className="w-full flex items-center justify-center gap-2 bg-foreground text-background px-4 py-3.5 text-[10px] font-mono uppercase tracking-widest hover:bg-foreground/90 transition-all rounded-xl shadow-lg shadow-foreground/10">
+                      <Globe className="w-4 h-4" />
+                      Sign in with Google
+                    </button>
+                    {loginError && <p className="text-[10px] font-mono text-red-500 text-center">{loginError}</p>}
+                  </div>
+                ) : analysis.history.length > 0 ? (
+                  analysis.history.map((item) => (
+                    <div
+                      key={item.id}
+                      className="group relative bg-white border border-border/10 p-5 hover:border-primary/30 hover:shadow-md transition-all cursor-pointer rounded-xl"
+                      onClick={() => {
+                        analysis.setResult(item);
+                        if (item.marketMode) setSelectedMode(item.marketMode);
+                        setShowHistory(false);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                    >
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-mono uppercase font-bold text-primary bg-primary/5 px-2 py-0.5 rounded">
+                            {item.createdAt ? new Date(item.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Unknown'}
+                          </span>
+                          {item.marketMode && (
+                            <span className="text-xs bg-gray-50 px-2 py-0.5 rounded border border-border/5" title={marketModeConfigs[item.marketMode].label}>
+                              {marketModeConfigs[item.marketMode].flag} {marketModeConfigs[item.marketMode].label}
                             </span>
-                            {item.marketMode && (
-                              <span className="text-xs bg-gray-50 px-2 py-0.5 rounded border border-border/5" title={marketModeConfigs[item.marketMode].label}>
-                                {marketModeConfigs[item.marketMode].flag} {marketModeConfigs[item.marketMode].label}
-                              </span>
-                            )}
-                          </div>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (item.id) analysis.deleteAnalysis(item.id);
-                            }}
-                            aria-label="Delete analysis"
-                            className="text-muted hover:text-red-500 transition-colors p-1"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          )}
                         </div>
-                        <h4 className="text-sm font-serif italic font-bold leading-snug group-hover:text-primary transition-colors line-clamp-2">
-                          {item.trend}
-                        </h4>
+                        <button onClick={(e) => { e.stopPropagation(); if (item.id) analysis.deleteAnalysis(item.id); }} aria-label="Delete analysis" className="text-muted hover:text-red-500 transition-colors p-1">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-20 opacity-30">
-                      <History className="w-16 h-16 mx-auto mb-4 opacity-20" />
-                      <p className="text-[10px] font-mono uppercase tracking-widest">No intelligence logs found</p>
+                      <h4 className="text-sm font-serif italic font-bold leading-snug group-hover:text-primary transition-colors line-clamp-2">{item.trend}</h4>
                     </div>
-                  )}
-                </div>
-
-                {user && (
-                  <div className="p-6 border-t border-border/10 bg-white/80 backdrop-blur-md">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
-                        {user.displayName?.[0] || 'U'}
-                      </div>
-                      <div className="flex-grow">
-                        <p className="text-xs font-mono uppercase font-bold leading-none mb-1">{user.displayName}</p>
-                        <p className="text-[10px] font-mono text-muted truncate">{user.email}</p>
-                      </div>
-                      <button onClick={logout} aria-label="Sign out" className="p-2.5 hover:bg-red-50 text-muted hover:text-red-500 rounded-xl transition-colors">
-                        <LogOut className="w-5 h-5" />
-                      </button>
-                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-20 opacity-30">
+                    <History className="w-16 h-16 mx-auto mb-4 opacity-20" />
+                    <p className="text-[10px] font-mono uppercase tracking-widest">No intelligence logs found</p>
                   </div>
                 )}
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
+              </div>
+              {user && (
+                <div className="p-6 border-t border-border/10 bg-white/80 backdrop-blur-md">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
+                      {user.displayName?.[0] || 'U'}
+                    </div>
+                    <div className="flex-grow">
+                      <p className="text-xs font-mono uppercase font-bold leading-none mb-1">{user.displayName}</p>
+                      <p className="text-[10px] font-mono text-muted truncate">{user.email}</p>
+                    </div>
+                    <button onClick={logout} aria-label="Sign out" className="p-2.5 hover:bg-red-50 text-muted hover:text-red-500 rounded-xl transition-colors">
+                      <LogOut className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
-        {/* App mode toggle */}
-        <div className="flex rounded-xl border border-gray-200 p-1 bg-gray-50 w-fit mx-auto mb-6">
-          {(['discover', 'validate'] as AppMode[]).map(mode => (
-            <button
-              key={mode}
-              type="button"
-              onClick={() => setAppMode(mode)}
-              className={`px-5 py-2 rounded-lg text-sm font-medium transition-all capitalize ${
-                appMode === mode
-                  ? 'bg-white text-black shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              {mode === 'discover' ? '🔍 Discover' : '💡 Validate'}
-            </button>
-          ))}
+      {/* ── 3-column body ── */}
+      <div className="flex md:h-[calc(100vh-52px)] md:overflow-hidden">
+
+        {/* Left sidebar — desktop only */}
+        <div className="hidden md:block w-[220px] flex-shrink-0 overflow-y-auto">
+          <LeftSidebar
+            selectedMode={selectedMode}
+            setSelectedMode={handleSetSelectedMode}
+            selectedSectors={selectedSectors}
+            toggleSector={toggleSector}
+            onValidate={() => setAppMode('validate')}
+            onDashboard={() => { window.location.href = '/dashboard'; }}
+            watchlistCount={watchlistCount}
+          />
         </div>
 
-        {appMode === 'validate' && (
-          <ValidateMode
-            selectedMode={selectedMode}
-            countryTag={countryTags[0] ?? ''}
-          />
-        )}
+        {/* Main content */}
+        <main className="flex-1 min-w-0 overflow-y-auto">
+          <div className="max-w-4xl mx-auto px-4 md:px-6 py-6">
 
-        {appMode === 'discover' && analysis.result && (
-          <PipelineProgress currentStep={currentStep} steps={pipelineSteps} />
-        )}
-
-        {appMode === 'discover' && <>
-
-        {/* FIX 3: Resume banner */}
-        {hasLastResult && !analysis.result && !analysis.loading && (
-          <div className="flex items-center gap-3 px-5 py-3 mb-6 bg-blue-50 border border-blue-200 rounded-2xl text-sm">
-            <span className="text-blue-700 font-medium flex-1">↩ You have an unsaved analysis from this session</span>
-            <button
-              onClick={() => {
-                try {
-                  const saved = sessionStorage.getItem('s2s_lastResult');
-                  if (saved) analysis.setResult(JSON.parse(saved));
-                } catch {}
-                setHasLastResult(false);
-              }}
-              className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-mono uppercase tracking-wide hover:bg-blue-700 transition-colors"
-            >
-              View results
-            </button>
-            <button
-              onClick={() => {
-                try { sessionStorage.removeItem('s2s_lastResult'); } catch {}
-                setHasLastResult(false);
-              }}
-              className="p-1.5 text-blue-400 hover:text-blue-700 transition-colors"
-              aria-label="Dismiss"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        )}
-
-        {/* Share hint — shown once to teach Web Share Target */}
-        {!hasSeenShareHint && (
-          <div className="mb-4 p-3 bg-blue-50 rounded-xl border border-blue-200 flex items-start gap-3">
-            <span className="text-lg flex-shrink-0">💡</span>
-            <div className="flex-1">
-              <p className="text-xs font-medium text-blue-800 mb-0.5">
-                Share any article directly to this app
-              </p>
-              <p className="text-xs text-blue-600 leading-relaxed">
-                On Android, tap Share → Signal to Startup to analyze it instantly.
-                On iOS, copy the URL and paste it in the Paste Signal tab.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                setHasSeenShareHint(true);
-                try { localStorage.setItem('seenShareHint', 'true'); } catch {}
-              }}
-              className="text-blue-400 hover:text-blue-600 flex-shrink-0 text-lg leading-none"
-            >
-              ×
-            </button>
-          </div>
-        )}
-
-        <SignalInput
-          input={analysis.input}
-          setInput={analysis.setInput}
-          urlInput={analysis.urlInput}
-          setUrlInput={analysis.setUrlInput}
-          fetchingUrl={analysis.fetchingUrl}
-          fetchUrl={analysis.fetchUrl}
-          urlFetchStatus={analysis.urlFetchStatus}
-          setUrlFetchStatus={analysis.setUrlFetchStatus}
-          location={analysis.location}
-          setLocation={analysis.setLocation}
-          focus={analysis.focus}
-          setFocus={analysis.setFocus}
-          loading={analysis.loading}
-          loadingStage={analysis.loadingStage}
-          loadingProgress={analysis.loadingProgress}
-          result={analysis.result}
-            analyzeSignal={analysis.analyzeSignal}
-            analyzeCompoundSignal={analysis.analyzeCompoundSignal}
-            cancelAnalysis={analysis.cancelAnalysis}
-          selectedMode={selectedMode}
-          setSelectedMode={handleSetSelectedMode}
-          countryTags={countryTags}
-          setCountryTags={handleSetCountryTags}
-        />
-
-        {/* Results Section */}
-        <AnimatePresence mode="wait">
-          {analysis.error && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-8 font-mono text-sm"
-            >
-              {analysis.error}
-            </motion.div>
-          )}
-
-          {analysis.result && (
-            <>
-              {/* FIX 2: Sticky back button */}
-              <div className="sticky top-4 z-40 flex justify-start mb-6">
+            {/* App mode toggle */}
+            <div className="flex rounded-xl border border-gray-200 p-1 bg-gray-50 w-fit mx-auto mb-6">
+              {(['discover', 'validate'] as AppMode[]).map(mode => (
                 <button
+                  key={mode}
                   type="button"
-                  onClick={handleBackToFeed}
-                  className="flex items-center gap-2 min-h-10 px-4 py-2 bg-white border border-border/10 hover:border-border/30 hover:bg-gray-50 rounded-xl shadow-md text-[11px] font-mono uppercase tracking-widest text-muted hover:text-foreground transition-all"
+                  onClick={() => setAppMode(mode)}
+                  className={`px-5 py-2 rounded-lg text-sm font-medium transition-all capitalize ${
+                    appMode === mode ? 'bg-white text-black shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                  }`}
                 >
-                  <ArrowLeft className="w-4 h-4" />
-                  Back to Feed
+                  {mode === 'discover' ? '🔍 Discover' : '💡 Validate'}
                 </button>
-              </div>
-            </>
-          )}
-          {analysis.result && (
-            <ResultsDashboard
-              result={analysis.result}
-              filteredOpportunities={analysis.filteredOpportunities}
-              filterType={analysis.filterType}
-              setFilterType={analysis.setFilterType}
-              grantOnly={analysis.grantOnly}
-              setGrantOnly={analysis.setGrantOnly}
-              generateDeepDive={analysis.generateDeepDive}
-              shareOnTwitter={analysis.shareOnTwitter}
-              shareOnLinkedIn={analysis.shareOnLinkedIn}
-              countryTags={countryTags}
-              isAgentResult={isAgentResult}
-              readingLevel={readingLevel}
-            />
-          )}
-        </AnimatePresence>
+              ))}
+            </div>
 
-        <AnimatePresence>
-          {analysis.selectedOpportunity && (
-            <DeepDiveModal
-              selectedOpportunity={analysis.selectedOpportunity}
-              setSelectedOpportunity={analysis.setSelectedOpportunity}
-              cancelDeepDive={analysis.cancelDeepDive}
-              deepDiveLoading={analysis.deepDiveLoading}
-              deepDiveResult={analysis.deepDiveResult}
-              activeDeepDiveTab={analysis.activeDeepDiveTab}
-              setActiveDeepDiveTab={analysis.setActiveDeepDiveTab}
-              generateDeepDive={analysis.generateDeepDive}
-              copyToClipboard={copyToClipboard}
-              copied={copied}
-              selectedMode={selectedMode}
-            />
-          )}
-        </AnimatePresence>
+            {appMode === 'validate' && (
+              <ValidateMode selectedMode={selectedMode} countryTag={countryTags[0] ?? ''} />
+            )}
 
-        {/* FIX 2: Cancel confirm modal */}
-        <AnimatePresence>
-          {showCancelConfirm && (
-            <>
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setShowCancelConfirm(false)}
-                className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50"
-              />
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.15 }}
-                className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full mx-4 space-y-5"
-              >
-                <p className="font-serif italic text-xl font-bold">Analysis almost done</p>
-                <p className="text-sm text-muted leading-relaxed">Results are nearly ready. Are you sure you want to cancel?</p>
-                <div className="flex gap-3">
+            {appMode === 'discover' && analysis.result && (
+              <PipelineProgress currentStep={currentStep} steps={pipelineSteps} />
+            )}
+
+            {appMode === 'discover' && <>
+
+              {/* Resume banner */}
+              {hasLastResult && !analysis.result && !analysis.loading && (
+                <div className="flex items-center gap-3 px-5 py-3 mb-6 bg-blue-50 border border-blue-200 rounded-2xl text-sm">
+                  <span className="text-blue-700 font-medium flex-1">↩ You have an unsaved analysis from this session</span>
                   <button
-                    onClick={() => setShowCancelConfirm(false)}
-                    className="flex-1 py-3 bg-foreground text-background rounded-xl font-mono text-[10px] uppercase tracking-widest hover:bg-foreground/90 transition-all"
+                    onClick={() => {
+                      try { const saved = sessionStorage.getItem('s2s_lastResult'); if (saved) analysis.setResult(JSON.parse(saved)); } catch {}
+                      setHasLastResult(false);
+                    }}
+                    className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-mono uppercase tracking-wide hover:bg-blue-700 transition-colors"
                   >
-                    Wait for results
+                    View results
                   </button>
-                  <button
-                    onClick={handleBackToFeed}
-                    className="flex-1 py-3 bg-white border border-border/10 text-muted rounded-xl font-mono text-[10px] uppercase tracking-widest hover:text-red-500 hover:border-red-200 transition-all"
-                  >
-                    Cancel anyway
+                  <button onClick={() => { try { sessionStorage.removeItem('s2s_lastResult'); } catch {} setHasLastResult(false); }} className="p-1.5 text-blue-400 hover:text-blue-700 transition-colors" aria-label="Dismiss">
+                    <X className="w-4 h-4" />
                   </button>
                 </div>
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
+              )}
 
-        {/* Footer Info */}
-        {!analysis.result && !analysis.loading && (
-          <footer className="mt-24 border-t border-[#141414] pt-8 grid grid-cols-1 md:grid-cols-3 gap-8 opacity-40">
-            <div>
-              <p className="text-[10px] font-mono uppercase tracking-widest mb-2">System Status</p>
-              <p className="text-xs">All intelligence modules operational. Monitoring global signals 24/7.</p>
-            </div>
-            <div>
-              <p className="text-[10px] font-mono uppercase tracking-widest mb-2">Methodology</p>
-              <p className="text-xs">First-principles thinking applied to market inefficiencies and regulatory shifts.</p>
-            </div>
-            <div>
-              <p className="text-[10px] font-mono uppercase tracking-widest mb-2">Disclaimer</p>
-              <p className="text-xs">Analysis is for informational purposes. Execution risk is inherent in all ventures.</p>
-            </div>
-          </footer>
-        )}
+              {/* Share hint */}
+              {!hasSeenShareHint && (
+                <div className="mb-4 p-3 bg-blue-50 rounded-xl border border-blue-200 flex items-start gap-3">
+                  <span className="text-lg flex-shrink-0">💡</span>
+                  <div className="flex-1">
+                    <p className="text-xs font-medium text-blue-800 mb-0.5">Share any article directly to this app</p>
+                    <p className="text-xs text-blue-600 leading-relaxed">On Android, tap Share → Signal to Startup to analyze it instantly. On iOS, copy the URL and paste it in the Paste Signal tab.</p>
+                  </div>
+                  <button type="button" onClick={() => { setHasSeenShareHint(true); try { localStorage.setItem('seenShareHint', 'true'); } catch {} }} className="text-blue-400 hover:text-blue-600 flex-shrink-0 text-lg leading-none">×</button>
+                </div>
+              )}
 
-        </> /* end appMode === 'discover' */}
+              <SignalInput
+                input={analysis.input}
+                setInput={analysis.setInput}
+                urlInput={analysis.urlInput}
+                setUrlInput={analysis.setUrlInput}
+                fetchingUrl={analysis.fetchingUrl}
+                fetchUrl={analysis.fetchUrl}
+                urlFetchStatus={analysis.urlFetchStatus}
+                setUrlFetchStatus={analysis.setUrlFetchStatus}
+                location={analysis.location}
+                setLocation={analysis.setLocation}
+                focus={analysis.focus}
+                setFocus={analysis.setFocus}
+                loading={analysis.loading}
+                loadingStage={analysis.loadingStage}
+                loadingProgress={analysis.loadingProgress}
+                result={analysis.result}
+                analyzeSignal={analysis.analyzeSignal}
+                analyzeCompoundSignal={analysis.analyzeCompoundSignal}
+                cancelAnalysis={analysis.cancelAnalysis}
+                selectedMode={selectedMode}
+                setSelectedMode={handleSetSelectedMode}
+                countryTags={countryTags}
+                setCountryTags={handleSetCountryTags}
+                selectedSectors={selectedSectors}
+              />
+
+              {/* Results */}
+              <AnimatePresence mode="wait">
+                {analysis.error && (
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-8 font-mono text-sm">
+                    {analysis.error}
+                  </motion.div>
+                )}
+                {analysis.result && (
+                  <>
+                    <div className="sticky top-4 z-40 flex justify-start mb-6">
+                      <button type="button" onClick={handleBackToFeed} className="flex items-center gap-2 min-h-10 px-4 py-2 bg-white border border-border/10 hover:border-border/30 hover:bg-gray-50 rounded-xl shadow-md text-[11px] font-mono uppercase tracking-widest text-muted hover:text-foreground transition-all">
+                        <ArrowLeft className="w-4 h-4" />
+                        Back to Feed
+                      </button>
+                    </div>
+                    <ResultsDashboard
+                      result={analysis.result}
+                      filteredOpportunities={analysis.filteredOpportunities}
+                      filterType={analysis.filterType}
+                      setFilterType={analysis.setFilterType}
+                      grantOnly={analysis.grantOnly}
+                      setGrantOnly={analysis.setGrantOnly}
+                      generateDeepDive={analysis.generateDeepDive}
+                      shareOnTwitter={analysis.shareOnTwitter}
+                      shareOnLinkedIn={analysis.shareOnLinkedIn}
+                      countryTags={countryTags}
+                      isAgentResult={isAgentResult}
+                      readingLevel={readingLevel}
+                    />
+                  </>
+                )}
+              </AnimatePresence>
+
+              {/* Footer */}
+              {!analysis.result && !analysis.loading && (
+                <footer className="mt-24 border-t border-[#141414] pt-8 grid grid-cols-1 md:grid-cols-3 gap-8 opacity-40">
+                  <div>
+                    <p className="text-[10px] font-mono uppercase tracking-widest mb-2">System Status</p>
+                    <p className="text-xs">All intelligence modules operational. Monitoring global signals 24/7.</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-mono uppercase tracking-widest mb-2">Methodology</p>
+                    <p className="text-xs">First-principles thinking applied to market inefficiencies and regulatory shifts.</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-mono uppercase tracking-widest mb-2">Disclaimer</p>
+                    <p className="text-xs">Analysis is for informational purposes. Execution risk is inherent in all ventures.</p>
+                  </div>
+                </footer>
+              )}
+
+            </> /* end appMode === discover */}
+          </div>
+        </main>
+
+        {/* Right panel — desktop only */}
+        <div className="hidden md:block w-[280px] flex-shrink-0 overflow-y-auto">
+          <RightPanel
+            result={analysis.result}
+            readingLevel={readingLevel}
+            onNextMoveDone={() => {}}
+          />
+        </div>
       </div>
+
+      {/* ── Modals (fixed/portal — outside grid) ── */}
+      <AnimatePresence>
+        {analysis.selectedOpportunity && (
+          <DeepDiveModal
+            selectedOpportunity={analysis.selectedOpportunity}
+            setSelectedOpportunity={analysis.setSelectedOpportunity}
+            cancelDeepDive={analysis.cancelDeepDive}
+            deepDiveLoading={analysis.deepDiveLoading}
+            deepDiveResult={analysis.deepDiveResult}
+            activeDeepDiveTab={analysis.activeDeepDiveTab}
+            setActiveDeepDiveTab={analysis.setActiveDeepDiveTab}
+            generateDeepDive={analysis.generateDeepDive}
+            copyToClipboard={copyToClipboard}
+            copied={copied}
+            selectedMode={selectedMode}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showCancelConfirm && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowCancelConfirm(false)} className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50" />
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.15 }} className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full mx-4 space-y-5">
+              <p className="font-serif italic text-xl font-bold">Analysis almost done</p>
+              <p className="text-sm text-muted leading-relaxed">Results are nearly ready. Are you sure you want to cancel?</p>
+              <div className="flex gap-3">
+                <button onClick={() => setShowCancelConfirm(false)} className="flex-1 py-3 bg-foreground text-background rounded-xl font-mono text-[10px] uppercase tracking-widest hover:bg-foreground/90 transition-all">Wait for results</button>
+                <button onClick={handleBackToFeed} className="flex-1 py-3 bg-white border border-border/10 text-muted rounded-xl font-mono text-[10px] uppercase tracking-widest hover:text-red-500 hover:border-red-200 transition-all">Cancel anyway</button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 }
