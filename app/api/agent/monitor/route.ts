@@ -94,18 +94,48 @@ export async function GET(request: NextRequest) {
         const userSectors = (userPrefs.sectors as string[]) || [];
         const userBusinessTypes = (userPrefs.businessTypes as string[]) || [];
 
-        // Filter articles for this user's market (always include global)
+        // Filter RSS articles for this user's market (always include global)
         const marketArticles = allArticles.filter(
           (article: { market: string }) =>
             article.market === userMarket || article.market === 'global'
         );
 
-        console.log('[AGENT] Market filtered articles:', marketArticles.length);
+        // Add Reddit posts as a second signal layer
+        const redditSignals = await fetchRedditSignals(userMarket, 5)
+          .then(posts => posts.map(post => {
+            const score = Math.min(
+              Math.round(
+                50 +
+                Math.min(post.upvotes / 50, 25) +
+                Math.min(post.comments / 10, 25)
+              ),
+              99
+            );
+            return {
+              title: post.title,
+              snippet: post.body.substring(0, 200),
+              source: `r/${post.subreddit}`,
+              url: post.url,
+              sector: post.sector,
+              signalScore: score,
+              type: 'reddit' as const,
+              market: userMarket,
+              publishedAt: new Date(post.created * 1000).toISOString(),
+            };
+          }))
+          .catch((err) => {
+            console.warn('[MONITOR] Reddit fetch failed:', err);
+            return [];
+          });
+
+        const combinedArticles = [...marketArticles, ...redditSignals];
+
+        console.log('[AGENT] Market filtered articles:', marketArticles.length, 'reddit:', redditSignals.length);
 
         // Score each article for this user
         const marketKeywords = MARKET_KEYWORDS[userMarket] ?? [];
 
-        const scoredArticles = marketArticles
+        const scoredArticles = combinedArticles
           .map((article: { title: string; snippet: string; sector: string; market: string; signalScore?: number; url: string; source: string; publishedAt: string }) => {
             let score = article.signalScore ?? 50;
 
