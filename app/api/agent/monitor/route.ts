@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebase-admin';
 import { fetchAllMarkets } from '@/lib/rss-fetcher';
+import { fetchRedditSignals } from '@/lib/reddit-fetcher';
 import { COUNTRY_CONTEXT, MARKET_KEYWORDS } from '@/lib/rss-sources';
 import { identifyStrongSignals } from '@/lib/signal-analyzer';
 import { Resend } from 'resend';
@@ -44,6 +45,35 @@ export async function GET(request: NextRequest) {
     } catch (feedError) {
       console.error('[AGENT] Feed fetch failed:', feedError);
       return NextResponse.json({ error: 'Feed fetch failed' }, { status: 500 });
+    }
+
+    // Fetch Reddit signals and blend into allArticles
+    try {
+      const redditPosts = await fetchRedditSignals('global', 5);
+      for (const post of redditPosts) {
+        const score = Math.min(
+          Math.round(
+            50 +
+              Math.min(post.upvotes / 50, 25) +
+              Math.min(post.comments / 10, 25)
+          ),
+          99
+        );
+        allArticles.push({
+          title: post.title,
+          snippet: post.body.substring(0, 200),
+          source: `r/${post.subreddit}`,
+          url: post.url,
+          sector: 'markets',
+          signalScore: score,
+          type: 'reddit',
+          market: 'global',
+          publishedAt: new Date(post.created * 1000).toISOString(),
+        });
+      }
+      console.log(`[AGENT] Added ${redditPosts.length} Reddit posts`);
+    } catch (err) {
+      console.warn('[MONITOR] Reddit fetch failed:', err);
     }
 
     if (allArticles.length === 0) {

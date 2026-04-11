@@ -291,6 +291,18 @@ export interface FeedSignal {
   market?: string;
   isLocalSource?: boolean;
   isGlobalMention?: boolean;
+  type?: 'rss' | 'reddit';
+  redditMeta?: {
+    subreddit: string;
+    upvotes: number;
+    comments: number;
+    postType: string;
+    problem: string;
+    startupIdea: string;
+    targetUser: string;
+    signalStrength: number;
+    marketNote?: string;
+  };
 }
 
 export type RecencyFilter = '24h' | '3d' | '7d';

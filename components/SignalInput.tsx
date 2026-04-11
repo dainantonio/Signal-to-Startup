@@ -57,7 +57,9 @@ export const SignalInput: React.FC<SignalInputProps> = ({
   selectedMode, setSelectedMode,
   selectedSectors = [],
 }) => {
-  const [inputMode, setInputMode] = useState<'paste' | 'feed'>('paste');
+  const [inputMode, setInputMode] = useState<'paste' | 'feed' | 'reddit'>('paste');
+  const [redditSignals, setRedditSignals] = useState<Record<string, unknown>[]>([]);
+  const [fetchingReddit, setFetchingReddit] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pdfStatus, setPdfStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -212,6 +214,23 @@ export const SignalInput: React.FC<SignalInputProps> = ({
     if (inputMode === 'feed') fetchFeed();
   }, [inputMode, fetchKey]);
 
+  const fetchRedditSignalsData = useCallback(async () => {
+    setFetchingReddit(true);
+    try {
+      const res = await fetch(`/api/reddit-signals?market=${selectedMode}`);
+      const data = await res.json();
+      setRedditSignals(data.signals || []);
+    } catch (err) {
+      console.error('Reddit fetch failed:', err);
+    } finally {
+      setFetchingReddit(false);
+    }
+  }, [selectedMode]);
+
+  useEffect(() => {
+    if (inputMode === 'reddit') fetchRedditSignalsData();
+  }, [inputMode, selectedMode]);
+
   // Progress animation for selected card
   useEffect(() => {
     if (!analyzingUrl) return;
@@ -357,6 +376,10 @@ export const SignalInput: React.FC<SignalInputProps> = ({
         <button onClick={() => setInputMode('feed')} className={`flex-1 py-3 rounded-xl font-mono text-[11px] uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 ${inputMode === 'feed' ? 'bg-foreground text-background shadow-lg shadow-foreground/10' : 'text-muted hover:text-foreground hover:bg-gray-50'}`}>
           <span className={`w-2 h-2 rounded-full flex-shrink-0 ${inputMode === 'feed' ? 'bg-red-400 animate-pulse' : 'bg-gray-300'}`} />
           Live Feed
+        </button>
+        <button onClick={() => setInputMode('reddit')} className={`flex-1 py-3 rounded-xl font-mono text-[11px] uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 ${inputMode === 'reddit' ? 'bg-foreground text-background shadow-lg shadow-foreground/10' : 'text-muted hover:text-foreground hover:bg-gray-50'}`}>
+          <span className={`w-2 h-2 rounded-full flex-shrink-0 ${inputMode === 'reddit' ? 'bg-orange-400 animate-pulse' : 'bg-gray-300'}`} />
+          Reddit Signals
         </button>
       </div>
 
@@ -554,7 +577,7 @@ export const SignalInput: React.FC<SignalInputProps> = ({
             </div>
           </details>
         </div>
-      ) : (
+      ) : inputMode === 'feed' ? (
         <div className="space-y-4">
           {/* Slim filter bar */}
           {(() => {
@@ -1081,6 +1104,111 @@ export const SignalInput: React.FC<SignalInputProps> = ({
             </div>
           </div>
 
+        </div>
+      ) : (
+        /* ── REDDIT SIGNALS ── */
+        <div className="space-y-4">
+          <div className="flex items-center justify-between px-1">
+            <p className="text-xs text-gray-500">
+              AI-analyzed Reddit posts — pain points, complaints &amp; workarounds turned into startup signals.
+            </p>
+            <button
+              type="button"
+              onClick={fetchRedditSignalsData}
+              disabled={fetchingReddit}
+              className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-900 transition-colors"
+            >
+              <RefreshCw className={`w-3 h-3 ${fetchingReddit ? 'animate-spin' : ''}`} />
+              Refresh
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {fetchingReddit
+              ? Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="bg-white border border-border/10 rounded-2xl p-5 space-y-3 animate-pulse">
+                    <div className="h-4 bg-gray-100 w-24 rounded"/>
+                    <div className="h-10 bg-gray-100 rounded"/>
+                    <div className="h-16 bg-gray-100 rounded"/>
+                    <div className="h-9 bg-gray-100 rounded-xl"/>
+                  </div>
+                ))
+              : redditSignals.length === 0
+              ? (
+                  <div className="col-span-2 text-center py-16 text-gray-400">
+                    <p className="text-2xl mb-2">🤖</p>
+                    <p className="text-sm font-medium text-gray-600 mb-1">No Reddit signals yet</p>
+                    <p className="text-xs">Click Refresh to fetch and analyze posts from r/smallbusiness, r/Entrepreneur and more.</p>
+                  </div>
+                )
+              : redditSignals.map((sig, i) => {
+                  const meta = sig.redditMeta as { subreddit?: string; postType?: string; upvotes?: number; comments?: number; problem?: string; startupIdea?: string } | undefined;
+                  return (
+                    <div key={i} className="bg-white border border-orange-100 rounded-2xl flex flex-col overflow-hidden hover:border-orange-200 hover:shadow-md transition-all">
+                      <div className="p-4 flex flex-col gap-3 flex-1">
+                        {/* Meta */}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-[9px] font-mono font-bold text-orange-400 uppercase tracking-wider">
+                            r/{meta?.subreddit}
+                          </span>
+                          <span className="px-2 py-0.5 text-[9px] font-mono uppercase font-bold rounded-md bg-orange-50 text-orange-600">
+                            {meta?.postType}
+                          </span>
+                          <div className="ml-auto flex items-center gap-1 px-2 py-0.5 bg-amber-50 border border-amber-200 rounded-lg">
+                            <span className="text-amber-500 text-[9px]">⚡</span>
+                            <span className="text-[10px] font-bold font-mono text-amber-700">{String(sig.signalScore ?? 0)}</span>
+                          </div>
+                        </div>
+
+                        {/* Title */}
+                        <h3 className="text-sm font-semibold text-gray-900 leading-snug line-clamp-2">{String(sig.title ?? '')}</h3>
+
+                        {/* Problem */}
+                        <div className="bg-orange-50 rounded-xl p-3">
+                          <p className="text-[9px] font-bold text-orange-600 uppercase tracking-widest mb-1">Problem identified</p>
+                          <p className="text-xs text-gray-700 leading-relaxed">{meta?.problem}</p>
+                        </div>
+
+                        {/* Startup idea */}
+                        <div className="bg-emerald-50 rounded-xl p-3">
+                          <p className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest mb-1">Startup opportunity</p>
+                          <p className="text-xs text-gray-700 leading-relaxed">{meta?.startupIdea}</p>
+                        </div>
+
+                        {/* Engagement */}
+                        <div className="flex items-center gap-3 text-[10px] text-gray-400">
+                          <span>▲ {(meta?.upvotes ?? 0).toLocaleString()} upvotes</span>
+                          <span>💬 {(meta?.comments ?? 0).toLocaleString()} comments</span>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const signalText = `${sig.title}. ${meta?.problem ?? ''}. Startup idea: ${meta?.startupIdea ?? ''}`;
+                              setInput(signalText as string);
+                              analyzeSignal(signalText as string);
+                            }}
+                            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-gray-900 text-white rounded-xl text-xs font-semibold hover:bg-gray-700 transition-colors"
+                          >
+                            ⚡ Deep Analysis
+                          </button>
+                          <a
+                            href={String(sig.url ?? '#')}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-3 py-2.5 rounded-xl border border-gray-200 text-xs text-gray-500 hover:border-gray-400 transition-colors flex items-center"
+                          >
+                            View Post
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+            }
+          </div>
         </div>
       )}
 
