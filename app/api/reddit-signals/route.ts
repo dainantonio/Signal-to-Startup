@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
     const genAI = new GoogleGenAI({ apiKey });
     const signals = [];
 
-    for (const post of posts.slice(0, 5)) {
+    for (const post of posts.slice(0, 8)) {
       try {
         const prompt = `You are a startup signal analyst.
 Analyze this Reddit post and extract a business opportunity signal.
@@ -113,7 +113,7 @@ Return ONLY the JSON object.`;
         if (type === 'noise') continue;
 
         const signalStrength = Number(parsed.signal_strength ?? parsed.signalStrength ?? 0);
-        if (signalStrength < 5) continue;
+        if (signalStrength < 4) continue;
 
         const problem = String(parsed.problem ?? parsed.problem_statement ?? parsed.problemStatement ?? parsed.summary ?? '').trim();
         const startupIdea = String(parsed.startup_idea ?? parsed.startupIdea ?? parsed.idea ?? '').trim();

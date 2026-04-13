@@ -38,14 +38,16 @@ const SUBREDDITS = [
   { name: 'microSaaS', sector: 'ai', market: 'global' },
   { name: 'freelance', sector: 'workforce', market: 'global' },
   { name: 'restaurantowners', sector: 'food', market: 'global' },
+  { name: 'design', sector: 'markets', market: 'global' },
+  { name: 'startup', sector: 'markets', market: 'global' },
   { name: 'nigeria', sector: 'markets', market: 'africa' },
   { name: 'jamaica', sector: 'markets', market: 'caribbean' },
   { name: 'africa', sector: 'markets', market: 'africa' },
   { name: 'personalfinance', sector: 'funding', market: 'global' },
 ];
 
-const MIN_UPVOTES = 50;
-const MIN_COMMENTS = 10;
+const MIN_UPVOTES = 10;
+const MIN_COMMENTS = 2;
 
 export async function fetchRedditSignals(
   market: string = 'global',
@@ -57,10 +59,10 @@ export async function fetchRedditSignals(
 
   const posts: RedditPost[] = [];
 
-  for (const sub of relevantSubs.slice(0, 5)) {
+  for (const sub of relevantSubs.slice(0, 8)) {
     try {
       const res = await fetch(
-        `https://www.reddit.com/r/${sub.name}/hot.json?limit=25`,
+        `https://www.reddit.com/r/${sub.name}/hot.json?limit=35`,
         {
           headers: { 'User-Agent': 'SignalToStartup/1.0' },
           next: { revalidate: 3600 },
@@ -81,11 +83,11 @@ export async function fetchRedditSignals(
         if (post.post_hint === 'image') continue;
 
         const body = post.selftext || '';
-        if (body.length < 50 && post.title.length < 30) continue;
+        if (body.length < 30 && post.title.length < 25) continue;
 
         posts.push({
           title: post.title,
-          body: body.substring(0, 1000),
+          body: body.substring(0, 1200),
           subreddit: sub.name,
           upvotes: post.ups,
           comments: post.num_comments,
