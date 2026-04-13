@@ -47,35 +47,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Feed fetch failed' }, { status: 500 });
     }
 
-    // Fetch Reddit signals and blend into allArticles
-    try {
-      const redditPosts = await fetchRedditSignals('global', 5);
-      for (const post of redditPosts) {
-        const score = Math.min(
-          Math.round(
-            50 +
-              Math.min(post.upvotes / 50, 25) +
-              Math.min(post.comments / 10, 25)
-          ),
-          99
-        );
-        allArticles.push({
-          title: post.title,
-          snippet: post.body.substring(0, 200),
-          source: `r/${post.subreddit}`,
-          url: post.url,
-          sector: 'markets',
-          signalScore: score,
-          type: 'reddit',
-          market: 'global',
-          publishedAt: new Date(post.created * 1000).toISOString(),
-        });
-      }
-      console.log(`[AGENT] Added ${redditPosts.length} Reddit posts`);
-    } catch (err) {
-      console.warn('[MONITOR] Reddit fetch failed:', err);
-    }
-
     if (allArticles.length === 0) {
       return NextResponse.json({ success: true, message: 'No new articles found' });
     }
@@ -100,12 +71,41 @@ export async function GET(request: NextRequest) {
             article.market === userMarket || article.market === 'global'
         );
 
-        console.log('[AGENT] Market filtered articles:', marketArticles.length);
+        let personalizedArticles = [...marketArticles];
+        try {
+          const redditPosts = await fetchRedditSignals(userMarket, 5);
+          for (const post of redditPosts) {
+            const score = Math.min(
+              Math.round(
+                50 +
+                  Math.min(post.upvotes / 50, 25) +
+                  Math.min(post.comments / 10, 25)
+              ),
+              99
+            );
+            personalizedArticles.push({
+              title: post.title,
+              snippet: post.body.substring(0, 200),
+              source: `r/${post.subreddit}`,
+              url: post.url,
+              sector: 'markets',
+              signalScore: score,
+              type: 'reddit',
+              market: userMarket,
+              publishedAt: new Date(post.created * 1000).toISOString(),
+            });
+          }
+          console.log(`[AGENT] Added ${redditPosts.length} Reddit posts for ${userMarket}`);
+        } catch (err) {
+          console.warn('[MONITOR] Reddit fetch failed:', err);
+        }
+
+        console.log('[AGENT] Market filtered articles:', personalizedArticles.length);
 
         // Score each article for this user
         const marketKeywords = MARKET_KEYWORDS[userMarket] ?? [];
 
-        const scoredArticles = marketArticles
+        const scoredArticles = personalizedArticles
           .map((article: { title: string; snippet: string; sector: string; market: string; signalScore?: number; url: string; source: string; publishedAt: string }) => {
             let score = article.signalScore ?? 50;
 
