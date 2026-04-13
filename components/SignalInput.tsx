@@ -773,7 +773,7 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                           : '0 1px 3px rgba(0,0,0,0.08)',
                       }}
                       transition={{ duration: 0.3, ease: 'easeInOut' }}
-                      className={`relative bg-white border border-gray-200 rounded-2xl flex flex-col overflow-hidden ${
+                      className={`relative bg-white border border-gray-200 rounded-2xl shadow-sm flex flex-col overflow-hidden ${
                         isOtherAnalyzing ? 'pointer-events-none' : ''
                       } ${isAnalyzing ? 'z-10 ring-2 ring-blue-400 ring-offset-2' : ''} ${
                         multiSelectMode ? 'cursor-pointer' : ''
@@ -879,52 +879,7 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                               >
                                 ⚡ Analyze
                               </button>
-
-                              <div className="relative">
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (watching === sig.url) return;
-                                    setShowWatchMenu(prev => prev === sig.url ? null : sig.url);
-                                  }}
-                                  className={watching === sig.url
-                                    ? 'px-3 py-2.5 rounded-xl border border-amber-200 text-xs font-medium text-amber-700 bg-amber-50 whitespace-nowrap'
-                                    : 'px-3 py-2.5 rounded-xl border border-gray-200 text-xs font-medium text-gray-500 hover:border-amber-400 hover:text-amber-700 bg-white transition-colors whitespace-nowrap'}
-                                >
-                                  {watching === sig.url ? 'Watching ✓' : 'Watch'}
-                                </button>
-                                {showWatchMenu === sig.url && (
-                                  <div
-                                    className="absolute bottom-full right-0 mb-2 w-44 bg-white border border-gray-200 rounded-2xl shadow-xl p-2 z-50"
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    <p className="text-xs font-semibold text-gray-600 px-2 py-1.5">Watch for how long?</p>
-                                    {[3, 5, 7, 14].map(days => (
-                                      <button
-                                        key={days}
-                                        type="button"
-                                        onClick={(e) => { e.stopPropagation(); addToWatchlist(sig, days); }}
-                                        className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-amber-50 hover:text-amber-700 rounded-xl transition-colors flex items-center justify-between"
-                                      >
-                                        <span>{days} days</span>
-                                        {days === 7 && <span className="text-amber-500">recommended</span>}
-                                      </button>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
-                              {sig.url && sig.url !== '#' && (
-                                <a
-                                  href={sig.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  onClick={e => e.stopPropagation()}
-                                  className="p-2.5 rounded-xl border border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-300 transition-colors text-sm flex items-center"
-                                >
-                                  ↗
-                                </a>
-                              )}
+                              <WatchButton article={sig} />
                             </div>
                           )}
                         </div>
