@@ -70,12 +70,21 @@ const rawRedditSignal = (post: { title: string; body: string; subreddit: string;
 
 export async function GET(request: NextRequest) {
   const market = request.nextUrl.searchParams.get('market') || 'global';
+  const raw = request.nextUrl.searchParams.get('raw') === 'true';
 
   try {
     const posts = await fetchRedditSignals(market, 8);
 
     if (posts.length === 0) {
       return NextResponse.json({ signals: [] });
+    }
+
+    // If raw mode requested, return raw posts immediately
+    if (raw) {
+      return NextResponse.json({
+        signals: posts.slice(0, 8).map(rawRedditSignal),
+        meta: { postCount: posts.length, rawFallback: true },
+      });
     }
 
     const apiKey =

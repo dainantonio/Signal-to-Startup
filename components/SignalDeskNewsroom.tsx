@@ -108,6 +108,7 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
   const [fetchingReddit, setFetchingReddit] = useState(false);
   const [redditError, setRedditError] = useState<string | null>(null);
   const [redditMeta, setRedditMeta] = useState<{ postCount?: number; rawFallback?: boolean } | null>(null);
+  const [showRawReddit, setShowRawReddit] = useState(false);
 
   // Card pop-out states
   const [analyzingUrl, setAnalyzingUrl] = useState<string | null>(null);
@@ -203,6 +204,32 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
 
     fetchReddit();
   }, [inputMode, selectedMode]);
+
+  const fetchRawReddit = async () => {
+    setFetchingReddit(true);
+    setRedditError(null);
+    try {
+      const res = await fetch(`/api/reddit-signals?market=${selectedMode}&raw=true`);
+      const data = await res.json();
+      if (!res.ok || data?.error) {
+        const message = data?.error || 'Failed to load raw Reddit posts';
+        setRedditSignals([]);
+        setRedditMeta(null);
+        setRedditError(message);
+        console.error('Raw Reddit fetch failed:', message);
+        return;
+      }
+      setRedditSignals(data.signals || []);
+      setRedditMeta({ postCount: data?.meta?.postCount, rawFallback: true });
+    } catch (err) {
+      setRedditError('Failed to load raw Reddit posts');
+      setRedditSignals([]);
+      setRedditMeta(null);
+      console.error('Raw Reddit fetch failed:', err);
+    } finally {
+      setFetchingReddit(false);
+    }
+  };
 
   // Progress animation for selected card
   useEffect(() => {
@@ -328,7 +355,7 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
           )}
         </button>
         <button
-          onClick={() => { setInputMode('reddit'); setMultiSelectMode(false); setSelectedArticles([]); }}
+          onClick={() => { setInputMode('reddit'); setMultiSelectMode(false); setSelectedArticles([]); setShowRawReddit(false); }}
           className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all ${
             inputMode === 'reddit'
               ? 'bg-black text-white shadow-lg'
@@ -603,6 +630,18 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
                       Fetched {redditMeta.postCount} Reddit posts{redditMeta.rawFallback ? ' (raw fallback mode)' : ''}.
                     </p>
                   )}
+                  {redditMeta?.postCount === 0 && (
+                    <p className="mt-2 text-xs text-gray-400">
+                      No Reddit posts passed the filters. Try lowering thresholds or adding more subreddits.
+                    </p>
+                  )}
+                  <button
+                    onClick={() => fetchRawReddit()}
+                    disabled={fetchingReddit}
+                    className="mt-4 px-4 py-2 bg-orange-100 text-orange-700 rounded-lg text-sm font-medium hover:bg-orange-200 disabled:opacity-50 transition-colors"
+                  >
+                    {fetchingReddit ? 'Loading...' : 'Show Raw Reddit Posts'}
+                  </button>
                 </div>
               ) : redditSignals.map((sig, i) => {
                 const meta = sig.redditMeta;
