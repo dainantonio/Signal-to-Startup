@@ -72,15 +72,21 @@ export async function GET(request: NextRequest) {
   const market = request.nextUrl.searchParams.get('market') || 'global';
   const raw = request.nextUrl.searchParams.get('raw') === 'true';
 
+  console.log('[REDDIT] API called with market:', market, 'raw:', raw);
+
   try {
     const posts = await fetchRedditSignals(market, 8);
 
+    console.log('[REDDIT] Fetched', posts.length, 'posts from Reddit');
+
     if (posts.length === 0) {
+      console.log('[REDDIT] No posts found, returning empty');
       return NextResponse.json({ signals: [] });
     }
 
     // If raw mode requested, return raw posts immediately
     if (raw) {
+      console.log('[REDDIT] Returning raw posts');
       return NextResponse.json({
         signals: posts.slice(0, 8).map(rawRedditSignal),
         meta: { postCount: posts.length, rawFallback: true },
