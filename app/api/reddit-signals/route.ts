@@ -1,28 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
 import { fetchRedditSignals } from '@/lib/reddit-fetcher';
+import type { RedditSignal } from '@/lib/reddit-fetcher';
 
-export async function GET(request: NextRequest) {
-  const market = request.nextUrl.searchParams.get('market') || 'global';
+interface RedditAnalysis {
+  type: string;
+  problem: string;
+  signal_strength: number;
+  startup_idea: string;
+  target_user: string;
+  market_note?: string;
+}
 
-  try {
-    const posts = await fetchRedditSignals(market, 8);
-
-    if (posts.length === 0) {
-      return NextResponse.json({ signals: [] });
-    }
-
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json({ error: 'No API key' }, { status: 500 });
-    }
-
-    const genAI = new GoogleGenAI({ apiKey });
-    const signals = [];
-
-    for (const post of posts.slice(0, 5)) {
-      try {
-        const prompt = `You are a startup signal analyst.
+const ANALYSIS_PROMPT = (post: {
+  title: string;
+  body: string;
+  subreddit: string;
+  upvotes: number;
+  comments: number;
+}) => `You are a startup signal analyst.
 Analyze this Reddit post and extract a business opportunity signal.
 
 Title: ${post.title}
@@ -48,16 +44,35 @@ Otherwise return ONLY valid JSON:
 Signal strength 1-10. Be strict — only score above 6 if truly actionable.
 Return ONLY the JSON object.`;
 
+export async function GET(request: NextRequest) {
+  const market = request.nextUrl.searchParams.get('market') || 'global';
+
+  try {
+    const posts = await fetchRedditSignals(market, 8);
+
+    if (posts.length === 0) {
+      return NextResponse.json({ signals: [], subreddits: [], topSignalScore: 0 });
+    }
+
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json({ error: 'No API key' }, { status: 500 });
+    }
+
+    const genAI = new GoogleGenAI({ apiKey });
+    const signals: RedditSignal[] = [];
+
+    for (const post of posts.slice(0, 5)) {
+      try {
         const response = await genAI.models.generateContent({
           model: 'gemini-2.5-flash',
-          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          contents: [{ role: 'user', parts: [{ text: ANALYSIS_PROMPT(post) }] }],
         });
 
-        const text = (response.text ?? '')
-          .replace(/```json|```/g, '')
-          .trim();
+        const text = response.text?.replace(/```json|```/g, '').trim();
+        if (!text) continue;
 
-        const parsed = JSON.parse(text);
+        const parsed = JSON.parse(text) as RedditAnalysis;
 
         if (parsed.type === 'Noise') continue;
         if ((parsed.signal_strength ?? 0) < 5) continue;
@@ -67,7 +82,7 @@ Return ONLY the JSON object.`;
           snippet: parsed.problem,
           source: `r/${post.subreddit}`,
           url: post.url,
-          sector: 'markets',
+          sector: (post.sector || 'markets') as RedditSignal['sector'],
           signalScore: Math.min(
             Math.round(
               parsed.signal_strength * 10 +
@@ -77,7 +92,6 @@ Return ONLY the JSON object.`;
             99
           ),
           type: 'reddit',
-          publishedAt: new Date(post.created * 1000).toISOString(),
           redditMeta: {
             subreddit: post.subreddit,
             upvotes: post.upvotes,
@@ -90,12 +104,15 @@ Return ONLY the JSON object.`;
             marketNote: parsed.market_note,
           },
         });
-      } catch {
-        console.warn('[REDDIT] Analysis failed for post:', post.title.slice(0, 40));
+      } catch (err) {
+        console.warn('[REDDIT] Analysis failed for post:', post.title.slice(0, 40), err);
       }
     }
 
-    return NextResponse.json({ signals });
+    const subreddits = [...new Set(signals.map(s => s.redditMeta.subreddit))];
+    const topSignalScore = signals.reduce((max, s) => Math.max(max, s.signalScore), 0);
+
+    return NextResponse.json({ signals, subreddits, topSignalScore });
   } catch (err) {
     console.error('[REDDIT] Route failed:', err);
     return NextResponse.json({ error: String(err) }, { status: 500 });
