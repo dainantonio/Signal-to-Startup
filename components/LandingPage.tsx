@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { auth, googleProvider, signInWithPopup, signInWithRedirect, db, addDoc, collection } from '@/firebase';
+import { auth, googleProvider, signInWithPopup, signInWithRedirect, getRedirectResult, db, addDoc, collection } from '@/firebase';
 import DemoMode from '@/components/DemoMode';
 import Logo from '@/components/Logo';
 import { WorkflowInteractiveDemo } from '@/components/WorkflowInteractiveDemo';
@@ -13,6 +13,22 @@ export default function LandingPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [showDemo, setShowDemo] = useState(false);
+
+  // Handle OAuth redirect callback on mount (fixes mobile sign-in loop)
+  useEffect(() => {
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result?.user) {
+          console.log('Redirect sign-in successful:', result.user.email);
+          // Auth state will update via onAuthStateChanged in page.tsx
+        }
+      })
+      .catch((err: { code?: string }) => {
+        if (err?.code !== 'auth/cancelled-popup-request') {
+          console.error('Redirect auth error:', err);
+        }
+      });
+  }, []);
 
   const handleWaitlist = async (e: React.FormEvent) => {
     e.preventDefault();
