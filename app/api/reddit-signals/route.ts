@@ -46,6 +46,28 @@ const parseModelJson = (raw: string): any | null => {
   return null;
 };
 
+const rawRedditSignal = (post: { title: string; body: string; subreddit: string; upvotes: number; comments: number; url: string; created: number }) => ({
+  title: post.title,
+  snippet: post.body?.substring(0, 180) || post.title,
+  source: `r/${post.subreddit}`,
+  url: post.url,
+  sector: 'markets',
+  signalScore: Math.min(post.upvotes + post.comments * 2, 75),
+  type: 'reddit',
+  publishedAt: new Date(post.created * 1000).toISOString(),
+  redditMeta: {
+    subreddit: post.subreddit,
+    upvotes: post.upvotes,
+    comments: post.comments,
+    postType: 'Raw',
+    problem: post.body?.substring(0, 120) || post.title,
+    startupIdea: 'Raw Reddit post signal',
+    targetUser: 'Startup founders',
+    signalStrength: 3,
+    marketNote: 'Fallback raw Reddit signal',
+  },
+});
+
 export async function GET(request: NextRequest) {
   const market = request.nextUrl.searchParams.get('market') || 'global';
 
@@ -61,8 +83,12 @@ export async function GET(request: NextRequest) {
       process.env.NEXT_PUBLIC_GEMINI_API_KEY ||
       process.env.gemini_api_key ||
       process.env.next_public_gemini_api_key;
+
     if (!apiKey) {
-      return NextResponse.json({ error: 'No API key' }, { status: 500 });
+      console.warn('[REDDIT] Missing Gemini API key — returning raw Reddit fallback signals');
+      return NextResponse.json({
+        signals: posts.slice(0, 8).map(rawRedditSignal),
+      });
     }
 
     const genAI = new GoogleGenAI({ apiKey });
@@ -151,6 +177,13 @@ Return ONLY the JSON object.`;
       } catch {
         console.warn('[REDDIT] Analysis failed for post:', post.title.slice(0, 40));
       }
+    }
+
+    if (signals.length === 0) {
+      console.warn('[REDDIT] No AI signals generated — returning raw Reddit fallback output');
+      return NextResponse.json({
+        signals: posts.slice(0, 8).map(rawRedditSignal),
+      });
     }
 
     return NextResponse.json({ signals });
