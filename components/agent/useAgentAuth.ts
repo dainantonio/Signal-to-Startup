@@ -40,20 +40,6 @@ export function useAgentAuth() {
   const [loginError, setLoginError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Handle redirect result first (mobile sign-in returns here)
-    getRedirectResult(auth)
-      .then((result) => {
-        if (result?.user) {
-          console.log('[AUTH] Redirect sign-in successful:', result.user.email);
-          ensureUserDocument(result.user);
-        }
-      })
-      .catch((err: { code?: string }) => {
-        if (err?.code !== 'auth/cancelled-popup-request') {
-          console.error('[AUTH] Redirect error:', err);
-        }
-      });
-
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
         ensureUserDocument(firebaseUser);
