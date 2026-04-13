@@ -352,6 +352,23 @@ export default function DashboardPage() {
           </div>
           <h1 className="text-3xl font-bold text-gray-900 tracking-tight mb-2">Your Dashboard</h1>
           <p className="text-sm text-gray-500">Track your saved opportunities from signal to launch.</p>
+
+          <div className="grid gap-4 sm:grid-cols-3 mt-8 mb-10">
+            {[
+              { step: '1', title: 'Capture signals', body: 'Save high-potential news, Reddit and market alerts into your feed.' },
+              { step: '2', title: 'Analyze ideas', body: 'Turn signals into Deep Dive plans with funding, pricing and next steps.' },
+              { step: '3', title: 'Execute launches', body: 'Manage progress, pitch assets, and launch momentum from one Pipeline.' },
+            ].map(card => (
+              <div key={card.step} className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-[10px] font-mono uppercase tracking-[0.35em] text-gray-400">Step {card.step}</span>
+                  <span className="text-[10px] font-semibold uppercase text-slate-600">Workflow</span>
+                </div>
+                <h2 className="text-lg font-semibold text-slate-900 mb-2">{card.title}</h2>
+                <p className="text-sm text-gray-500 leading-relaxed">{card.body}</p>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Tab switcher */}
@@ -746,6 +763,20 @@ export default function DashboardPage() {
               <p>The Pipeline is your execution engine. When you read the news feed and see a business opportunity you like, analyzing it generates a full "Deep Dive" business plan.</p>
               <p>Save that Deep Dive to this Pipeline to manage its lifecycle from idea to execution. It will automatically generate funding sources, cost estimates, and let you launch a real waitlist website.</p>
             </div>
+
+            <div className="grid gap-3 sm:grid-cols-3 mb-8">
+              {[
+                { title: 'Save signal', body: 'Capture the best idea from news, Reddit or your own notes.' },
+                { title: 'Analyze deeply', body: 'Transform it into a full business plan with runway, costs and growth steps.' },
+                { title: 'Launch fast', body: 'Use your saved opportunity to create landing pages, pitch decks and launch actions.' },
+              ].map(card => (
+                <div key={card.title} className="rounded-3xl border border-gray-200 bg-white p-4 text-sm text-gray-600 shadow-sm">
+                  <p className="text-xs uppercase tracking-[0.35em] font-bold text-gray-400 mb-2">{card.title}</p>
+                  <p>{card.body}</p>
+                </div>
+              ))}
+            </div>
+
             <Link href="/" className="inline-flex items-center gap-2 bg-foreground text-background px-8 py-4 rounded-2xl text-[11px] font-mono uppercase tracking-widest font-bold hover:bg-foreground/90 transition-all shadow-xl shadow-foreground/10">
               Go to News Feed <ArrowRight className="w-4 h-4" />
             </Link>

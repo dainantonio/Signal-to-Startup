@@ -550,6 +550,19 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                   )}
                 </div>
               </div>
+
+              <div className="grid gap-3 sm:grid-cols-3 mt-6">
+                {[
+                  { label: 'Signal', description: 'We monitor news, Reddit and local market notes to find the right opportunities.' },
+                  { label: 'Analyze', description: 'Your agent extracts the best business idea, funding sources and first steps.' },
+                  { label: 'Launch', description: 'Saved opportunities appear in your Pipeline as execution-ready plans.' },
+                ].map(item => (
+                  <div key={item.label} className="rounded-3xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+                    <p className="text-xs uppercase tracking-[0.35em] font-semibold text-slate-500 mb-2">{item.label}</p>
+                    <p>{item.description}</p>
+                  </div>
+                ))}
+              </div>
             </motion.div>
           )}
 
