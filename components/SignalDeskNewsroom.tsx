@@ -107,6 +107,7 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
   const [redditSignals, setRedditSignals] = useState<FeedSignal[]>([]);
   const [fetchingReddit, setFetchingReddit] = useState(false);
   const [redditError, setRedditError] = useState<string | null>(null);
+  const [redditMeta, setRedditMeta] = useState<{ postCount?: number; rawFallback?: boolean } | null>(null);
 
   // Card pop-out states
   const [analyzingUrl, setAnalyzingUrl] = useState<string | null>(null);
@@ -183,14 +184,17 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
         if (!res.ok || data?.error) {
           const message = data?.error || 'Failed to load Reddit signals';
           setRedditSignals([]);
+          setRedditMeta(null);
           setRedditError(message);
           console.error('Reddit fetch failed:', message);
           return;
         }
         setRedditSignals(data.signals || []);
+        setRedditMeta({ postCount: data?.meta?.postCount, rawFallback: data?.meta?.rawFallback });
       } catch (err) {
         setRedditError('Failed to load Reddit signals');
         setRedditSignals([]);
+        setRedditMeta(null);
         console.error('Reddit fetch failed:', err);
       } finally {
         setFetchingReddit(false);
@@ -593,7 +597,12 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
                 ))
               ) : redditSignals.length === 0 ? (
                 <div className="col-span-full text-center py-16 text-gray-500 text-sm">
-                  No Reddit signals found. Try again or select a different market.
+                  <p>No Reddit signals found. Try again or select a different market.</p>
+                  {redditMeta?.postCount !== undefined && (
+                    <p className="mt-2 text-xs text-gray-400">
+                      Fetched {redditMeta.postCount} Reddit posts{redditMeta.rawFallback ? ' (raw fallback mode)' : ''}.
+                    </p>
+                  )}
                 </div>
               ) : redditSignals.map((sig, i) => {
                 const meta = sig.redditMeta;

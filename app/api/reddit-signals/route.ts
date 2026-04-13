@@ -88,6 +88,7 @@ export async function GET(request: NextRequest) {
       console.warn('[REDDIT] Missing Gemini API key — returning raw Reddit fallback signals');
       return NextResponse.json({
         signals: posts.slice(0, 8).map(rawRedditSignal),
+        meta: { postCount: posts.length, rawFallback: true },
       });
     }
 
@@ -183,10 +184,11 @@ Return ONLY the JSON object.`;
       console.warn('[REDDIT] No AI signals generated — returning raw Reddit fallback output');
       return NextResponse.json({
         signals: posts.slice(0, 8).map(rawRedditSignal),
+        meta: { postCount: posts.length, rawFallback: true },
       });
     }
 
-    return NextResponse.json({ signals });
+    return NextResponse.json({ signals, meta: { postCount: posts.length, rawFallback: false } });
   } catch (err) {
     console.error('[REDDIT] Route failed:', err);
     return NextResponse.json({ error: String(err) }, { status: 500 });
