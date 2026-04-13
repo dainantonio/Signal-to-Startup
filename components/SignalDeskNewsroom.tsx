@@ -20,6 +20,7 @@ import { MarketMode, FeedSignal, SectorKey, RecencyFilter, FeedFilters, SECTOR_C
 import { LOADING_STAGE_LABELS } from './agent/useAgentAnalysis';
 import { MarketModeSelector } from './MarketModeSelector';
 import { COUNTRY_CONTEXT } from '@/lib/rss-sources';
+import WatchButton from './WatchButton';
 
 const capitalize = (s: string) => s.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 const ALL_SECTORS: SectorKey[] = ['ai', 'policy', 'markets', 'funding', 'sustainability', 'realestate', 'health', 'ai_intelligence'];
@@ -645,36 +646,51 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
                           </div>
                         </div>
                       ) : (
-                        <div className="p-5 flex flex-col gap-3">
+                        <div className="p-4 flex flex-col gap-3 flex-1">
+                          {/* Meta row */}
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-xs font-semibold text-gray-500 uppercase truncate">
+                            <span className="text-[9px] font-mono font-bold text-gray-400 uppercase tracking-wider">
                               {sig.source}
                             </span>
-                            <span className={`px-2 py-0.5 text-xs font-semibold rounded-md ${cfg.badgeBg} ${cfg.badgeText}`}>
+                            <span className={`px-2 py-0.5 text-[9px] font-mono uppercase font-bold rounded-md ${cfg.badgeBg} ${cfg.badgeText}`}>
                               {cfg.label}
                             </span>
                             {sig.isLocalSource && (
-                              <span className="px-2 py-0.5 text-xs font-semibold rounded-md bg-green-100 text-green-700">
+                              <span className="px-2 py-0.5 text-[9px] font-mono uppercase font-bold rounded-md bg-green-100 text-green-700">
                                 Local
                               </span>
                             )}
-                            <div className="ml-auto">
-                              <SignalScoreBadge score={sig.signalScore} publishedAt={sig.publishedAt} />
+                            {/* Score — right aligned */}
+                            <div className="ml-auto flex items-center gap-1 px-2 py-0.5 bg-amber-50 border border-amber-200 rounded-lg">
+                              <span className="text-amber-500 text-[9px]">⚡</span>
+                              <span className="text-[10px] font-bold font-mono text-amber-700">
+                                {Math.min(sig.signalScore || 0, 99)}
+                              </span>
                             </div>
                           </div>
-                          <p className="text-sm font-semibold leading-snug line-clamp-2">{sig.title}</p>
-                          <p className="text-xs text-gray-600 leading-relaxed line-clamp-2 flex-1">
+
+                          {/* Title */}
+                          <h3 className="text-sm font-semibold text-gray-900 leading-snug line-clamp-2">
+                            {sig.title}
+                          </h3>
+
+                          {/* Snippet */}
+                          <p className="text-xs text-gray-500 leading-relaxed line-clamp-2 flex-1">
                             {sig.snippet}
                           </p>
-                          <button
-                            type="button"
-                            onClick={() => onAnalyzeSignal(sig)}
-                            disabled={!!analyzingUrl}
-                            className="w-full flex items-center justify-center gap-2 py-2.5 bg-black text-white rounded-xl text-xs font-semibold hover:bg-gray-800 disabled:opacity-50 transition-all shadow-sm"
-                          >
-                            <Zap className="w-4 h-4" />
-                            Analyze
-                          </button>
+
+                          {/* Action buttons */}
+                          <div className="flex gap-2 pt-1">
+                            <button
+                              type="button"
+                              onClick={() => onAnalyzeSignal(sig)}
+                              disabled={!!analyzingUrl}
+                              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-gray-900 text-white rounded-xl text-xs font-semibold hover:bg-gray-700 disabled:opacity-40 transition-colors"
+                            >
+                              ⚡ Analyze
+                            </button>
+                            <WatchButton article={sig} />
+                          </div>
                         </div>
                       )}
                     </motion.div>
