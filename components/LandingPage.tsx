@@ -47,6 +47,7 @@ export default function LandingPage() {
   const handleSignIn = async () => {
     try {
       const isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
+      console.log('Starting Google sign-in, mobile=', isMobile, 'userAgent=', navigator.userAgent);
       if (isMobile) {
         await signInWithRedirect(auth, googleProvider);
       } else {

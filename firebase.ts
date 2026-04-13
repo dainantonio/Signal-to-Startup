@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence, User as FirebaseUser } from 'firebase/auth';
 import { getFirestore, collection, doc, setDoc, getDoc, getDocs, query, where, orderBy, onSnapshot, Timestamp, addDoc, updateDoc, deleteDoc, getDocFromServer, limit } from 'firebase/firestore';
 
 // Import the Firebase configuration
@@ -9,6 +9,10 @@ import firebaseConfig from './firebase-applet-config.json';
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 export const auth = getAuth(app);
+auth.useDeviceLanguage();
+setPersistence(auth, browserLocalPersistence).catch((err) => {
+  console.error('[AUTH] Unable to set persistence:', err);
+});
 export const googleProvider = new GoogleAuthProvider();
 
 // Error Handling Spec for Firestore Operations
