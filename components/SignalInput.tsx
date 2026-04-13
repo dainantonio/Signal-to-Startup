@@ -848,7 +848,9 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                                 {isSelected && <span className="text-white text-[10px]">✓</span>}
                               </div>
                             )}
-                            <span className="text-[9px] font-mono font-bold text-gray-400 uppercase tracking-wider truncate max-w-[100px]">{sig.source}</span>
+                            <span className="text-[9px] font-mono font-bold text-gray-400 uppercase tracking-wider">
+                              {sig.source}
+                            </span>
                             <span className={`px-2 py-0.5 text-[9px] font-mono uppercase font-bold rounded-md ${cfg.badgeBg} ${cfg.badgeText}`}>{cfg.label}</span>
                             {sig.isLocalSource && (
                               <span className="px-2 py-0.5 text-[9px] font-mono uppercase font-bold rounded-md bg-green-100 text-green-700">Local</span>

@@ -910,50 +910,35 @@ function KanbanCard({ opportunity, onStatusChange, isUpdating, selected, onSelec
   }[opp.priority] || 'bg-gray-400';
 
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
+    <div
       onClick={() => onSelect?.()}
-      className={`bg-white border p-6 rounded-2xl shadow-sm hover:shadow-xl hover:border-primary/20 transition-all duration-300 group relative overflow-hidden cursor-pointer ${
-        selected ? 'border-primary ring-1 ring-primary' : 'border-border/10'
+      className={`bg-white border border-gray-200 rounded-2xl p-5 space-y-4 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer ${
+        selected ? 'border-primary ring-1 ring-primary' : ''
       }`}
     >
-      {/* Priority Strip */}
-      <div className={`absolute top-0 left-0 right-0 h-1 ${priorityColor} rounded-t-2xl`} />
+      {/* Top accent bar based on status */}
+      <div className={`h-1 rounded-full -mt-5 -mx-5 mb-4 rounded-t-2xl ${
+        opportunity.status === 'Launched' ? 'bg-green-400' : opportunity.status === 'In Progress' ? 'bg-blue-400' : 'bg-gray-200'
+      }`} />
 
-      {/* Checkbox */}
-      {onSelect && (
-        <div className="absolute top-6 left-6 z-10">
-          <div className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${
-            selected ? 'bg-gray-900 border-gray-900 text-white' : 'border-gray-200 bg-white group-hover:border-gray-400'
-          }`}>
-            {selected && <CheckSquare className="w-3.5 h-3.5" />}
-          </div>
-        </div>
-      )}
 
-      {/* Header */}
-      <div className={`flex items-start justify-between mb-4 ${onSelect ? 'pl-10' : ''}`}>
-        <div className="flex-grow space-y-2 min-w-0">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-[10px] font-mono font-bold text-gray-400 uppercase tracking-wider">
-              Score: {Math.min(Math.round(opp.money_score || 0), 99)}
-            </span>
-            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-              opp.priority === 'High' ? 'bg-green-100 text-green-700'
-              : opp.priority === 'Medium' ? 'bg-amber-100 text-amber-700'
-              : 'bg-gray-100 text-gray-600'
-            }`}>
-              {opp.priority}
-            </span>
-          </div>
-          <h3 className="text-sm font-bold text-gray-900 leading-snug">
-            {opp.name}
-          </h3>
-        </div>
+
+      {/* Score badge */}
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] font-mono font-bold text-gray-400 uppercase tracking-wider">
+          Score: {Math.min(opp.money_score || 0, 99)}
+        </span>
+        <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${
+          opportunity.status === 'Launched' ? 'bg-green-100 text-green-700' : opportunity.status === 'In Progress' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'
+        }`}>
+          {opportunity.status}
+        </span>
       </div>
+
+      {/* Name */}
+      <h3 className="text-sm font-bold text-gray-900 leading-snug">
+        {opp.name}
+      </h3>
 
       {/* Checklist Progress */}
       <div className="mb-4 space-y-2">
@@ -971,23 +956,7 @@ function KanbanCard({ opportunity, onStatusChange, isUpdating, selected, onSelec
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        <div className="space-y-1 min-w-0">
-          <div className="flex items-center gap-1 text-muted">
-            <Coins className="w-3 h-3 flex-shrink-0" />
-            <p className="text-[8px] font-mono uppercase tracking-widest truncate">Cost</p>
-          </div>
-          <p className="text-xs font-bold font-mono truncate">{opportunity.marketMode ? (COUNTRY_CONTEXT[opportunity.marketMode]?.symbol || '$') : '$'}{opp.startup_cost.toLocaleString()}</p>
-        </div>
-        <div className="space-y-1">
-          <div className="flex items-center gap-1 text-muted">
-            <Target className="w-3 h-3" />
-            <p className="text-[8px] font-mono uppercase tracking-widest">Priority</p>
-          </div>
-          <p className="text-xs font-bold font-mono">{opp.priority}</p>
-        </div>
-      </div>
+
 
       {/* Action Buttons */}
       <div className="flex flex-col gap-2">
@@ -1053,7 +1022,7 @@ function KanbanCard({ opportunity, onStatusChange, isUpdating, selected, onSelec
           </AnimatePresence>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
 
