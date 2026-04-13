@@ -346,12 +346,12 @@ export default function DashboardPage() {
       <main className="max-w-7xl mx-auto px-6 py-12">
 
         {/* Page Title */}
-        <div className="mb-12 space-y-2">
-          <div className="flex items-center gap-3 mb-2">
-            <span className="text-[10px] font-mono uppercase font-bold tracking-widest">Opportunity Pipeline</span>
+        <div className="mb-8">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-xs font-mono uppercase tracking-widest text-gray-400">Opportunity Pipeline</span>
           </div>
-          <h1 className="text-4xl md:text-6xl font-serif italic font-bold tracking-tight">Strategic Dashboard</h1>
-          <p className="text-base text-muted font-medium max-w-2xl">Manage and track your saved opportunities from signal to launch.</p>
+          <h1 className="text-3xl font-bold text-gray-900 tracking-tight mb-2">Your Dashboard</h1>
+          <p className="text-sm text-gray-500">Track your saved opportunities from signal to launch.</p>
         </div>
 
         {/* Tab switcher */}
@@ -368,8 +368,8 @@ export default function DashboardPage() {
               key={tab}
               type="button"
               onClick={() => setDashboardTab(tab)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                dashboardTab === tab ? 'bg-white text-black shadow-sm' : 'text-gray-500 hover:text-gray-700'
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${
+                dashboardTab === tab ? 'bg-gray-900 text-white' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
               }`}
             >
               {label}
@@ -920,32 +920,39 @@ function KanbanCard({ opportunity, onStatusChange, isUpdating, selected, onSelec
         selected ? 'border-primary ring-1 ring-primary' : 'border-border/10'
       }`}
     >
+      {/* Priority Strip */}
+      <div className={`absolute top-0 left-0 right-0 h-1 ${priorityColor} rounded-t-2xl`} />
+
       {/* Checkbox */}
       {onSelect && (
         <div className="absolute top-6 left-6 z-10">
-           <div className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${
-            selected ? 'bg-primary border-primary text-white' : 'border-gray-200 bg-white group-hover:border-gray-400'
+          <div className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${
+            selected ? 'bg-gray-900 border-gray-900 text-white' : 'border-gray-200 bg-white group-hover:border-gray-400'
           }`}>
             {selected && <CheckSquare className="w-3.5 h-3.5" />}
           </div>
         </div>
       )}
-      {/* Priority Strip */}
-      <div className={`absolute top-0 left-0 right-0 h-1 ${priorityColor} opacity-40`} />
 
       {/* Header */}
       <div className={`flex items-start justify-between mb-4 ${onSelect ? 'pl-10' : ''}`}>
-        <div className="flex-grow space-y-1">
-          <h3 className="font-serif italic font-bold text-base leading-tight group-hover:text-primary transition-colors">
-            {opp.name}
-          </h3>
-          <div className="flex items-center gap-2">
-            <span className="text-[9px] font-mono uppercase font-bold text-muted bg-gray-50 px-2 py-0.5 rounded border border-border/5">
+        <div className="flex-grow space-y-2 min-w-0">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[10px] font-mono font-bold text-gray-400 uppercase tracking-wider">
               Score: {Math.min(Math.round(opp.money_score || 0), 99)}
             </span>
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+              opp.priority === 'High' ? 'bg-green-100 text-green-700'
+              : opp.priority === 'Medium' ? 'bg-amber-100 text-amber-700'
+              : 'bg-gray-100 text-gray-600'
+            }`}>
+              {opp.priority}
+            </span>
           </div>
+          <h3 className="text-sm font-bold text-gray-900 leading-snug">
+            {opp.name}
+          </h3>
         </div>
-        <GripVertical className="w-4 h-4 text-muted/20 group-hover:text-muted/50 transition-colors cursor-grab" />
       </div>
 
       {/* Checklist Progress */}

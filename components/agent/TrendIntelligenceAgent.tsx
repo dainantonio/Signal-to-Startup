@@ -366,7 +366,79 @@ export default function TrendIntelligenceAgent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 selection:bg-primary/20">
+    <>
+      {/* Left sidebar - desktop only */}
+      <aside className="hidden md:block fixed left-0 top-[52px] w-[220px] h-[calc(100vh-52px)] bg-white border-r border-gray-100 overflow-y-auto z-40 py-3">
+        <p className="text-[9px] font-bold text-gray-400 tracking-[2px] uppercase px-4 pb-3">Market</p>
+        {([
+          ['global','🌎','Global / US'],
+          ['caribbean','🌴','Caribbean'],
+          ['africa','🌍','Africa'],
+          ['uk','🇬🇧','UK'],
+          ['latam','🌎','LatAm'],
+        ] as const).map(([id,flag,label]) => (
+          <button key={id}
+            onClick={() => handleSetSelectedMode(id as MarketMode)}
+            className={`w-full flex items-center gap-2 px-4 py-2 text-xs font-medium transition-colors text-left ${selectedMode === id ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-50'}`}>
+            <span className="text-sm">{flag}</span>
+            {label}
+          </button>
+        ))}
+        <div className="border-t border-gray-100 mx-3 my-3"/>
+        <p className="text-[9px] font-bold text-gray-400 tracking-[2px] uppercase px-4 pb-3">Tools</p>
+        <a href="/dashboard" className="w-full flex items-center gap-2 px-4 py-2 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+          <span className="text-sm">📊</span>Dashboard
+        </a>
+        <a href="/dashboard?tab=watchlist" className="w-full flex items-center gap-2 px-4 py-2 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+          <span className="text-sm">👓</span>Watchlist
+        </a>
+        <div className="border-t border-gray-100 mx-3 my-2"/>
+        <p className="text-[9px] font-bold text-gray-400 tracking-[2px] uppercase px-4 pb-2">Sectors</p>
+        {[
+          {id:'ai',icon:'🤖',label:'AI & Tech'},
+          {id:'markets',icon:'📈',label:'Markets'},
+          {id:'funding',icon:'💰',label:'Funding'},
+          {id:'policy',icon:'📋',label:'Policy'},
+          {id:'retail',icon:'🛍',label:'Retail'},
+          {id:'food',icon:'🍽',label:'Food'},
+          {id:'workforce',icon:'👷',label:'Workforce'},
+          {id:'agriculture',icon:'🌾',label:'Agriculture'},
+          {id:'tourism',icon:'✈️',label:'Tourism'},
+          {id:'remittances',icon:'💸',label:'Remittances'},
+        ].map((s) => (
+          <button key={s.id}
+            onClick={() => toggleSector(s.id)}
+            className={`w-full flex items-center gap-2 px-4 py-1.5 text-xs font-medium transition-colors text-left rounded-lg mx-1 ${
+              selectedSectors.includes(s.id)
+                ? 'bg-gray-100 text-gray-900 font-semibold'
+                : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
+            }`}>
+            <span style={{fontSize:'11px'}}>{s.icon}</span>
+            {s.label}
+          </button>
+        ))}
+      </aside>
+
+      {/* Right panel - desktop only */}
+      <aside className="hidden md:block fixed right-0 top-[52px] w-[260px] h-[calc(100vh-52px)] bg-white border-l border-gray-100 overflow-y-auto z-40 p-3">
+        <p className="text-[9px] font-bold text-gray-400 tracking-[2px] uppercase mb-3">Agent Status</p>
+        {[
+          ['Signal Monitor','7:00 AM'],
+          ['Opportunity Scout','8:00 AM'],
+          ['Signal Watcher','8:00 AM'],
+          ['Daily Digest','9:00 AM'],
+        ].map(([name,time],i) => (
+          <div key={i} className="flex items-center justify-between py-2.5 border-b border-gray-50 last:border-0">
+            <div>
+              <p className="text-xs font-medium text-gray-900">{name}</p>
+              <p className="text-[10px] text-gray-400 mt-0.5">{time}</p>
+            </div>
+            <div className="w-2 h-2 rounded-full bg-green-400 flex-shrink-0"/>
+          </div>
+        ))}
+      </aside>
+
+      <div className="min-h-screen bg-gray-50 selection:bg-primary/20 md:ml-[220px] md:mr-[260px]">
 
       {/* ── Compact header ── */}
       <header className="sticky top-0 z-50 h-[52px] bg-white border-b border-gray-100 flex items-center justify-between px-4 md:px-5">
@@ -507,66 +579,6 @@ export default function TrendIntelligenceAgent() {
         )}
       </AnimatePresence>
 
-      {/* ── 3-column body ── */}
-      <div>
-        {/* LEFT SIDEBAR — fixed, desktop only */}
-        <aside className="hidden md:block" style={{
-          position: 'fixed',
-          left: 0,
-          top: '52px',
-          width: '200px',
-          height: 'calc(100vh - 52px)',
-          background: 'white',
-          borderRight: '0.5px solid #e5e7eb',
-          overflowY: 'auto',
-          zIndex: 40,
-          padding: '12px 8px',
-        }}>
-          <p style={{fontSize:'9px',fontWeight:600,color:'#9ca3af',letterSpacing:'1.5px',textTransform:'uppercase',padding:'4px 8px 8px',margin:0}}>Market</p>
-          {([
-            {id:'global',flag:'🌎',label:'Global / US'},
-            {id:'caribbean',flag:'🌴',label:'Caribbean'},
-            {id:'africa',flag:'🌍',label:'Africa'},
-            {id:'uk',flag:'🇬🇧',label:'UK'},
-            {id:'latam',flag:'🌎',label:'Latin America'},
-          ] as {id:string;flag:string;label:string}[]).map(m => (
-            <button key={m.id} onClick={() => handleSetSelectedMode(m.id as MarketMode)} style={{width:'100%',display:'flex',alignItems:'center',gap:'8px',padding:'7px 10px',borderRadius:'8px',border:'none',background:selectedMode===m.id?'#111':'transparent',color:selectedMode===m.id?'white':'#374151',fontSize:'12px',fontWeight:500,cursor:'pointer',marginBottom:'2px',textAlign:'left'}}>
-              <span style={{fontSize:'13px'}}>{m.flag}</span>{m.label}
-            </button>
-          ))}
-          <div style={{borderTop:'0.5px solid #f3f4f6',margin:'8px 0'}}/>
-          <p style={{fontSize:'9px',fontWeight:600,color:'#9ca3af',letterSpacing:'1.5px',textTransform:'uppercase',padding:'4px 8px 8px',margin:0}}>Sectors</p>
-          {([
-            {id:'ai',icon:'🤖',label:'AI & Tech'},
-            {id:'markets',icon:'📈',label:'Markets'},
-            {id:'funding',icon:'💰',label:'Funding'},
-            {id:'policy',icon:'📋',label:'Policy'},
-            {id:'retail',icon:'🛍',label:'Retail'},
-            {id:'food',icon:'🍽',label:'Food & Bev'},
-            {id:'workforce',icon:'👷',label:'Workforce'},
-            {id:'agriculture',icon:'🌾',label:'Agriculture'},
-            {id:'tourism',icon:'✈️',label:'Tourism'},
-            {id:'remittances',icon:'💸',label:'Remittances'},
-            {id:'realestate',icon:'🏠',label:'Real Estate'},
-            {id:'health',icon:'🏥',label:'Health'},
-          ] as {id:string;icon:string;label:string}[]).map(s => (
-            <button key={s.id} onClick={() => toggleSector(s.id)} style={{width:'100%',display:'flex',alignItems:'center',gap:'8px',padding:'6px 10px',borderRadius:'8px',border:'none',background:selectedSectors.includes(s.id)?'#f3f4f6':'transparent',color:selectedSectors.includes(s.id)?'#111':'#6b7280',fontSize:'11px',fontWeight:500,cursor:'pointer',marginBottom:'1px',textAlign:'left'}}>
-              <span style={{fontSize:'12px'}}>{s.icon}</span>{s.label}
-            </button>
-          ))}
-          <div style={{borderTop:'0.5px solid #f3f4f6',margin:'8px 0'}}/>
-          <p style={{fontSize:'9px',fontWeight:600,color:'#9ca3af',letterSpacing:'1.5px',textTransform:'uppercase',padding:'4px 8px 8px',margin:0}}>Tools</p>
-          <button onClick={() => window.location.href='/dashboard'} style={{width:'100%',display:'flex',alignItems:'center',gap:'8px',padding:'7px 10px',borderRadius:'8px',border:'none',background:'transparent',color:'#374151',fontSize:'12px',fontWeight:500,cursor:'pointer',textAlign:'left',marginBottom:'2px'}}>
-            <span style={{fontSize:'13px'}}>📊</span>Dashboard
-          </button>
-          <button onClick={() => window.location.href='/dashboard?tab=watchlist'} style={{width:'100%',display:'flex',alignItems:'center',gap:'8px',padding:'7px 10px',borderRadius:'8px',border:'none',background:'transparent',color:'#374151',fontSize:'12px',fontWeight:500,cursor:'pointer',textAlign:'left'}}>
-            <span style={{fontSize:'13px'}}>👓</span>Watchlist
-            {watchlistCount > 0 && <span style={{marginLeft:'auto',fontSize:'10px',fontWeight:700,padding:'2px 6px',background:'#fef3c7',color:'#92400e',borderRadius:'999px'}}>{watchlistCount}</span>}
-          </button>
-        </aside>
-
-        {/* MAIN CONTENT — always visible */}
-        <main className="md:ml-[200px] md:mr-[240px]">
           <div className="max-w-4xl mx-auto px-4 md:px-6 py-6">
 
             {/* App mode toggle */}
@@ -706,43 +718,6 @@ export default function TrendIntelligenceAgent() {
 
             </> /* end appMode === discover */}
           </div>
-        </main>
-
-        {/* RIGHT PANEL — fixed, desktop only */}
-        <aside className="hidden md:block" style={{position:'fixed',right:0,top:'52px',width:'240px',height:'calc(100vh - 52px)',background:'white',borderLeft:'0.5px solid #e5e7eb',overflowY:'auto',zIndex:40,padding:'12px',display:'flex',flexDirection:'column',gap:'12px'}}>
-          {analysis.result?.today_action && (
-            <div style={{background:'#f0fdf4',border:'0.5px solid #86efac',borderRadius:'12px',padding:'14px'}}>
-              <p style={{fontSize:'9px',fontWeight:700,color:'#15803d',letterSpacing:'1.5px',textTransform:'uppercase',marginBottom:'8px',margin:'0 0 8px'}}>Your Next Move</p>
-              <p style={{fontSize:'12px',color:'#166534',lineHeight:1.6,marginBottom:'12px',margin:'0 0 12px'}}>{analysis.result.today_action}</p>
-              <button style={{width:'100%',padding:'8px',background:'#15803d',color:'white',border:'none',borderRadius:'8px',fontSize:'11px',fontWeight:600,cursor:'pointer'}}>✓ I did this</button>
-            </div>
-          )}
-          <div style={{border:'0.5px solid #e5e7eb',borderRadius:'12px',padding:'14px'}}>
-            <p style={{fontSize:'9px',fontWeight:700,color:'#9ca3af',letterSpacing:'1.5px',textTransform:'uppercase',marginBottom:'12px',margin:'0 0 12px'}}>Agent Status</p>
-            {[
-              {name:'Signal Monitor',time:'7:00 AM UTC'},
-              {name:'Opportunity Scout',time:'8:00 AM UTC'},
-              {name:'Signal Watcher',time:'8:00 AM UTC'},
-              {name:'Daily Digest',time:'9:00 AM UTC'},
-            ].map((a,i) => (
-              <div key={i} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'8px 0',borderBottom:i<3?'0.5px solid #f9fafb':'none'}}>
-                <div>
-                  <p style={{fontSize:'12px',fontWeight:500,color:'#111',margin:0}}>{a.name}</p>
-                  <p style={{fontSize:'10px',color:'#9ca3af',margin:'2px 0 0'}}>{a.time}</p>
-                </div>
-                <div style={{width:'7px',height:'7px',borderRadius:'50%',background:'#22c55e',flexShrink:0}}/>
-              </div>
-            ))}
-          </div>
-          {!analysis.result?.today_action && (
-            <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',textAlign:'center',padding:'32px 16px',flex:1}}>
-              <p style={{fontSize:'24px',marginBottom:'8px'}}>⚡</p>
-              <p style={{fontSize:'12px',fontWeight:500,color:'#374151',marginBottom:'4px'}}>Run an analysis</p>
-              <p style={{fontSize:'11px',color:'#9ca3af',lineHeight:1.5}}>Your next move and agent status will appear here</p>
-            </div>
-          )}
-        </aside>
-      </div>
 
       {/* ── Modals (fixed — outside grid, visible on all screen sizes) ── */}
       <AnimatePresence>
@@ -780,5 +755,6 @@ export default function TrendIntelligenceAgent() {
       </AnimatePresence>
 
     </div>
+    </>
   );
 }
