@@ -64,22 +64,22 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white font-sans">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 font-sans">
 
       {/* NAV */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-sm border-b border-gray-100">
-        <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
+      <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-slate-200/50">
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <Logo size="sm" showWordmark showSubbrand={false} theme="light" />
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6">
             <button
               onClick={() => setShowDemo(true)}
-              className="text-sm text-gray-500 hover:text-black transition-colors hidden sm:block"
+              className="btn-ghost hidden sm:flex"
             >
               Try free demo
             </button>
             <button
               onClick={handleSignIn}
-              className="text-sm font-medium text-gray-600 hover:text-black transition-colors"
+              className="btn-primary text-sm"
             >
               Sign in →
             </button>
@@ -88,28 +88,28 @@ export default function LandingPage() {
       </nav>
 
       {/* HERO */}
-      <section className="pt-32 pb-16 px-4 text-center max-w-4xl mx-auto">
+      <section className="pt-32 pb-20 px-6 text-center max-w-5xl mx-auto">
 
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
-          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-gray-200 bg-gray-50 text-xs font-medium text-gray-600 mb-8"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-medium mb-8"
         >
-          <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-          Beta — free to join
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          Now with Reddit signals & compound analysis
         </motion.div>
 
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="text-4xl sm:text-5xl md:text-6xl font-bold text-gray-900 leading-tight tracking-tight mb-6"
+          className="text-balance mb-6"
         >
-          Stop reading the news.
+          Turn news into
           <br />
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-gray-500">
-            Start building from it.
+          <span className="gradient-primary bg-clip-text text-transparent">
+            business opportunities
           </span>
         </motion.h1>
 
@@ -117,76 +117,92 @@ export default function LandingPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="text-lg text-gray-500 leading-relaxed max-w-2xl mx-auto mb-4"
+          className="text-lg text-slate-600 leading-relaxed max-w-3xl mx-auto mb-6 text-balance"
         >
-          Signal to Startup turns any news story into a business opportunity — with a
-          full plan, real costs, and funding sources specific to where you are.
-          US, Caribbean, Africa, UK, Latin America.
-          Your market. Your language. Your currency.
-        </motion.p>
-
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.25 }}
-          className="text-sm text-gray-400 mb-10"
-        >
-          Used by entrepreneurs in Atlanta, Kingston, Lagos, London, and beyond.
+          Signal to Startup transforms any news story into actionable business opportunities.
+          Get AI-powered analysis, market-specific insights, funding sources, and a complete
+          launch plan — all tailored to your location and industry.
         </motion.p>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
-          className="max-w-md mx-auto"
+          className="flex flex-wrap justify-center gap-4 text-sm text-slate-500 mb-10"
+        >
+          <span className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+            5 markets covered
+          </span>
+          <span className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+            Reddit signal analysis
+          </span>
+          <span className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+            Compound opportunity detection
+          </span>
+          <span className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+            Auto-generated pitch decks
+          </span>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+          className="max-w-lg mx-auto"
         >
           {submitted ? (
-            <div className="p-6 bg-green-50 rounded-2xl border border-green-200 text-center">
-              <div className="text-3xl mb-2">🎉</div>
-              <p className="text-base font-semibold text-green-800 mb-1">You are on the list</p>
-              <p className="text-sm text-green-600">We will be in touch. Want to try right now?</p>
+            <div className="premium-card p-8 text-center rounded-2xl">
+              <div className="text-4xl mb-4">🎉</div>
+              <h3 className="text-xl font-semibold text-slate-900 mb-2">You're on the list!</h3>
+              <p className="text-slate-600 mb-6">Ready to start building? Try it now.</p>
               <button
                 onClick={handleSignIn}
-                className="mt-4 px-6 py-2.5 bg-black text-white rounded-xl text-sm font-medium hover:bg-gray-900 transition-colors"
+                className="btn-primary w-full"
               >
                 Start free →
               </button>
             </div>
           ) : (
-            <form onSubmit={handleWaitlist} className="flex flex-col sm:flex-row gap-2">
-              <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="Enter your email"
-                className="flex-1 px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-black"
-              />
-              <button
-                type="submit"
-                disabled={submitting}
-                className="px-6 py-3 bg-black text-white rounded-xl text-sm font-semibold hover:bg-gray-900 transition-colors disabled:opacity-50 whitespace-nowrap"
-              >
-                {submitting ? 'Joining...' : 'Get early access'}
-              </button>
+            <form onSubmit={handleWaitlist} className="space-y-4">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <input
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="Enter your email"
+                  className="input-premium flex-1"
+                />
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="btn-primary whitespace-nowrap"
+                >
+                  {submitting ? 'Joining...' : 'Get early access'}
+                </button>
+              </div>
+              {error && <p className="text-sm text-red-600 text-center">{error}</p>}
+              <p className="text-sm text-slate-500 text-center">
+                Free during beta • No credit card required •{' '}
+                <button onClick={handleSignIn} className="text-primary hover:underline">
+                  Already have access?
+                </button>
+              </p>
             </form>
           )}
-          {error && <p className="text-xs text-red-500 mt-2">{error}</p>}
-          {!submitted && (
-            <p className="text-xs text-gray-400 mt-3">
-              Free during beta. No credit card.{' '}
-              <button onClick={handleSignIn} className="underline hover:text-black transition-colors">
-                Already have access? Sign in
-              </button>
-            </p>
-          )}
-          <div className="mt-4 flex items-center justify-center gap-3">
-            <div className="h-px bg-gray-200 flex-1 max-w-16" />
-            <span className="text-xs text-gray-400">or</span>
-            <div className="h-px bg-gray-200 flex-1 max-w-16" />
+
+          <div className="mt-6 flex items-center justify-center gap-4">
+            <div className="h-px bg-slate-200 flex-1 max-w-12" />
+            <span className="text-sm text-slate-400">or</span>
+            <div className="h-px bg-slate-200 flex-1 max-w-12" />
           </div>
+
           <button
             onClick={() => setShowDemo(true)}
-            className="w-full sm:w-auto px-8 py-3 border-2 border-gray-200 text-gray-700 rounded-xl text-sm font-medium hover:border-black hover:text-black transition-all"
+            className="btn-secondary w-full mt-4"
           >
             Try a free analysis — no sign up needed
           </button>
@@ -194,49 +210,55 @@ export default function LandingPage() {
       </section>
 
       {/* STATS */}
-      <section className="border-y border-gray-100 py-8 px-4 bg-gray-50">
-        <div className="max-w-4xl mx-auto flex flex-wrap items-center justify-center gap-10 text-center">
-          {[
-            { number: '5',   label: 'Markets covered' },
-            { number: '59+', label: 'Curated signal sources' },
-            { number: '3',   label: 'Agents running daily' },
-            { number: '50+', label: 'Countries supported' },
-          ].map(stat => (
-            <div key={stat.label}>
-              <div className="text-2xl font-bold text-gray-900">{stat.number}</div>
-              <div className="text-xs text-gray-500 mt-0.5">{stat.label}</div>
-            </div>
-          ))}
+      <section className="border-y border-slate-200/50 py-12 px-6 bg-slate-50/50">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            {[
+              { number: '5', label: 'Markets covered', icon: '🌍' },
+              { number: '60+', label: 'Signal sources', icon: '📡' },
+              { number: '3', label: 'AI agents running', icon: '🤖' },
+              { number: '50+', label: 'Countries supported', icon: '🇺🇸' },
+            ].map(stat => (
+              <div key={stat.label} className="text-center">
+                <div className="text-3xl mb-2">{stat.icon}</div>
+                <div className="text-2xl font-bold text-slate-900">{stat.number}</div>
+                <div className="text-sm text-slate-600 mt-1">{stat.label}</div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
       {/* WHY NOT CHATGPT */}
-      <section className="py-20 px-4 bg-gray-950 text-white">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-14">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
+      <section className="py-24 px-6 bg-slate-900 text-white">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <p className="text-sm font-semibold text-slate-400 uppercase tracking-widest mb-4">
               Why not just use ChatGPT?
             </p>
-            <h2 className="text-3xl font-bold mb-4">Four things no other AI tool does</h2>
-            <p className="text-gray-400 text-sm max-w-xl mx-auto">
-              ChatGPT is great. But it waits for you to ask, gives generic global
-              advice, and stops at the idea. Signal to Startup is different in four specific ways.
+            <h2 className="text-3xl md:text-4xl font-bold mb-6 text-balance">
+              Four things no other AI tool does
+            </h2>
+            <p className="text-slate-400 text-lg max-w-3xl mx-auto leading-relaxed">
+              ChatGPT is great. But it waits for you to ask, gives generic global advice,
+              and stops at the idea. Signal to Startup is different in four specific ways.
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {[
               {
                 icon: '🤖',
                 label: '01',
                 title: 'It works while you sleep',
-                body: 'Your personal agent monitors markets every morning, finds signals matching your profile, analyzes the top opportunities, and has them waiting in your inbox. You open the app and the research is already done. ChatGPT waits for you.',
+                body: 'Your personal AI agent monitors markets every morning, finds signals matching your profile, analyzes the top opportunities, and has them waiting in your inbox. You open the app and the research is already done.',
                 highlight: true,
               },
               {
                 icon: '📍',
                 label: '02',
                 title: 'It knows your specific market',
-                body: 'A small business owner in Atlanta gets SBA programs and local market context. One in Kingston gets DBJ loans, JMD costs, and references to Portmore market. One in Lagos gets TEF funding and naira pricing. No prompt gets ChatGPT that specific.',
+                body: 'An Atlanta entrepreneur gets SBA programs and local market context. A Kingston business owner gets DBJ loans, JMD costs, and references to Portmore market. A Lagos founder gets TEF funding and naira pricing. No prompt gets ChatGPT that specific.',
                 highlight: false,
               },
               {
@@ -249,8 +271,8 @@ export default function LandingPage() {
               {
                 icon: '🚀',
                 label: '04',
-                title: 'The Launch Engine',
-                body: 'We do not stop at the idea. We generate a 10-slide YC Pitch Deck, deploy a Waitlist Landing Page CRM to capture leads, and gamify your launch checklist with XP streaks.',
+                title: 'Reddit signal intelligence',
+                body: 'We analyze real-time Reddit discussions across 50+ subreddits to find pain points, complaints, and workarounds that traditional news misses. Turn community conversations into business opportunities before they become mainstream.',
                 highlight: true,
               },
             ].map(item => (
@@ -259,14 +281,14 @@ export default function LandingPage() {
                 initial={{ opacity: 0, y: 16 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                className={`p-6 rounded-2xl border ${item.highlight ? 'bg-white/10 border-white/20' : 'bg-white/5 border-white/10'}`}
+                className={`premium-card p-8 rounded-2xl ${item.highlight ? 'bg-slate-800 border-slate-700' : 'bg-slate-800/50 border-slate-700/50'}`}
               >
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="text-2xl">{item.icon}</span>
-                  <span className="text-xs font-mono text-gray-500">{item.label}</span>
+                <div className="flex items-center gap-4 mb-6">
+                  <span className="text-3xl">{item.icon}</span>
+                  <span className="text-sm font-mono text-slate-500">{item.label}</span>
                 </div>
-                <h3 className="text-base font-semibold text-white mb-3">{item.title}</h3>
-                <p className="text-sm text-gray-400 leading-relaxed">{item.body}</p>
+                <h3 className="text-xl font-semibold text-white mb-4">{item.title}</h3>
+                <p className="text-slate-300 leading-relaxed">{item.body}</p>
               </motion.div>
             ))}
           </div>

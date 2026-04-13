@@ -339,40 +339,40 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
   return (
     <section id="step-1" className="scroll-mt-24 mb-16">
       {/* Mode Toggle */}
-      <div className="flex bg-white border border-gray-200 rounded-2xl p-1.5 mb-6 shadow-sm w-fit mx-auto">
+      <div className="flex bg-gradient-to-r from-slate-50 to-slate-100 border border-slate-200/50 rounded-2xl p-1.5 mb-8 shadow-sm w-fit mx-auto backdrop-blur-sm">
         <button
           onClick={() => { setInputMode('feed'); setMultiSelectMode(false); setSelectedArticles([]); }}
-          className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all ${
+          className={`flex items-center gap-3 px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
             inputMode === 'feed'
-              ? 'bg-black text-white shadow-lg'
-              : 'text-gray-600 hover:text-black hover:bg-gray-50'
+              ? 'bg-gradient-to-r from-slate-900 to-slate-700 text-white shadow-lg'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-white/80'
           }`}
         >
           <Newspaper className="w-4 h-4" />
           Newsroom Feed
           {inputMode === 'feed' && (
-            <span className="w-2 h-2 bg-red-400 rounded-full animate-pulse" />
+            <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
           )}
         </button>
         <button
           onClick={() => { setInputMode('reddit'); setMultiSelectMode(false); setSelectedArticles([]); setShowRawReddit(false); }}
-          className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all ${
+          className={`flex items-center gap-3 px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
             inputMode === 'reddit'
-              ? 'bg-black text-white shadow-lg'
-              : 'text-gray-600 hover:text-black hover:bg-gray-50'
+              ? 'bg-gradient-to-r from-orange-600 to-orange-500 text-white shadow-lg'
+              : 'text-slate-600 hover:text-orange-600 hover:bg-white/80'
           }`}
         >
           <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
-            inputMode === 'reddit' ? 'bg-orange-400 animate-pulse' : 'bg-gray-300'
+            inputMode === 'reddit' ? 'bg-orange-400 animate-pulse' : 'bg-slate-300'
           }`} />
           Reddit Signals
         </button>
         <button
           onClick={() => { setInputMode('paste'); setMultiSelectMode(false); setSelectedArticles([]); }}
-          className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all ${
+          className={`flex items-center gap-3 px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
             inputMode === 'paste'
-              ? 'bg-black text-white shadow-lg'
-              : 'text-gray-600 hover:text-black hover:bg-gray-50'
+              ? 'bg-gradient-to-r from-slate-900 to-slate-700 text-white shadow-lg'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-white/80'
           }`}
         >
           <Edit3 className="w-4 h-4" />
@@ -382,12 +382,12 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
 
       {inputMode === 'paste' ? (
         /* PASTE MODE */
-        <div className="bg-white border border-gray-200 rounded-3xl shadow-sm overflow-hidden">
-          <div className="border-b border-gray-100 px-8 py-5">
+        <div className="bg-gradient-to-br from-white to-slate-50/50 border border-slate-200/50 rounded-3xl shadow-sm overflow-hidden backdrop-blur-sm">
+          <div className="border-b border-slate-200/50 px-8 py-6 bg-white/80">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-2xl font-sans font-bold text-gray-900 mb-1">Signal Desk</h2>
-                <p className="text-sm text-gray-500">Paste your market signal to extract opportunities</p>
+                <h2 className="text-2xl font-bold text-slate-900 mb-1">Signal Desk</h2>
+                <p className="text-sm text-slate-600">Paste your market signal to extract opportunities</p>
               </div>
             </div>
           </div>
@@ -409,7 +409,7 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 placeholder="Paste a news article, policy update, or market signal here..."
-                className="w-full h-64 bg-gray-50 border-0 rounded-2xl p-6 focus:ring-2 focus:ring-black focus:bg-white outline-none resize-none font-sans text-base leading-relaxed transition-all"
+                className="w-full h-64 bg-slate-50/50 border border-slate-200/50 rounded-2xl p-6 focus:ring-2 focus:ring-slate-900/20 focus:bg-white outline-none resize-none font-sans text-base leading-relaxed transition-all duration-200 shadow-inner"
               />
             </div>
 
@@ -480,16 +480,17 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
                 type="button"
                 onClick={() => analyzeSignal()}
                 disabled={!input.trim()}
-                className="w-full bg-black text-white py-5 rounded-2xl text-base font-semibold hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-3 shadow-lg active:scale-[0.98]"
+                className="w-full bg-gradient-to-r from-slate-900 to-slate-700 text-white py-5 rounded-2xl text-base font-semibold hover:from-slate-800 hover:to-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl active:scale-[0.98]"
               >
+                <Zap className="w-5 h-5" />
                 Extract Opportunities
               </button>
             )}
 
-            <div className="border-t border-gray-100 pt-6 space-y-6">
+            <div className="border-t border-slate-200/50 pt-6 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-2 uppercase tracking-wide">
+                  <label className="block text-xs font-medium text-slate-600 mb-2 uppercase tracking-wide">
                     Location
                   </label>
                   <input
@@ -497,11 +498,11 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
                     value={location}
                     onChange={e => setLocation(e.target.value)}
                     placeholder="e.g. Kingston, New York"
-                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-black focus:bg-white outline-none transition-all"
+                    className="w-full bg-slate-50/50 border border-slate-200/50 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-slate-900/20 focus:bg-white outline-none transition-all duration-200"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-2 uppercase tracking-wide">
+                  <label className="block text-xs font-medium text-slate-600 mb-2 uppercase tracking-wide">
                     Focus / Niche
                   </label>
                   <input
@@ -509,23 +510,23 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
                     value={focus}
                     onChange={e => setFocus(e.target.value)}
                     placeholder="e.g. SaaS, Healthcare"
-                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-black focus:bg-white outline-none transition-all"
+                    className="w-full bg-slate-50/50 border border-slate-200/50 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-slate-900/20 focus:bg-white outline-none transition-all duration-200"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-2 uppercase tracking-wide">
+                  <label className="block text-xs font-medium text-slate-600 mb-2 uppercase tracking-wide">
                     Market Region
                   </label>
                   <MarketModeSelector selectedMode={selectedMode} onModeChange={setSelectedMode} />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-2 uppercase tracking-wide">
+                  <label className="block text-xs font-medium text-slate-600 mb-2 uppercase tracking-wide">
                     Reading Mode
                   </label>
-                  <div className="flex rounded-xl border border-gray-200 overflow-hidden h-11">
+                  <div className="flex rounded-xl border border-slate-200/50 overflow-hidden h-11 bg-slate-50/50">
                     {([
                       { value: 'simple', label: 'Simple' },
                       { value: 'standard', label: 'Standard' },
@@ -535,9 +536,9 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
                         key={opt.value}
                         type="button"
                         onClick={() => setReadingLevel(opt.value)}
-                        className={`flex-1 py-2 text-xs font-medium ${
-                          i > 0 ? 'border-l border-gray-200' : ''
-                        } ${readingLevel === opt.value ? 'bg-black text-white' : 'text-gray-600 hover:bg-gray-50'}`}
+                        className={`flex-1 py-2 text-xs font-medium transition-all duration-200 ${
+                          i > 0 ? 'border-l border-slate-200/50' : ''
+                        } ${readingLevel === opt.value ? 'bg-gradient-to-r from-slate-900 to-slate-700 text-white' : 'text-slate-600 hover:bg-white/80'}`}
                       >
                         {opt.label}
                       </button>
@@ -552,15 +553,15 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
         /* FEED MODE */
         <div className="space-y-6">
           {/* Filter Bar */}
-          <div className="bg-white border border-gray-200 rounded-2xl px-6 py-4 shadow-sm">
+          <div className="bg-gradient-to-r from-white to-slate-50/50 border border-slate-200/50 rounded-2xl px-6 py-4 shadow-sm backdrop-blur-sm">
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div className="flex items-center gap-3">
-                <Newspaper className="w-5 h-5 text-gray-400" />
-                <span className="text-sm font-medium text-gray-600">
+                <Newspaper className="w-5 h-5 text-slate-400" />
+                <span className="text-sm font-medium text-slate-600">
                   {fetchingFeed ? 'Loading...' : `${signals.length} signals`}
                 </span>
                 {feedMeta && feedMeta.duplicatesRemoved > 0 && (
-                  <span className="text-xs text-gray-400">
+                  <span className="text-xs text-slate-400">
                     · {feedMeta.duplicatesRemoved} duplicates removed
                   </span>
                 )}
@@ -572,10 +573,10 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
                     setMultiSelectMode(!multiSelectMode);
                     setSelectedArticles([]);
                   }}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-semibold transition-all ${
+                  className={`flex items-center gap-1.5 px-4 py-2 rounded-xl border text-xs font-semibold transition-all duration-200 ${
                     multiSelectMode
-                      ? 'bg-black text-white border-black'
-                      : 'border-gray-200 text-gray-600 hover:border-gray-400'
+                      ? 'bg-gradient-to-r from-slate-900 to-slate-700 text-white border-slate-900 shadow-sm'
+                      : 'border-slate-200/50 text-slate-600 hover:border-slate-400 hover:bg-white/80'
                   }`}
                 >
                   {multiSelectMode ? '✕ Cancel' : '⊕ Compare'}
@@ -583,19 +584,19 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowFilterDrawer(true)}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:border-gray-400 transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200/50 text-sm font-medium text-slate-600 hover:border-slate-400 hover:bg-white/80 transition-all duration-200"
                 >
                   <SlidersHorizontal className="w-4 h-4" />
                   Filters
                   {(countryTags.length > 0 || filters.sectors.length < ALL_SECTORS.length) && (
-                    <span className="w-2 h-2 rounded-full bg-black" />
+                    <span className="w-2 h-2 rounded-full bg-slate-900" />
                   )}
                 </button>
                 <button
                   type="button"
                   onClick={() => fetchFeed(true)}
                   disabled={fetchingFeed}
-                  className="p-2 text-gray-400 hover:text-black transition-colors"
+                  className="p-2 text-slate-400 hover:text-slate-600 transition-colors duration-200"
                 >
                   <RefreshCw className={`w-5 h-5 ${fetchingFeed ? 'animate-spin' : ''}`} />
                 </button>
@@ -722,15 +723,15 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
                 ? Array.from({ length: 6 }).map((_, i) => (
                     <div
                       key={i}
-                      className="bg-white border border-gray-200 rounded-2xl p-5 space-y-3 animate-pulse shadow-sm"
+                      className="bg-gradient-to-br from-white to-slate-50/50 border border-slate-200/50 rounded-2xl p-5 space-y-3 animate-pulse shadow-sm backdrop-blur-sm"
                     >
                       <div className="flex gap-2">
-                        <div className="h-4 bg-gray-100 w-16 rounded-md" />
-                        <div className="h-4 bg-gray-100 w-10 rounded-md" />
+                        <div className="h-4 bg-slate-100 w-16 rounded-md" />
+                        <div className="h-4 bg-slate-100 w-10 rounded-md" />
                       </div>
-                      <div className="h-12 bg-gray-100 rounded-lg" />
-                      <div className="h-8 bg-gray-100 rounded-lg" />
-                      <div className="h-10 bg-gray-100 rounded-xl" />
+                      <div className="h-12 bg-slate-100 rounded-lg" />
+                      <div className="h-8 bg-slate-100 rounded-lg" />
+                      <div className="h-10 bg-slate-100 rounded-xl" />
                     </div>
                   ))
                 : signals.length === 0
@@ -754,13 +755,13 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
                             filter: isOtherAnalyzing ? 'blur(1px)' : 'blur(0px)',
                           }}
                           transition={{ duration: 0.2 }}
-                          className={`relative bg-white rounded-2xl flex flex-col overflow-hidden transition-all ${
+                          className={`relative bg-gradient-to-br from-white to-slate-50/50 rounded-2xl flex flex-col overflow-hidden transition-all duration-200 ${
                             multiSelectMode
                               ? selectedArticles.some(a => a.url === key)
-                                ? 'border-2 border-black shadow-md'
-                                : 'border-2 border-gray-200 hover:border-gray-400 cursor-pointer'
-                              : isOtherAnalyzing ? 'pointer-events-none border border-gray-200' :
-                                isAnalyzing ? 'border border-gray-200 ring-2 ring-black shadow-xl' : 'border border-gray-200 shadow-sm hover:shadow-md'
+                                ? 'border-2 border-slate-900 shadow-lg'
+                                : 'border-2 border-slate-200/50 hover:border-slate-400 cursor-pointer'
+                              : isOtherAnalyzing ? 'pointer-events-none border border-slate-200/50' :
+                                isAnalyzing ? 'border border-slate-200/50 ring-2 ring-slate-900/20 shadow-xl' : 'border border-slate-200/50 shadow-sm hover:shadow-lg backdrop-blur-sm'
                           }`}
                         >
                           {multiSelectMode ? (
@@ -890,7 +891,7 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
 
           {/* Sticky Compound Analysis Bar */}
           {multiSelectMode && (
-            <div className={`fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-2xl transition-transform duration-300 ${
+            <div className={`fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-white to-slate-50/50 border-t border-slate-200/50 shadow-2xl transition-transform duration-300 backdrop-blur-sm ${
               selectedArticles.length > 0 ? 'translate-y-0' : 'translate-y-full'
             }`}>
               <div className="max-w-3xl mx-auto px-4 py-4">
@@ -940,13 +941,13 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
           )}
 
           <div
-            className={`fixed right-0 top-0 bottom-0 z-50 w-80 bg-white shadow-2xl transform transition-transform duration-300 flex flex-col ${
+            className={`fixed right-0 top-0 bottom-0 z-50 w-80 bg-gradient-to-br from-white to-slate-50/50 shadow-2xl transform transition-transform duration-300 flex flex-col border-l border-slate-200/50 backdrop-blur-sm ${
               showFilterDrawer ? 'translate-x-0' : 'translate-x-full'
             }`}
           >
-            <div className="flex items-center justify-between p-4 border-b border-gray-200">
-              <h3 className="text-sm font-semibold">Feed Filters</h3>
-              <button onClick={() => setShowFilterDrawer(false)} className="text-gray-400 hover:text-black">
+            <div className="flex items-center justify-between p-4 border-b border-slate-200/50 bg-white/80">
+              <h3 className="text-sm font-semibold text-slate-900">Feed Filters</h3>
+              <button onClick={() => setShowFilterDrawer(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
                 ✕
               </button>
             </div>
@@ -1028,13 +1029,13 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
               </div>
             </div>
 
-            <div className="p-4 border-t border-gray-200">
+            <div className="p-4 border-t border-slate-200/50 bg-white/80">
               <button
                 onClick={() => {
                   setShowFilterDrawer(false);
                   fetchFeed(true);
                 }}
-                className="w-full py-3 bg-black text-white rounded-xl text-sm font-semibold hover:bg-gray-900"
+                className="w-full py-3 bg-gradient-to-r from-slate-900 to-slate-700 text-white rounded-xl text-sm font-semibold hover:from-slate-800 hover:to-slate-600 transition-all duration-200 shadow-sm hover:shadow-md"
               >
                 Apply Filters
               </button>
