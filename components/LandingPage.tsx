@@ -209,6 +209,37 @@ export default function LandingPage() {
         </motion.div>
       </section>
 
+      {/* WORKFLOW */}
+      <section className="py-10 px-6 max-w-6xl mx-auto">
+        <div className="grid gap-4 md:grid-cols-3">
+          {[
+            {
+              label: 'Discover',
+              title: 'Signal discovery',
+              detail: 'Automatically scan news, Reddit, and local market sources for the most relevant opportunities.',
+            },
+            {
+              label: 'Analyze',
+              title: 'AI intelligence',
+              detail: 'The agent converts raw signals into startup ideas, funding paths, and action-ready execution plans.',
+            },
+            {
+              label: 'Launch',
+              title: 'Build with confidence',
+              detail: 'Get a clear path from idea to launch with pitch decks, landing pages, and launch checklists.',
+            },
+          ].map(step => (
+            <div key={step.label} className="premium-card rounded-3xl p-8 text-left">
+              <div className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-slate-900 text-white font-semibold mb-4">
+                {step.label.slice(0, 1)}
+              </div>
+              <h3 className="text-xl font-semibold text-slate-900 mb-3">{step.title}</h3>
+              <p className="text-sm text-slate-600 leading-relaxed">{step.detail}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* STATS */}
       <section className="border-y border-slate-200/50 py-12 px-6 bg-slate-50/50">
         <div className="max-w-6xl mx-auto">
