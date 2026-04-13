@@ -106,6 +106,7 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
 
   const [redditSignals, setRedditSignals] = useState<FeedSignal[]>([]);
   const [fetchingReddit, setFetchingReddit] = useState(false);
+  const [redditError, setRedditError] = useState<string | null>(null);
 
   // Card pop-out states
   const [analyzingUrl, setAnalyzingUrl] = useState<string | null>(null);
@@ -175,11 +176,21 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
     if (inputMode !== 'reddit') return;
     const fetchReddit = async () => {
       setFetchingReddit(true);
+      setRedditError(null);
       try {
         const res = await fetch(`/api/reddit-signals?market=${selectedMode}`);
         const data = await res.json();
+        if (!res.ok || data?.error) {
+          const message = data?.error || 'Failed to load Reddit signals';
+          setRedditSignals([]);
+          setRedditError(message);
+          console.error('Reddit fetch failed:', message);
+          return;
+        }
         setRedditSignals(data.signals || []);
       } catch (err) {
+        setRedditError('Failed to load Reddit signals');
+        setRedditSignals([]);
         console.error('Reddit fetch failed:', err);
       } finally {
         setFetchingReddit(false);
@@ -564,7 +575,11 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
           {/* Feed Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {inputMode === 'reddit' ? (
-              fetchingReddit ? (
+              redditError ? (
+                <div className="col-span-full text-center py-16 text-sm text-red-500">
+                  {redditError}
+                </div>
+              ) : fetchingReddit ? (
                 Array.from({ length: 4 }).map((_, i) => (
                   <div
                     key={i}

@@ -2,6 +2,50 @@ import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
 import { fetchRedditSignals } from '@/lib/reddit-fetcher';
 
+const sanitizeAiJson = (raw: string) =>
+  raw
+    .replace(/```json/gi, '')
+    .replace(/```/g, '')
+    .replace(/[]/g, "'")
+    .replace(/[]/g, '"')
+    .replace(/[\u0000-\u001F\u007F-\u009F]/g, ' ')
+    .replace(/[\u200B-\u200D\uFEFF]/g, '')
+    .replace(/&/g, 'and')
+    .replace(/</g, '')
+    .replace(/>/g, '')
+    .replace(/\r/g, ' ')
+    .replace(/\n/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const parseModelJson = (raw: string): any | null => {
+  const cleaned = sanitizeAiJson(raw);
+  const candidates = [cleaned];
+  const match = cleaned.match(/\{[\s\S]*\}/);
+  if (match) candidates.push(match[0]);
+  candidates.push(cleaned.replace(/,(\s*[}\]])/g, '$1'));
+
+  if (!cleaned.trim().endsWith('}')) {
+    const lastBrace = cleaned.lastIndexOf('}');
+    if (lastBrace > 0) {
+      const truncated = cleaned.substring(0, lastBrace + 1);
+      const opens = (truncated.match(/\{/g) || []).length;
+      const closes = (truncated.match(/\}/g) || []).length;
+      candidates.push(truncated + '}'.repeat(Math.max(0, opens - closes)));
+    }
+  }
+
+  for (const candidate of candidates) {
+    try {
+      return JSON.parse(candidate);
+    } catch {
+      continue;
+    }
+  }
+
+  return null;
+};
+
 export async function GET(request: NextRequest) {
   const market = request.nextUrl.searchParams.get('market') || 'global';
 
@@ -12,7 +56,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ signals: [] });
     }
 
-    const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+    const apiKey =
+      process.env.GEMINI_API_KEY ||
+      process.env.NEXT_PUBLIC_GEMINI_API_KEY ||
+      process.env.gemini_api_key ||
+      process.env.next_public_gemini_api_key;
     if (!apiKey) {
       return NextResponse.json({ error: 'No API key' }, { status: 500 });
     }
@@ -53,24 +101,34 @@ Return ONLY the JSON object.`;
           contents: [{ role: 'user', parts: [{ text: prompt }] }],
         });
 
-        const text = (response.text ?? '')
-          .replace(/```json|```/g, '')
-          .trim();
+        const text = response.text ?? '';
+        const parsed = parseModelJson(text);
 
-        const parsed = JSON.parse(text);
+        if (!parsed) {
+          console.warn('[REDDIT] Could not parse model output for post:', post.title.slice(0, 120), text.substring(0, 250));
+          continue;
+        }
 
-        if (parsed.type === 'Noise') continue;
-        if ((parsed.signal_strength ?? 0) < 5) continue;
+        const type = String(parsed.type ?? parsed.postType ?? '').trim().toLowerCase();
+        if (type === 'noise') continue;
+
+        const signalStrength = Number(parsed.signal_strength ?? parsed.signalStrength ?? 0);
+        if (signalStrength < 5) continue;
+
+        const problem = String(parsed.problem ?? parsed.problem_statement ?? parsed.problemStatement ?? parsed.summary ?? '').trim();
+        const startupIdea = String(parsed.startup_idea ?? parsed.startupIdea ?? parsed.idea ?? '').trim();
+        const targetUser = String(parsed.target_user ?? parsed.targetUser ?? parsed.target_audience ?? '').trim();
+        const marketNote = String(parsed.market_note ?? parsed.marketNote ?? parsed.note ?? '').trim();
 
         signals.push({
           title: post.title,
-          snippet: parsed.problem,
+          snippet: problem || parsed.problem || parsed.summary || post.body.substring(0, 200),
           source: `r/${post.subreddit}`,
           url: post.url,
           sector: 'markets',
           signalScore: Math.min(
             Math.round(
-              parsed.signal_strength * 10 +
+              signalStrength * 10 +
                 Math.min(post.upvotes / 100, 10) +
                 Math.min(post.comments / 20, 9)
             ),
@@ -82,12 +140,12 @@ Return ONLY the JSON object.`;
             subreddit: post.subreddit,
             upvotes: post.upvotes,
             comments: post.comments,
-            postType: parsed.type,
-            problem: parsed.problem,
-            startupIdea: parsed.startup_idea,
-            targetUser: parsed.target_user,
-            signalStrength: parsed.signal_strength,
-            marketNote: parsed.market_note,
+            postType: parsed.type || parsed.postType || type || 'reddit',
+            problem: problem || parsed.problem || '',
+            startupIdea: startupIdea || parsed.startup_idea || '',
+            targetUser: targetUser || parsed.target_user || '',
+            signalStrength,
+            marketNote: marketNote || parsed.market_note || parsed.marketNote || '',
           },
         });
       } catch {
