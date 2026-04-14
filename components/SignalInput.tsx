@@ -218,9 +218,64 @@ export const SignalInput: React.FC<SignalInputProps> = ({
   const fetchRedditSignalsData = useCallback(async () => {
     setFetchingReddit(true);
     try {
-      const res = await fetch(`/api/reddit-signals?market=${selectedMode}`);
-      const data = await res.json();
-      setRedditSignals(data.signals || []);
+      const subredditsByMarket: Record<string, string[]> = {
+        global: ['smallbusiness', 'Entrepreneur', 'SideProject', 'indiehackers', 'microSaaS', 'freelance', 'startup'],
+        africa: ['smallbusiness', 'Entrepreneur', 'nigeria', 'africa', 'SideProject'],
+        caribbean: ['smallbusiness', 'Entrepreneur', 'jamaica', 'SideProject'],
+        latam: ['smallbusiness', 'Entrepreneur', 'SideProject', 'indiehackers'],
+        asia: ['smallbusiness', 'Entrepreneur', 'SideProject', 'indiehackers'],
+        europe: ['smallbusiness', 'Entrepreneur', 'SideProject', 'freelance'],
+      };
+
+      const subs = subredditsByMarket[selectedMode] || subredditsByMarket['global'];
+
+      const results = await Promise.allSettled(
+        subs.slice(0, 6).map(sub =>
+          fetch(`https://www.reddit.com/r/${sub}/hot.json?limit=25`, {
+            headers: { 'User-Agent': 'SignalToStartup/1.0' },
+          }).then(r => r.ok ? r.json() : null)
+        )
+      );
+
+      const posts: Array<Record<string, unknown>> = [];
+      results.forEach((result, idx) => {
+        if (result.status !== 'fulfilled' || !result.value) return;
+        const sub = subs[idx];
+        const children = result.value?.data?.children || [];
+        for (const child of children) {
+          const p = child.data;
+          if (!p || p.ups < 10 || p.num_comments < 2 || p.is_video) continue;
+          const body: string = p.selftext || '';
+          if (body.length < 30 && (p.title || '').length < 25) continue;
+          posts.push({
+            title: p.title,
+            snippet: (body || p.title).substring(0, 200),
+            source: `r/${sub}`,
+            url: `https://reddit.com${p.permalink}`,
+            sector: 'markets',
+            signalScore: Math.min(p.ups + p.num_comments * 2, 75),
+            type: 'reddit',
+            publishedAt: new Date(p.created_utc * 1000).toISOString(),
+            redditMeta: {
+              subreddit: sub,
+              upvotes: p.ups,
+              comments: p.num_comments,
+              postType: 'Raw',
+              problem: (body || p.title).substring(0, 120),
+              startupIdea: 'Analyze this signal for startup opportunities',
+              targetUser: 'Startup founders',
+              signalStrength: 3,
+              marketNote: '',
+            },
+          });
+        }
+      });
+
+      const sorted = posts
+        .sort((a, b) => (b.signalScore as number) - (a.signalScore as number))
+        .slice(0, 12);
+
+      setRedditSignals(sorted);
     } catch (err) {
       console.error('Reddit fetch failed:', err);
     } finally {
@@ -1140,17 +1195,26 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                         </div>
 
                         {/* Actions */}
+                        {(() => {
+                          const isAnalyzingThisCard = analyzingUrl === String(sig.url ?? '');
+                          return (
                         <div className="flex gap-2">
                           <button
                             type="button"
+                            disabled={!!analyzingUrl}
                             onClick={() => {
-                              const signalText = `${sig.title}. ${meta?.problem ?? ''}. Startup idea: ${meta?.startupIdea ?? ''}`;
+                              const signalText = [sig.title, meta?.problem || ''].filter(Boolean).join('. ');
                               setInput(signalText as string);
+                              setAnalyzingUrl(String(sig.url ?? signalText));
                               analyzeSignal(signalText as string);
                             }}
-                            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-gray-900 text-white rounded-xl text-xs font-semibold hover:bg-gray-700 transition-colors"
+                            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-gray-900 text-white rounded-xl text-xs font-semibold hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                           >
-                            ⚡ Deep Analysis
+                            {isAnalyzingThisCard ? (
+                              <><Loader2 className="w-3 h-3 animate-spin" /> Analyzing...</>
+                            ) : (
+                              '⚡ Deep Analysis'
+                            )}
                           </button>
                           <a
                             href={String(sig.url ?? '#')}
@@ -1161,6 +1225,8 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                             View Post
                           </a>
                         </div>
+                          );
+                        })()}
                       </div>
                     </div>
                   );
