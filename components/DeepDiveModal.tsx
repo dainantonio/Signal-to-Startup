@@ -290,7 +290,7 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-foreground/40 backdrop-blur-md z-50 flex items-end md:items-center justify-center p-0 md:p-8 no-print"
+      className="fixed inset-0 bg-foreground/40 backdrop-blur-md z-[70] flex items-end md:items-center justify-center p-0 md:p-8 no-print"
       onClick={handleClose}
     >
       <style dangerouslySetInnerHTML={{ __html: `

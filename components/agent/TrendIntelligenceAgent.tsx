@@ -9,7 +9,6 @@ import {
   X,
   User as UserIcon,
   Trash2,
-  ArrowLeft,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { MarketMode } from '../types';
@@ -676,9 +675,8 @@ export default function TrendIntelligenceAgent() {
                 {analysis.result && (
                   <>
                     <div className="sticky top-4 z-40 flex justify-start mb-6">
-                      <button type="button" onClick={handleBackToFeed} className="flex items-center gap-2 min-h-10 px-4 py-2 bg-white border border-border/10 hover:border-border/30 hover:bg-gray-50 rounded-xl shadow-md text-[11px] font-mono uppercase tracking-widest text-muted hover:text-foreground transition-all">
-                        <ArrowLeft className="w-4 h-4" />
-                        Back to Feed
+                      <button type="button" onClick={handleBackToFeed} className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 shadow-sm transition-colors">
+                        ← Back to Feed
                       </button>
                     </div>
                     <ResultsDashboard
@@ -720,7 +718,9 @@ export default function TrendIntelligenceAgent() {
             </> /* end appMode === discover */}
           </div>
 
-      {/* ── Modals (fixed — outside grid, visible on all screen sizes) ── */}
+    </div>
+
+      {/* ── Modals — outside main div so z-index is always viewport-relative ── */}
       <AnimatePresence>
         {analysis.selectedOpportunity && (
           <DeepDiveModal
@@ -742,8 +742,8 @@ export default function TrendIntelligenceAgent() {
       <AnimatePresence>
         {showCancelConfirm && (
           <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowCancelConfirm(false)} className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50" />
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.15 }} className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full mx-4 space-y-5">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowCancelConfirm(false)} className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[70]" />
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.15 }} className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[70] bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full mx-4 space-y-5">
               <p className="font-serif italic text-xl font-bold">Analysis almost done</p>
               <p className="text-sm text-muted leading-relaxed">Results are nearly ready. Are you sure you want to cancel?</p>
               <div className="flex gap-3">
@@ -754,8 +754,6 @@ export default function TrendIntelligenceAgent() {
           </>
         )}
       </AnimatePresence>
-
-    </div>
 
       {/* Signal Guide — floating AI agent, outside main div so fixed positioning is always viewport-relative */}
       <SignalGuide

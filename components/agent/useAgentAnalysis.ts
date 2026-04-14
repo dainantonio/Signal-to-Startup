@@ -980,6 +980,7 @@ Return ONLY valid JSON in this exact structure:
 
   // Generate deep dive — wraps deepDiveOpportunity with state management
   const generateDeepDive = async (opportunity: Opportunity) => {
+    console.log('[DEEP DIVE] triggered for:', opportunity.name);
     setSelectedOpportunity(opportunity);
     setDeepDiveResult(null);
     setDeepDiveLoading(true);
