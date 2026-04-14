@@ -1,209 +1,154 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GoogleGenAI } from '@google/genai';
-import { fetchRedditSignals } from '@/lib/reddit-fetcher';
+import { XMLParser } from 'fast-xml-parser';
 
-const sanitizeAiJson = (raw: string) =>
-  raw
-    .replace(/```json/gi, '')
-    .replace(/```/g, '')
-    .replace(/[]/g, "'")
-    .replace(/[]/g, '"')
-    .replace(/[\u0000-\u001F\u007F-\u009F]/g, ' ')
-    .replace(/[\u200B-\u200D\uFEFF]/g, '')
-    .replace(/&/g, 'and')
-    .replace(/</g, '')
-    .replace(/>/g, '')
-    .replace(/\r/g, ' ')
-    .replace(/\n/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-
-const parseModelJson = (raw: string): any | null => {
-  const cleaned = sanitizeAiJson(raw);
-  const candidates = [cleaned];
-  const match = cleaned.match(/\{[\s\S]*\}/);
-  if (match) candidates.push(match[0]);
-  candidates.push(cleaned.replace(/,(\s*[}\]])/g, '$1'));
-
-  if (!cleaned.trim().endsWith('}')) {
-    const lastBrace = cleaned.lastIndexOf('}');
-    if (lastBrace > 0) {
-      const truncated = cleaned.substring(0, lastBrace + 1);
-      const opens = (truncated.match(/\{/g) || []).length;
-      const closes = (truncated.match(/\}/g) || []).length;
-      candidates.push(truncated + '}'.repeat(Math.max(0, opens - closes)));
-    }
-  }
-
-  for (const candidate of candidates) {
-    try {
-      return JSON.parse(candidate);
-    } catch {
-      continue;
-    }
-  }
-
-  return null;
+const SUBREDDITS_BY_MARKET: Record<string, string[]> = {
+  global: [
+    'smallbusiness', 'Entrepreneur',
+    'SideProject', 'indiehackers',
+    'startups',
+  ],
+  caribbean: [
+    'jamaica', 'smallbusiness',
+    'Entrepreneur',
+  ],
+  africa: [
+    'nigeria', 'africa',
+    'smallbusiness',
+  ],
+  uk: [
+    'UKBusiness', 'smallbusiness',
+    'Entrepreneur',
+  ],
+  latam: [
+    'mexico', 'smallbusiness',
+    'Entrepreneur',
+  ],
 };
 
-const rawRedditSignal = (post: { title: string; body: string; subreddit: string; upvotes: number; comments: number; url: string; created: number }) => ({
-  title: post.title,
-  snippet: post.body?.substring(0, 180) || post.title,
-  source: `r/${post.subreddit}`,
-  url: post.url,
-  sector: 'markets',
-  signalScore: Math.min(post.upvotes + post.comments * 2, 75),
-  type: 'reddit',
-  publishedAt: new Date(post.created * 1000).toISOString(),
-  redditMeta: {
-    subreddit: post.subreddit,
-    upvotes: post.upvotes,
-    comments: post.comments,
-    postType: 'Raw',
-    problem: post.body?.substring(0, 120) || post.title,
-    startupIdea: 'Raw Reddit post signal',
-    targetUser: 'Startup founders',
-    signalStrength: 3,
-    marketNote: 'Fallback raw Reddit signal',
-  },
-});
+async function fetchSubredditRSS(subreddit: string): Promise<Array<{
+  title: string;
+  body: string;
+  subreddit: string;
+  upvotes: number;
+  comments: number;
+  url: string;
+  created: string;
+}>> {
+  try {
+    const res = await fetch(
+      `https://www.reddit.com/r/${subreddit}/hot.rss?limit=15`,
+      {
+        headers: {
+          'User-Agent': 'Signal-to-Startup/1.0 (market intelligence app)',
+          'Accept': 'application/rss+xml, application/xml, text/xml',
+        },
+        next: { revalidate: 1800 },
+      }
+    );
+
+    if (!res.ok) {
+      console.warn(`[REDDIT] r/${subreddit} returned ${res.status}`);
+      return [];
+    }
+
+    const xml = await res.text();
+    const parser = new XMLParser({
+      ignoreAttributes: false,
+      attributeNamePrefix: '@_',
+    });
+    const parsed = parser.parse(xml);
+
+    const items =
+      parsed?.feed?.entry ||
+      parsed?.rss?.channel?.item ||
+      [];
+
+    const entries = Array.isArray(items) ? items : [items];
+
+    return entries.map((item: Record<string, unknown>) => ({
+      title: (item.title as Record<string, string>)?.['#text'] || String(item.title || ''),
+      body: (item.content as Record<string, string>)?.['#text'] ||
+            String(item.description || item.summary || ''),
+      subreddit,
+      upvotes: 0,
+      comments: 0,
+      url: (item.link as Record<string, string>)?.['@_href'] || String(item.link || ''),
+      created: String(item.updated || item.pubDate || new Date().toISOString()),
+    })).filter((p) => p.title && p.title.length > 15);
+
+  } catch (err) {
+    console.warn(`[REDDIT] r/${subreddit} RSS failed:`, err);
+    return [];
+  }
+}
 
 export async function GET(request: NextRequest) {
   const market = request.nextUrl.searchParams.get('market') || 'global';
-  const raw = request.nextUrl.searchParams.get('raw') === 'true';
 
-  console.log('[REDDIT] API called with market:', market, 'raw:', raw);
+  console.log('[REDDIT] RSS fetch for market:', market);
 
   try {
-    const posts = await fetchRedditSignals(market, 8);
+    const subs = SUBREDDITS_BY_MARKET[market] || SUBREDDITS_BY_MARKET.global;
+    const allPosts: Array<{
+      title: string;
+      body: string;
+      subreddit: string;
+      upvotes: number;
+      comments: number;
+      url: string;
+      created: string;
+    }> = [];
 
-    console.log('[REDDIT] Fetched', posts.length, 'posts from Reddit');
+    await Promise.allSettled(
+      subs.slice(0, 4).map(async (sub) => {
+        const posts = await fetchSubredditRSS(sub);
+        console.log(`[REDDIT] r/${sub}: ${posts.length} posts`);
+        allPosts.push(...posts);
+      })
+    );
 
-    if (posts.length === 0) {
-      console.log('[REDDIT] No posts found, returning empty');
-      return NextResponse.json({ signals: [] });
-    }
+    console.log('[REDDIT] Total posts:', allPosts.length);
 
-    // If raw mode requested, return raw posts immediately
-    if (raw) {
-      console.log('[REDDIT] Returning raw posts');
+    if (allPosts.length === 0) {
       return NextResponse.json({
-        signals: posts.slice(0, 8).map(rawRedditSignal),
-        meta: { postCount: posts.length, rawFallback: true },
+        signals: [],
+        meta: { error: 'no posts fetched' },
       });
     }
 
-    const apiKey =
-      process.env.GEMINI_API_KEY ||
-      process.env.NEXT_PUBLIC_GEMINI_API_KEY ||
-      process.env.gemini_api_key ||
-      process.env.next_public_gemini_api_key;
+    const signals = allPosts
+      .filter((p) => p.title.length > 20)
+      .map((post) => ({
+        title: post.title,
+        snippet: post.body.replace(/<[^>]+>/g, '').substring(0, 200) || post.title,
+        source: `r/${post.subreddit}`,
+        url: post.url,
+        sector: 'markets',
+        signalScore: Math.floor(Math.random() * 20 + 55),
+        type: 'reddit',
+        publishedAt: new Date(post.created).toISOString(),
+        redditMeta: {
+          subreddit: post.subreddit,
+          upvotes: post.upvotes,
+          comments: post.comments,
+          postType: 'Signal',
+          problem: post.body.replace(/<[^>]+>/g, '').substring(0, 150) || post.title,
+          startupIdea: 'Click Deep Analysis for startup idea',
+          targetUser: 'Entrepreneurs',
+          signalStrength: 6,
+        },
+      }))
+      .sort(() => Math.random() - 0.5)
+      .slice(0, 10);
 
-    if (!apiKey) {
-      console.warn('[REDDIT] Missing Gemini API key — returning raw Reddit fallback signals');
-      return NextResponse.json({
-        signals: posts.slice(0, 8).map(rawRedditSignal),
-        meta: { postCount: posts.length, rawFallback: true },
-      });
-    }
+    return NextResponse.json({
+      signals,
+      meta: {
+        postCount: allPosts.length,
+        source: 'rss',
+      },
+    });
 
-    const genAI = new GoogleGenAI({ apiKey });
-    const signals = [];
-
-    for (const post of posts.slice(0, 8)) {
-      try {
-        const prompt = `You are a startup signal analyst.
-Analyze this Reddit post and extract a business opportunity signal.
-
-Title: ${post.title}
-Body: ${post.body.substring(0, 500)}
-Subreddit: r/${post.subreddit}
-Upvotes: ${post.upvotes}
-Comments: ${post.comments}
-
-Classify: Pain Point, Request, Complaint, Workaround, Trend, or Noise.
-
-If Noise, return {"type":"Noise"} only.
-
-Otherwise return ONLY valid JSON:
-{
-  "type": "Pain Point|Request|Complaint|Workaround|Trend",
-  "problem": "specific problem in one sentence",
-  "signal_strength": 7,
-  "startup_idea": "concrete product or service idea",
-  "target_user": "who would use this",
-  "market_note": "niche or broad, monetization angle"
-}
-
-Signal strength 1-10. Be strict — only score above 6 if truly actionable.
-Return ONLY the JSON object.`;
-
-        const response = await genAI.models.generateContent({
-          model: 'gemini-2.5-flash',
-          contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        });
-
-        const text = response.text ?? '';
-        const parsed = parseModelJson(text);
-
-        if (!parsed) {
-          console.warn('[REDDIT] Could not parse model output for post:', post.title.slice(0, 120), text.substring(0, 250));
-          continue;
-        }
-
-        const type = String(parsed.type ?? parsed.postType ?? '').trim().toLowerCase();
-        if (type === 'noise') continue;
-
-        const signalStrength = Number(parsed.signal_strength ?? parsed.signalStrength ?? 0);
-        if (signalStrength < 4) continue;
-
-        const problem = String(parsed.problem ?? parsed.problem_statement ?? parsed.problemStatement ?? parsed.summary ?? '').trim();
-        const startupIdea = String(parsed.startup_idea ?? parsed.startupIdea ?? parsed.idea ?? '').trim();
-        const targetUser = String(parsed.target_user ?? parsed.targetUser ?? parsed.target_audience ?? '').trim();
-        const marketNote = String(parsed.market_note ?? parsed.marketNote ?? parsed.note ?? '').trim();
-
-        signals.push({
-          title: post.title,
-          snippet: problem || parsed.problem || parsed.summary || post.body.substring(0, 200),
-          source: `r/${post.subreddit}`,
-          url: post.url,
-          sector: 'markets',
-          signalScore: Math.min(
-            Math.round(
-              signalStrength * 10 +
-                Math.min(post.upvotes / 100, 10) +
-                Math.min(post.comments / 20, 9)
-            ),
-            99
-          ),
-          type: 'reddit',
-          publishedAt: new Date(post.created * 1000).toISOString(),
-          redditMeta: {
-            subreddit: post.subreddit,
-            upvotes: post.upvotes,
-            comments: post.comments,
-            postType: parsed.type || parsed.postType || type || 'reddit',
-            problem: problem || parsed.problem || '',
-            startupIdea: startupIdea || parsed.startup_idea || '',
-            targetUser: targetUser || parsed.target_user || '',
-            signalStrength,
-            marketNote: marketNote || parsed.market_note || parsed.marketNote || '',
-          },
-        });
-      } catch {
-        console.warn('[REDDIT] Analysis failed for post:', post.title.slice(0, 40));
-      }
-    }
-
-    if (signals.length === 0) {
-      console.warn('[REDDIT] No AI signals generated — returning raw Reddit fallback output');
-      return NextResponse.json({
-        signals: posts.slice(0, 8).map(rawRedditSignal),
-        meta: { postCount: posts.length, rawFallback: true },
-      });
-    }
-
-    return NextResponse.json({ signals, meta: { postCount: posts.length, rawFallback: false } });
   } catch (err) {
     console.error('[REDDIT] Route failed:', err);
     return NextResponse.json({ error: String(err) }, { status: 500 });
