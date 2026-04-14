@@ -16,7 +16,9 @@ import {
   getDoc,
 } from '../../firebase';
 
-const ensureUserDocument = async (user: FirebaseUser) => {
+const ensureUserDocument = async (
+  user: FirebaseUser
+) => {
   try {
     const userRef = doc(db, 'users', user.uid);
     const userSnap = await getDoc(userRef);
@@ -28,47 +30,74 @@ const ensureUserDocument = async (user: FirebaseUser) => {
         photoURL: user.photoURL || '',
         createdAt: new Date().toISOString(),
       });
-      console.log('[AUTH] User document created:', user.uid);
     }
   } catch (err) {
-    console.warn('[AUTH] Failed to create user doc:', err);
+    console.warn(
+      '[AUTH] Failed to create user doc:', err
+    );
   }
 };
 
 export function useAgentAuth() {
-  const [user, setUser] = useState<FirebaseUser | null>(null);
-  const [loginError, setLoginError] = useState<string | null>(null);
-  const [authLoading, setAuthLoading] = useState(true);
+  const [user, setUser] =
+    useState<FirebaseUser | null>(null);
+  const [loginError, setLoginError] =
+    useState<string | null>(null);
+  const [authLoading, setAuthLoading] =
+    useState(true);
 
   useEffect(() => {
-    // Handle redirect result first — fires when user returns from Google redirect on mobile
+    // CRITICAL: handle redirect result on
+    // mount — fires when user returns from
+    // Google sign-in redirect
     getRedirectResult(auth)
       .then((result) => {
         if (result?.user) {
-          console.log('[AUTH] Redirect sign-in successful');
+          console.log(
+            '[AUTH] Redirect sign-in success:',
+            result.user.email
+          );
           ensureUserDocument(result.user);
+        } else {
+          console.log(
+            '[AUTH] No redirect result'
+          );
         }
       })
       .catch((err: unknown) => {
-        const code = (err as { code?: string }).code;
+        const code =
+          (err as { code?: string }).code;
         if (
-          code === 'auth/cancelled-popup-request' ||
-          code === 'auth/popup-closed-by-user' ||
-          code === 'auth/credential-already-in-use'
+          code === 'auth/cancelled-popup-request'
+          || code === 'auth/popup-closed-by-user'
+          || code === 'auth/credential-already-in-use'
         ) return;
-        console.warn('[AUTH] Redirect result error:', code);
+        console.warn(
+          '[AUTH] Redirect error:', code, err
+        );
       });
 
-    // Auth state listener
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      if (firebaseUser) {
-        ensureUserDocument(firebaseUser);
-        setUser(firebaseUser);
-      } else {
-        setUser(null);
+    // Auth state listener — fires for both
+    // popup and redirect sign-in
+    const unsubscribe = onAuthStateChanged(
+      auth,
+      (firebaseUser) => {
+        if (firebaseUser) {
+          ensureUserDocument(firebaseUser);
+          setUser(firebaseUser);
+          console.log(
+            '[AUTH] Signed in:',
+            firebaseUser.email
+          );
+        } else {
+          setUser(null);
+          console.log(
+            '[AUTH] Signed out'
+          );
+        }
+        setAuthLoading(false);
       }
-      setAuthLoading(false);
-    });
+    );
 
     return () => unsubscribe();
   }, []);
@@ -76,19 +105,28 @@ export function useAgentAuth() {
   const login = async () => {
     setLoginError(null);
     try {
-      const isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
+      const isMobile =
+        /iPhone|iPad|Android/i
+          .test(navigator.userAgent);
       if (isMobile) {
-        await signInWithRedirect(auth, googleProvider);
+        await signInWithRedirect(
+          auth, googleProvider
+        );
       } else {
-        await signInWithPopup(auth, googleProvider);
+        await signInWithPopup(
+          auth, googleProvider
+        );
       }
     } catch (err: unknown) {
-      const code = (err as { code?: string }).code;
+      const code =
+        (err as { code?: string }).code;
       if (
-        code === 'auth/cancelled-popup-request' ||
-        code === 'auth/popup-closed-by-user'
+        code === 'auth/cancelled-popup-request'
+        || code === 'auth/popup-closed-by-user'
       ) return;
-      setLoginError('Sign-in failed. Please try again.');
+      setLoginError(
+        'Sign-in failed. Please try again.'
+      );
       console.error('[AUTH] Login failed:', err);
     }
   };
@@ -102,5 +140,11 @@ export function useAgentAuth() {
     }
   };
 
-  return { user, login, logout, loginError, authLoading };
+  return {
+    user,
+    login,
+    logout,
+    loginError,
+    authLoading,
+  };
 }
