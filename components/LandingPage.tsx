@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import { auth, googleProvider, signInWithPopup, signInWithRedirect, db, addDoc, collection } from '@/firebase';
+import { useEffect } from 'react';
+import { auth, googleProvider, signInWithPopup, signInWithRedirect, getRedirectResult, db, addDoc, collection } from '@/firebase';
 import DemoMode from '@/components/DemoMode';
 import Logo from '@/components/Logo';
 import { WorkflowInteractiveDemo } from '@/components/WorkflowInteractiveDemo';
@@ -13,6 +14,22 @@ export default function LandingPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [showDemo, setShowDemo] = useState(false);
+  const [signInError, setSignInError] = useState<string | null>(null);
+
+  useEffect(() => {
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result?.user) console.log('[AUTH] Landing redirect sign-in successful');
+      })
+      .catch((err: unknown) => {
+        const code = (err as { code?: string }).code;
+        if (
+          code === 'auth/cancelled-popup-request' ||
+          code === 'auth/popup-closed-by-user'
+        ) return;
+        console.warn('[AUTH] Landing redirect result error:', code);
+      });
+  }, []);
 
   const handleWaitlist = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,18 +62,22 @@ export default function LandingPage() {
   };
 
   const handleSignIn = async () => {
+    setSignInError(null);
     try {
       const isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
-      console.log('Starting Google sign-in, mobile=', isMobile, 'userAgent=', navigator.userAgent);
       if (isMobile) {
         await signInWithRedirect(auth, googleProvider);
       } else {
         await signInWithPopup(auth, googleProvider);
       }
-    } catch (err: any) {
-      if (err?.code === 'auth/cancelled-popup-request') return;
-      if (err?.code === 'auth/popup-closed-by-user') return;
-      console.error('Sign in failed:', err);
+    } catch (err: unknown) {
+      const code = (err as { code?: string }).code;
+      if (
+        code === 'auth/cancelled-popup-request' ||
+        code === 'auth/popup-closed-by-user'
+      ) return;
+      setSignInError('Sign-in failed. Please try again.');
+      console.error('[AUTH] Sign-in failed:', err);
     }
   };
 

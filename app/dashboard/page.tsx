@@ -38,6 +38,7 @@ import {
   FirebaseUser,
   signInWithPopup,
   signInWithRedirect,
+  getRedirectResult,
   googleProvider,
   limit,
 } from '@/firebase';
@@ -82,8 +83,21 @@ export default function DashboardPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkProcessing, setBulkProcessing] = useState(false);
 
-  // Auth listener
+  // Auth listener + redirect result
   useEffect(() => {
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result?.user) console.log('[AUTH] Dashboard redirect sign-in successful');
+      })
+      .catch((err: unknown) => {
+        const code = (err as { code?: string }).code;
+        if (
+          code === 'auth/cancelled-popup-request' ||
+          code === 'auth/popup-closed-by-user'
+        ) return;
+        console.warn('[AUTH] Dashboard redirect result error:', code);
+      });
+
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       if (user) {

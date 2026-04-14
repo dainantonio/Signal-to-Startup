@@ -38,8 +38,28 @@ const ensureUserDocument = async (user: FirebaseUser) => {
 export function useAgentAuth() {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [loginError, setLoginError] = useState<string | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
+    // Handle redirect result first — fires when user returns from Google redirect on mobile
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result?.user) {
+          console.log('[AUTH] Redirect sign-in successful');
+          ensureUserDocument(result.user);
+        }
+      })
+      .catch((err: unknown) => {
+        const code = (err as { code?: string }).code;
+        if (
+          code === 'auth/cancelled-popup-request' ||
+          code === 'auth/popup-closed-by-user' ||
+          code === 'auth/credential-already-in-use'
+        ) return;
+        console.warn('[AUTH] Redirect result error:', code);
+      });
+
+    // Auth state listener
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
         ensureUserDocument(firebaseUser);
@@ -47,7 +67,9 @@ export function useAgentAuth() {
       } else {
         setUser(null);
       }
+      setAuthLoading(false);
     });
+
     return () => unsubscribe();
   }, []);
 
@@ -62,20 +84,23 @@ export function useAgentAuth() {
       }
     } catch (err: unknown) {
       const code = (err as { code?: string }).code;
-      if (code === 'auth/cancelled-popup-request') return;
-      if (code === 'auth/popup-closed-by-user') return;
+      if (
+        code === 'auth/cancelled-popup-request' ||
+        code === 'auth/popup-closed-by-user'
+      ) return;
       setLoginError('Sign-in failed. Please try again.');
-      console.error('Login failed', err);
+      console.error('[AUTH] Login failed:', err);
     }
   };
 
   const logout = async () => {
     try {
       await signOut(auth);
+      setUser(null);
     } catch (err) {
-      console.error('Logout failed', err);
+      console.error('[AUTH] Logout failed:', err);
     }
   };
 
-  return { user, login, logout, loginError };
+  return { user, login, logout, loginError, authLoading };
 }
