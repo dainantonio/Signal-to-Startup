@@ -755,15 +755,15 @@ export default function TrendIntelligenceAgent() {
         )}
       </AnimatePresence>
 
-      {/* Signal Guide — floating AI agent */}
+    </div>
+
+      {/* Signal Guide — floating AI agent, outside main div so fixed positioning is always viewport-relative */}
       <SignalGuide
         currentResult={analysis.result ?? undefined}
         selectedMode={selectedMode}
         appMode={appMode}
         lastAction={analysis.result ? 'analyzed' : 'idle'}
       />
-
-    </div>
     </>
   );
 }
