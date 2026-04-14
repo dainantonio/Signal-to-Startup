@@ -168,9 +168,10 @@ export const OpportunityCard: React.FC<OpportunityCardProps> = ({
           <button
             type="button"
             onClick={() => generateDeepDive(opp)}
-            className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gray-900 text-white rounded-xl text-xs font-semibold hover:bg-gray-700 transition-colors group"
+            className="w-full flex items-center justify-center gap-2 mt-3 py-3 px-4 bg-gray-900 hover:bg-gray-700 text-white rounded-xl text-sm font-semibold transition-all active:scale-[0.98]"
           >
-            ⚡ Open Execution Suite
+            <span>⚡</span>
+            Open Execution Suite
           </button>
         )}
       </div>

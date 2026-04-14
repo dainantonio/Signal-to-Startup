@@ -721,6 +721,7 @@ export default function TrendIntelligenceAgent() {
     </div>
 
       {/* ── Modals — outside main div so z-index is always viewport-relative ── */}
+      {process.env.NODE_ENV === 'development' && (console.log('[MODAL] selectedOpportunity:', analysis.selectedOpportunity?.name) as unknown as null)}
       <AnimatePresence>
         {analysis.selectedOpportunity && (
           <DeepDiveModal

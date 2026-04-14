@@ -20,28 +20,57 @@ function cleanText(raw: string): string {
     .trim();
 }
 
-const SUBREDDITS_BY_MARKET: Record<string, string[]> = {
-  global: [
-    'smallbusiness', 'Entrepreneur',
-    'SideProject', 'indiehackers',
-    'startups',
-  ],
-  caribbean: [
-    'jamaica', 'smallbusiness',
-    'Entrepreneur',
-  ],
-  africa: [
-    'nigeria', 'africa',
-    'smallbusiness',
-  ],
-  uk: [
-    'UKBusiness', 'smallbusiness',
-    'Entrepreneur',
-  ],
-  latam: [
-    'mexico', 'smallbusiness',
-    'Entrepreneur',
-  ],
+function cleanRedditText(raw: string): string {
+  if (!raw) return '';
+  return raw
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, '')
+    .replace(/&gt;/g, '')
+    .replace(/<[^>]+>/g, '')
+    .replace(/\[.*?\]/g, '')
+    .replace(/https?:\/\/\S+/g, '')
+    .replace(/\n+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function getTimeAgo(isoString: string): string {
+  const seconds = Math.floor((Date.now() - new Date(isoString).getTime()) / 1000);
+  if (seconds < 60) return 'just now';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
+const SUBREDDITS_BY_MARKET_SECTOR: Record<string, Record<string, string[]>> = {
+  global: {
+    ai: ['MachineLearning', 'artificial', 'ChatGPT', 'singularity'],
+    markets: ['smallbusiness', 'Entrepreneur', 'startups'],
+    funding: ['venturecapital', 'startups', 'Entrepreneur'],
+    food: ['restaurantowners', 'foodtrucks', 'KitchenConfidential'],
+    workforce: ['freelance', 'remotework', 'digitalnomad'],
+    retail: ['ecommerce', 'smallbusiness', 'Entrepreneur'],
+    default: ['smallbusiness', 'Entrepreneur', 'SideProject', 'indiehackers'],
+  },
+  caribbean: {
+    default: ['jamaica', 'smallbusiness', 'Entrepreneur'],
+  },
+  africa: {
+    default: ['nigeria', 'africa', 'smallbusiness'],
+    ai: ['nigeria', 'africa', 'AfricanTech'],
+    funding: ['nigeria', 'africa', 'startups'],
+  },
+  uk: {
+    default: ['UKBusiness', 'smallbusiness', 'Entrepreneur', 'ukpolitics'],
+  },
+  latam: {
+    default: ['mexico', 'smallbusiness', 'Entrepreneur'],
+  },
 };
 
 async function fetchSubredditRSS(subreddit: string): Promise<Array<{
@@ -103,11 +132,14 @@ async function fetchSubredditRSS(subreddit: string): Promise<Array<{
 
 export async function GET(request: NextRequest) {
   const market = request.nextUrl.searchParams.get('market') || 'global';
+  const sector = request.nextUrl.searchParams.get('sector') || 'default';
 
-  console.log('[REDDIT] RSS fetch for market:', market);
+  console.log('[REDDIT] RSS fetch for market:', market, 'sector:', sector);
 
   try {
-    const subs = SUBREDDITS_BY_MARKET[market] || SUBREDDITS_BY_MARKET.global;
+    const marketSectors = SUBREDDITS_BY_MARKET_SECTOR[market] || SUBREDDITS_BY_MARKET_SECTOR.global;
+    const subs = marketSectors[sector] || marketSectors.default || ['smallbusiness', 'Entrepreneur'];
+
     const allPosts: Array<{
       title: string;
       body: string;
@@ -138,8 +170,8 @@ export async function GET(request: NextRequest) {
     const signals = allPosts
       .filter((p) => p.title.length > 20)
       .map((post) => {
-        const cleanTitle = cleanText(post.title);
-        const cleanBody = cleanText(post.body);
+        const cleanTitle = cleanRedditText(post.title);
+        const cleanBody = cleanRedditText(post.body);
         return {
           title: cleanTitle,
           snippet: (cleanBody || cleanTitle).substring(0, 200),
@@ -149,6 +181,7 @@ export async function GET(request: NextRequest) {
           signalScore: Math.floor(Math.random() * 20 + 55),
           type: 'reddit',
           publishedAt: new Date(post.created).toISOString(),
+          timeAgo: getTimeAgo(post.created),
           redditMeta: {
             subreddit: post.subreddit,
             upvotes: post.upvotes,

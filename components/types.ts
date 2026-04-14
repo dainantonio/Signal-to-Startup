@@ -292,6 +292,7 @@ export interface FeedSignal {
   isLocalSource?: boolean;
   isGlobalMention?: boolean;
   type?: 'rss' | 'reddit';
+  timeAgo?: string;
   redditMeta?: {
     subreddit: string;
     upvotes: number;

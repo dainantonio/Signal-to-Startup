@@ -985,9 +985,19 @@ Return ONLY valid JSON in this exact structure:
     setDeepDiveResult(null);
     setDeepDiveLoading(true);
     setActiveDeepDiveTab('plan');
-    const ddResult = await deepDiveOpportunity(opportunity, input);
+
+    // Use result trend/summary as context when input is empty (e.g. after feed analysis)
+    const context = input.trim() || result?.trend || result?.summary || opportunity.name;
+    console.log('[DEEP DIVE] Starting for:', opportunity.name, 'context length:', context.length);
+
+    const ddResult = await deepDiveOpportunity(opportunity, context);
     setDeepDiveLoading(false);
-    if (ddResult) setDeepDiveResult(ddResult);
+    if (ddResult) {
+      setDeepDiveResult(ddResult);
+      console.log('[DEEP DIVE] Complete, tabs:', Object.keys(ddResult).join(', '));
+    } else {
+      console.error('[DEEP DIVE] No result returned');
+    }
   };
 
   const shareOnTwitter = () => {

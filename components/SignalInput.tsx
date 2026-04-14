@@ -219,7 +219,8 @@ export const SignalInput: React.FC<SignalInputProps> = ({
     setFetchingReddit(true);
     try {
       console.log('[REDDIT] fetching for market:', selectedMode);
-      const res = await fetch(`/api/reddit-signals?market=${selectedMode}`);
+      const sector = selectedSectors[0] || 'default';
+      const res = await fetch(`/api/reddit-signals?market=${selectedMode}&sector=${sector}`);
       const data = await res.json();
       console.log('[REDDIT] got signals:', data.signals?.length || 0, 'meta:', data.meta);
       setRedditSignals(data.signals || []);
@@ -229,7 +230,7 @@ export const SignalInput: React.FC<SignalInputProps> = ({
     } finally {
       setFetchingReddit(false);
     }
-  }, [selectedMode]);
+  }, [selectedMode, selectedSectors]);
 
   useEffect(() => {
     if (inputMode === 'reddit') fetchRedditSignalsData();
@@ -373,18 +374,32 @@ export const SignalInput: React.FC<SignalInputProps> = ({
 
   return (
     <section id="step-1" className="scroll-mt-24 mb-12">
-      <div className="flex w-full bg-white border border-border/10 p-1 rounded-2xl shadow-sm mb-6">
-        <button onClick={() => setInputMode('paste')} className={`flex-1 py-3 rounded-xl font-mono text-[11px] uppercase tracking-wider transition-all duration-200 ${inputMode === 'paste' ? 'bg-foreground text-background shadow-lg shadow-foreground/10' : 'text-muted hover:text-foreground hover:bg-gray-50'}`}>
-          ✏️ Paste / URL
-        </button>
-        <button onClick={() => setInputMode('feed')} className={`flex-1 py-3 rounded-xl font-mono text-[11px] uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 ${inputMode === 'feed' ? 'bg-foreground text-background shadow-lg shadow-foreground/10' : 'text-muted hover:text-foreground hover:bg-gray-50'}`}>
-          <span className={`w-2 h-2 rounded-full flex-shrink-0 ${inputMode === 'feed' ? 'bg-red-400 animate-pulse' : 'bg-gray-300'}`} />
-          📰 News Feed
-        </button>
-        <button onClick={() => setInputMode('reddit')} className={`flex-1 py-3 rounded-xl font-mono text-[11px] uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 ${inputMode === 'reddit' ? 'bg-foreground text-background shadow-lg shadow-foreground/10' : 'text-muted hover:text-foreground hover:bg-gray-50'}`}>
-          <span className={`w-2 h-2 rounded-full flex-shrink-0 ${inputMode === 'reddit' ? 'bg-orange-400 animate-pulse' : 'bg-gray-300'}`} />
-          🟠 Reddit
-        </button>
+      <div className="flex bg-slate-100 rounded-2xl p-1 mb-6">
+        {([
+          { mode: 'paste', label: 'Paste / URL', dot: false, orange: false },
+          { mode: 'feed',   label: 'News Feed',  dot: true,  orange: false },
+          { mode: 'reddit', label: 'Reddit',     dot: true,  orange: true  },
+        ] as { mode: 'feed'|'paste'|'reddit'; label: string; dot: boolean; orange: boolean }[]).map(tab => (
+          <button
+            key={tab.mode}
+            type="button"
+            onClick={() => setInputMode(tab.mode)}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 ${
+              inputMode === tab.mode
+                ? 'bg-white text-slate-900 shadow-sm'
+                : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            {tab.dot && (
+              <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                inputMode === tab.mode
+                  ? tab.orange ? 'bg-orange-500 animate-pulse' : 'bg-emerald-500 animate-pulse'
+                  : 'bg-slate-300'
+              }`} />
+            )}
+            {tab.label}
+          </button>
+        ))}
       </div>
 
       {inputMode === 'paste' ? (
@@ -764,9 +779,7 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                       key={i}
                       layout
                       animate={{
-                        scale: isAnalyzing ? 1.04 : isOtherAnalyzing ? 0.96 : 1,
-                        opacity: isOtherAnalyzing ? 0.4 : 1,
-                        filter: isOtherAnalyzing ? 'blur(2px)' : 'blur(0px)',
+                        scale: isAnalyzing ? 1.04 : 1,
                         boxShadow: isSuccess
                           ? '0 0 0 2px #22c55e, 0 20px 60px rgba(34,197,94,0.2)'
                           : isAnalyzing
@@ -776,11 +789,11 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                           : '0 1px 3px rgba(0,0,0,0.08)',
                       }}
                       transition={{ duration: 0.3, ease: 'easeInOut' }}
-                      className={`relative bg-white border border-gray-200 rounded-2xl shadow-sm flex flex-col overflow-hidden ${
-                        isOtherAnalyzing ? 'pointer-events-none' : ''
-                      } ${isAnalyzing ? 'z-10 ring-2 ring-blue-400 ring-offset-2' : ''} ${
-                        multiSelectMode ? 'cursor-pointer' : ''
-                      } ${isSelected ? 'border-black bg-gray-50' : ''}`}
+                      className={`relative bg-white border rounded-2xl flex flex-col overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 ${
+                        isSelected ? 'ring-2 ring-slate-900 border-slate-900' : 'border-slate-200/60 hover:border-slate-300/60'
+                      } ${isOtherAnalyzing ? 'pointer-events-none opacity-40' : ''} ${
+                        isAnalyzing ? 'ring-2 ring-blue-400 ring-offset-2 z-10' : ''
+                      } ${multiSelectMode ? 'cursor-pointer' : ''}`}
                       onClick={() => {
                         if (!multiSelectMode) return;
                         setSelectedArticles(prev => {
@@ -1131,7 +1144,7 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                     : (sig.snippet as string || '').replace(/<[^>]+>/g, '').substring(0, 180);
 
                   return (
-                    <div key={i} className="bg-white border border-orange-100 rounded-2xl flex flex-col overflow-hidden hover:border-orange-200 hover:shadow-md transition-all">
+                    <div key={i} className="bg-white border border-slate-200/60 rounded-2xl flex flex-col overflow-hidden shadow-sm hover:shadow-md hover:border-orange-200/60 transition-all duration-200">
                       <div className="p-4 flex flex-col gap-3 flex-1">
                         {/* Meta */}
                         <div className="flex items-center gap-2 flex-wrap">
@@ -1155,8 +1168,8 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                         </h3>
 
                         {/* Problem */}
-                        <div className="bg-orange-50 rounded-xl p-3">
-                          <p className="text-[9px] font-bold text-orange-600 uppercase tracking-widest mb-1">Problem identified</p>
+                        <div className="bg-slate-50 border border-slate-100 rounded-xl p-3">
+                          <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">Problem identified</p>
                           <p className="text-xs text-gray-700 leading-relaxed">{displayProblem}</p>
                         </div>
 
@@ -1170,11 +1183,12 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                           </div>
                         )}
 
-                        {/* Engagement — hide when 0 */}
-                        {((meta?.upvotes ?? 0) > 0 || (meta?.comments ?? 0) > 0) && (
+                        {/* Engagement + time */}
+                        {(sig.timeAgo || (meta?.upvotes ?? 0) > 0 || (meta?.comments ?? 0) > 0) && (
                           <div className="flex items-center gap-3 text-[10px] text-gray-400">
-                            {(meta?.upvotes ?? 0) > 0 && <span>▲ {(meta!.upvotes!).toLocaleString()} upvotes</span>}
-                            {(meta?.comments ?? 0) > 0 && <span>💬 {(meta!.comments!).toLocaleString()} comments</span>}
+                            {sig.timeAgo && <span>🕐 {String(sig.timeAgo)}</span>}
+                            {(meta?.upvotes ?? 0) > 0 && <span>▲ {(meta!.upvotes!).toLocaleString()}</span>}
+                            {(meta?.comments ?? 0) > 0 && <span>💬 {(meta!.comments!).toLocaleString()}</span>}
                           </div>
                         )}
 
@@ -1197,7 +1211,7 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                             {isAnalyzingThisCard ? (
                               <><Loader2 className="w-3 h-3 animate-spin" /> Analyzing...</>
                             ) : (
-                              '⚡ Deep Analysis'
+                              '⚡ Analyze'
                             )}
                           </button>
                           <a
