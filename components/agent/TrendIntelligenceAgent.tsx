@@ -28,6 +28,7 @@ import Logo from '../Logo';
 import NotificationBell from '../NotificationBell';
 import LeftSidebar from '../LeftSidebar';
 import RightPanel from '../RightPanel';
+import SignalGuide from '../SignalGuide';
 import { auth, db, doc, setDoc, getDoc, getDocs, query, where, collection } from '@/firebase';
 
 type AppMode = 'discover' | 'validate';
@@ -753,6 +754,14 @@ export default function TrendIntelligenceAgent() {
           </>
         )}
       </AnimatePresence>
+
+      {/* Signal Guide — floating AI agent */}
+      <SignalGuide
+        currentResult={analysis.result ?? undefined}
+        selectedMode={selectedMode}
+        appMode={appMode}
+        lastAction={analysis.result ? 'analyzed' : 'idle'}
+      />
 
     </div>
     </>
