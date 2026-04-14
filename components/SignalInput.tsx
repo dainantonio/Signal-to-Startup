@@ -1184,11 +1184,17 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                         )}
 
                         {/* Engagement + time */}
-                        {(sig.timeAgo || (meta?.upvotes ?? 0) > 0 || (meta?.comments ?? 0) > 0) && (
+                        {(typeof sig.timeAgo === 'string' || (meta?.upvotes ?? 0) > 0 || (meta?.comments ?? 0) > 0) && (
                           <div className="flex items-center gap-3 text-[10px] text-gray-400">
-                            {sig.timeAgo && <span>🕐 {String(sig.timeAgo)}</span>}
-                            {(meta?.upvotes ?? 0) > 0 && <span>▲ {(meta!.upvotes!).toLocaleString()}</span>}
-                            {(meta?.comments ?? 0) > 0 && <span>💬 {(meta!.comments!).toLocaleString()}</span>}
+                            {typeof sig.timeAgo === 'string' && sig.timeAgo && (
+                              <span>🕐 {sig.timeAgo}</span>
+                            )}
+                            {(meta?.upvotes ?? 0) > 0 && (
+                              <span>▲ {Number(meta?.upvotes ?? 0).toLocaleString()}</span>
+                            )}
+                            {(meta?.comments ?? 0) > 0 && (
+                              <span>💬 {Number(meta?.comments ?? 0).toLocaleString()}</span>
+                            )}
                           </div>
                         )}
 
