@@ -113,24 +113,11 @@ export function useAgentAuth() {
   const login = async () => {
     setLoginError(null);
     try {
-      const isMobile =
-        /iPhone|iPad|Android/i
-          .test(navigator.userAgent);
-      console.log(
-        '[AUTH] login() called, isMobile:', isMobile
-      );
-      if (isMobile) {
-        await signInWithRedirect(
-          auth, googleProvider
-        );
-      } else {
-        await signInWithPopup(
-          auth, googleProvider
-        );
-        console.log(
-          '[AUTH] popup completed successfully'
-        );
-      }
+      // Use popup on all devices —
+      // redirect causes COOP issues on mobile
+      console.log('[AUTH] login() called');
+      await signInWithPopup(auth, googleProvider);
+      console.log('[AUTH] popup completed successfully');
     } catch (err: unknown) {
       const code =
         (err as { code?: string }).code;
@@ -138,9 +125,18 @@ export function useAgentAuth() {
         code === 'auth/cancelled-popup-request'
         || code === 'auth/popup-closed-by-user'
       ) return;
-      setLoginError(
-        'Sign-in failed. Please try again.'
-      );
+
+      // If popup blocked, fall back to redirect
+      if (code === 'auth/popup-blocked') {
+        try {
+          await signInWithRedirect(auth, googleProvider);
+        } catch {
+          setLoginError('Sign-in failed. Please try again.');
+        }
+        return;
+      }
+
+      setLoginError('Sign-in failed. Please try again.');
       console.error('[AUTH] Login failed:', err);
     }
   };

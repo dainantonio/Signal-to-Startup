@@ -292,15 +292,18 @@ export default function DashboardPage() {
 
   const login = async () => {
     try {
-      const isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
-      if (isMobile) {
+      // Use popup on all devices — redirect causes COOP issues on mobile
+      await signInWithPopup(auth, googleProvider);
+    } catch (err: unknown) {
+      const code = (err as { code?: string }).code;
+      if (
+        code === 'auth/cancelled-popup-request' ||
+        code === 'auth/popup-closed-by-user'
+      ) return;
+      if (code === 'auth/popup-blocked') {
         await signInWithRedirect(auth, googleProvider);
-      } else {
-        await signInWithPopup(auth, googleProvider);
+        return;
       }
-    } catch (err: any) {
-      if (err?.code === 'auth/cancelled-popup-request') return;
-      if (err?.code === 'auth/popup-closed-by-user') return;
       console.error('Login failed', err);
     }
   };

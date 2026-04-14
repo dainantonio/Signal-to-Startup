@@ -217,67 +217,95 @@ export const SignalInput: React.FC<SignalInputProps> = ({
 
   const fetchRedditSignalsData = useCallback(async () => {
     setFetchingReddit(true);
+    console.log('[REDDIT] starting fetch for market:', selectedMode);
     try {
-      const subredditsByMarket: Record<string, string[]> = {
-        global: ['smallbusiness', 'Entrepreneur', 'SideProject', 'indiehackers', 'microSaaS', 'freelance', 'startup'],
-        africa: ['smallbusiness', 'Entrepreneur', 'nigeria', 'africa', 'SideProject'],
-        caribbean: ['smallbusiness', 'Entrepreneur', 'jamaica', 'SideProject'],
-        latam: ['smallbusiness', 'Entrepreneur', 'SideProject', 'indiehackers'],
-        asia: ['smallbusiness', 'Entrepreneur', 'SideProject', 'indiehackers'],
-        europe: ['smallbusiness', 'Entrepreneur', 'SideProject', 'freelance'],
+      const SUBS: Record<string, string[]> = {
+        global: [
+          'smallbusiness', 'Entrepreneur',
+          'SideProject', 'indiehackers',
+        ],
+        caribbean: [
+          'jamaica', 'smallbusiness',
+          'Entrepreneur',
+        ],
+        africa: [
+          'nigeria', 'africa',
+          'smallbusiness',
+        ],
+        uk: [
+          'UKBusiness', 'smallbusiness',
+          'Entrepreneur',
+        ],
+        latam: [
+          'mexico', 'smallbusiness',
+          'Entrepreneur',
+        ],
       };
 
-      const subs = subredditsByMarket[selectedMode] || subredditsByMarket['global'];
+      const subs = SUBS[selectedMode] || SUBS.global;
+      const allPosts: Record<string, unknown>[] = [];
 
-      const results = await Promise.allSettled(
-        subs.slice(0, 6).map(sub =>
-          fetch(`https://www.reddit.com/r/${sub}/hot.json?limit=25`, {
-            headers: { 'User-Agent': 'SignalToStartup/1.0' },
-          }).then(r => r.ok ? r.json() : null)
-        )
+      await Promise.allSettled(
+        subs.slice(0, 3).map(async (sub) => {
+          try {
+            const r = await fetch(
+              `https://www.reddit.com/r/${sub}/hot.json?limit=20&raw_json=1`,
+              { headers: { 'Accept': 'application/json' } }
+            );
+            if (!r.ok) return;
+            const d = await r.json();
+            const children = d?.data?.children || [];
+
+            for (const child of children) {
+              const p = child.data;
+              if ((p.ups || 0) < 15) continue;
+              if ((p.num_comments || 0) < 3) continue;
+              if (p.is_video) continue;
+              if (p.post_hint === 'image') continue;
+
+              const body = p.selftext || '';
+              allPosts.push({
+                title: p.title,
+                snippet: (body || p.title).substring(0, 200),
+                source: `r/${sub}`,
+                url: `https://reddit.com${p.permalink}`,
+                sector: 'markets',
+                signalScore: Math.min(
+                  Math.round(
+                    50 +
+                    Math.min((p.ups || 0) / 50, 25) +
+                    Math.min((p.num_comments || 0) / 5, 25)
+                  ), 99
+                ),
+                type: 'reddit',
+                publishedAt: new Date(p.created_utc * 1000).toISOString(),
+                redditMeta: {
+                  subreddit: sub,
+                  upvotes: p.ups || 0,
+                  comments: p.num_comments || 0,
+                  postType: 'Signal',
+                  problem: body.substring(0, 150) || p.title,
+                  startupIdea: 'Click Deep Analysis',
+                  targetUser: 'Entrepreneurs',
+                  signalStrength: Math.min(Math.round((p.ups || 0) / 100 + 5), 9),
+                },
+              });
+            }
+          } catch (e) {
+            console.warn('[REDDIT] r/' + sub + ' failed:', e);
+          }
+        })
       );
 
-      const posts: Array<Record<string, unknown>> = [];
-      results.forEach((result, idx) => {
-        if (result.status !== 'fulfilled' || !result.value) return;
-        const sub = subs[idx];
-        const children = result.value?.data?.children || [];
-        for (const child of children) {
-          const p = child.data;
-          if (!p || p.ups < 10 || p.num_comments < 2 || p.is_video) continue;
-          const body: string = p.selftext || '';
-          if (body.length < 30 && (p.title || '').length < 25) continue;
-          posts.push({
-            title: p.title,
-            snippet: (body || p.title).substring(0, 200),
-            source: `r/${sub}`,
-            url: `https://reddit.com${p.permalink}`,
-            sector: 'markets',
-            signalScore: Math.min(p.ups + p.num_comments * 2, 75),
-            type: 'reddit',
-            publishedAt: new Date(p.created_utc * 1000).toISOString(),
-            redditMeta: {
-              subreddit: sub,
-              upvotes: p.ups,
-              comments: p.num_comments,
-              postType: 'Raw',
-              problem: (body || p.title).substring(0, 120),
-              startupIdea: 'Analyze this signal for startup opportunities',
-              targetUser: 'Startup founders',
-              signalStrength: 3,
-              marketNote: '',
-            },
-          });
-        }
-      });
-
-      const sorted = posts
-        .sort((a, b) => (b.signalScore as number) - (a.signalScore as number))
-        .slice(0, 12);
-
-      setRedditSignals(sorted);
+      console.log('[REDDIT] got posts:', allPosts.length);
+      setRedditSignals(
+        allPosts
+          .sort((a, b) => (b.signalScore as number) - (a.signalScore as number))
+          .slice(0, 10)
+      );
     } catch (err) {
-      console.error('Reddit fetch failed:', err);
+      console.error('[REDDIT] fetch failed:', err);
+      setRedditSignals([]);
     } finally {
       setFetchingReddit(false);
     }

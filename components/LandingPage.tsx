@@ -64,18 +64,18 @@ export default function LandingPage() {
   const handleSignIn = async () => {
     setSignInError(null);
     try {
-      const isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
-      if (isMobile) {
-        await signInWithRedirect(auth, googleProvider);
-      } else {
-        await signInWithPopup(auth, googleProvider);
-      }
+      // Use popup on all devices — redirect causes COOP issues on mobile
+      await signInWithPopup(auth, googleProvider);
     } catch (err: unknown) {
       const code = (err as { code?: string }).code;
       if (
         code === 'auth/cancelled-popup-request' ||
         code === 'auth/popup-closed-by-user'
       ) return;
+      if (code === 'auth/popup-blocked') {
+        await signInWithRedirect(auth, googleProvider);
+        return;
+      }
       setSignInError('Sign-in failed. Please try again.');
       console.error('[AUTH] Sign-in failed:', err);
     }
