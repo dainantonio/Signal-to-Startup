@@ -375,15 +375,15 @@ export const SignalInput: React.FC<SignalInputProps> = ({
     <section id="step-1" className="scroll-mt-24 mb-12">
       <div className="flex w-full bg-white border border-border/10 p-1 rounded-2xl shadow-sm mb-6">
         <button onClick={() => setInputMode('paste')} className={`flex-1 py-3 rounded-xl font-mono text-[11px] uppercase tracking-wider transition-all duration-200 ${inputMode === 'paste' ? 'bg-foreground text-background shadow-lg shadow-foreground/10' : 'text-muted hover:text-foreground hover:bg-gray-50'}`}>
-          Paste Signal
+          ✏️ Paste / URL
         </button>
         <button onClick={() => setInputMode('feed')} className={`flex-1 py-3 rounded-xl font-mono text-[11px] uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 ${inputMode === 'feed' ? 'bg-foreground text-background shadow-lg shadow-foreground/10' : 'text-muted hover:text-foreground hover:bg-gray-50'}`}>
           <span className={`w-2 h-2 rounded-full flex-shrink-0 ${inputMode === 'feed' ? 'bg-red-400 animate-pulse' : 'bg-gray-300'}`} />
-          Live Feed
+          📰 News Feed
         </button>
         <button onClick={() => setInputMode('reddit')} className={`flex-1 py-3 rounded-xl font-mono text-[11px] uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 ${inputMode === 'reddit' ? 'bg-foreground text-background shadow-lg shadow-foreground/10' : 'text-muted hover:text-foreground hover:bg-gray-50'}`}>
           <span className={`w-2 h-2 rounded-full flex-shrink-0 ${inputMode === 'reddit' ? 'bg-orange-400 animate-pulse' : 'bg-gray-300'}`} />
-          Reddit Signals
+          🟠 Reddit
         </button>
       </div>
 
@@ -863,13 +863,23 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                             )}
                             <div className="ml-auto flex items-center gap-1 px-2 py-0.5 bg-amber-50 border border-amber-200 rounded-lg flex-shrink-0">
                               <span className="text-amber-500 text-[9px]">⚡</span>
-                              <span className="text-[10px] font-bold font-mono text-amber-700">{Math.min(sig.signalScore || 0, 99)}</span>
+                              <span className="text-xs font-bold font-mono text-amber-700">{Math.min(sig.signalScore || 0, 99)}</span>
                             </div>
                           </div>
                           {/* Title */}
-                          <h3 className="text-sm font-semibold text-gray-900 leading-snug line-clamp-2">{sig.title}</h3>
+                          <h3 className="text-sm font-semibold text-gray-900 leading-snug line-clamp-2">
+                            {(sig.title || '').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/<[^>]+>/g, '')}
+                          </h3>
                           {/* Snippet */}
-                          <p className="text-xs text-gray-500 leading-relaxed line-clamp-2 flex-1">{sig.snippet}</p>
+                          {(() => {
+                            const cleanSnippet = (sig.snippet || '')
+                              .replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+                              .replace(/&lt;/g, '').replace(/&gt;/g, '').replace(/<[^>]+>/g, '')
+                              .substring(0, 160);
+                            return cleanSnippet ? (
+                              <p className="text-xs text-gray-500 leading-relaxed line-clamp-2 flex-1">{cleanSnippet}</p>
+                            ) : null;
+                          })()}
                           {/* Action buttons */}
                           {!multiSelectMode && (
                             <div className="flex gap-2 pt-1">
@@ -1096,14 +1106,30 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                 ))
               : redditSignals.length === 0
               ? (
-                  <div className="col-span-2 text-center py-16 text-gray-400">
-                    <p className="text-2xl mb-2">🤖</p>
-                    <p className="text-sm font-medium text-gray-600 mb-1">No Reddit signals yet</p>
-                    <p className="text-xs">Click Refresh to fetch and analyze posts from r/smallbusiness, r/Entrepreneur and more.</p>
+                  <div className="col-span-2 text-center py-12 space-y-3">
+                    <div className="text-3xl">🟠</div>
+                    <p className="text-sm font-semibold text-gray-700">Reddit signals loading</p>
+                    <p className="text-xs text-gray-500 max-w-xs mx-auto">
+                      Fetching hot posts from r/smallbusiness, r/Entrepreneur and more. This takes a few seconds.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={fetchRedditSignalsData}
+                      className="text-xs font-medium text-orange-600 hover:text-orange-700 underline"
+                    >
+                      Try again
+                    </button>
                   </div>
                 )
               : redditSignals.map((sig, i) => {
                   const meta = sig.redditMeta as { subreddit?: string; postType?: string; upvotes?: number; comments?: number; problem?: string; startupIdea?: string } | undefined;
+
+                  const problemText = (meta?.problem || '')
+                    .replace(/<[^>]+>/g, '').replace(/\[.*?\]/g, '').replace(/&amp;/g, '&').replace(/&#39;/g, "'").replace(/&quot;/g, '"').trim();
+                  const displayProblem = problemText.length > 30
+                    ? problemText.substring(0, 180)
+                    : (sig.snippet as string || '').replace(/<[^>]+>/g, '').substring(0, 180);
+
                   return (
                     <div key={i} className="bg-white border border-orange-100 rounded-2xl flex flex-col overflow-hidden hover:border-orange-200 hover:shadow-md transition-all">
                       <div className="p-4 flex flex-col gap-3 flex-1">
@@ -1112,35 +1138,45 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                           <span className="text-[9px] font-mono font-bold text-orange-400 uppercase tracking-wider">
                             r/{meta?.subreddit}
                           </span>
-                          <span className="px-2 py-0.5 text-[9px] font-mono uppercase font-bold rounded-md bg-orange-50 text-orange-600">
-                            {meta?.postType}
-                          </span>
+                          {meta?.postType && meta.postType !== 'Signal' && meta.postType !== 'Raw' && (
+                            <span className="px-2 py-0.5 text-[9px] font-mono uppercase font-bold rounded-md bg-orange-50 text-orange-600">
+                              {meta.postType}
+                            </span>
+                          )}
                           <div className="ml-auto flex items-center gap-1 px-2 py-0.5 bg-amber-50 border border-amber-200 rounded-lg">
                             <span className="text-amber-500 text-[9px]">⚡</span>
-                            <span className="text-[10px] font-bold font-mono text-amber-700">{String(sig.signalScore ?? 0)}</span>
+                            <span className="text-xs font-bold font-mono text-amber-700">{String(sig.signalScore ?? 0)}</span>
                           </div>
                         </div>
 
                         {/* Title */}
-                        <h3 className="text-sm font-semibold text-gray-900 leading-snug line-clamp-2">{String(sig.title ?? '')}</h3>
+                        <h3 className="text-sm font-semibold text-gray-900 leading-snug line-clamp-2">
+                          {(String(sig.title ?? '')).replace(/&amp;/g, '&').replace(/&#39;/g, "'").replace(/<[^>]+>/g, '')}
+                        </h3>
 
                         {/* Problem */}
                         <div className="bg-orange-50 rounded-xl p-3">
                           <p className="text-[9px] font-bold text-orange-600 uppercase tracking-widest mb-1">Problem identified</p>
-                          <p className="text-xs text-gray-700 leading-relaxed">{meta?.problem}</p>
+                          <p className="text-xs text-gray-700 leading-relaxed">{displayProblem}</p>
                         </div>
 
-                        {/* Startup idea */}
-                        <div className="bg-emerald-50 rounded-xl p-3">
-                          <p className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest mb-1">Startup opportunity</p>
-                          <p className="text-xs text-gray-700 leading-relaxed">{meta?.startupIdea}</p>
-                        </div>
+                        {/* Startup idea — hide placeholder text */}
+                        {meta?.startupIdea &&
+                          meta.startupIdea !== 'Click Deep Analysis' &&
+                          meta.startupIdea !== 'Click Deep Analysis for startup idea' && (
+                          <div className="bg-emerald-50 rounded-xl p-3">
+                            <p className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest mb-1">Startup opportunity</p>
+                            <p className="text-xs text-gray-700 leading-relaxed">{meta.startupIdea}</p>
+                          </div>
+                        )}
 
-                        {/* Engagement */}
-                        <div className="flex items-center gap-3 text-[10px] text-gray-400">
-                          <span>▲ {(meta?.upvotes ?? 0).toLocaleString()} upvotes</span>
-                          <span>💬 {(meta?.comments ?? 0).toLocaleString()} comments</span>
-                        </div>
+                        {/* Engagement — hide when 0 */}
+                        {((meta?.upvotes ?? 0) > 0 || (meta?.comments ?? 0) > 0) && (
+                          <div className="flex items-center gap-3 text-[10px] text-gray-400">
+                            {(meta?.upvotes ?? 0) > 0 && <span>▲ {(meta!.upvotes!).toLocaleString()} upvotes</span>}
+                            {(meta?.comments ?? 0) > 0 && <span>💬 {(meta!.comments!).toLocaleString()} comments</span>}
+                          </div>
+                        )}
 
                         {/* Actions */}
                         {(() => {

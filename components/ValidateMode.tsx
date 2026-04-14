@@ -422,15 +422,37 @@ function ValidationResults({
       animate={{ opacity: 1 }}
       className="space-y-4 py-4 max-w-xl mx-auto"
     >
+      {/* Market timing badge — prominent at top */}
+      <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold ${
+        result.market_timing === 'Perfect timing' ? 'bg-green-100 text-green-800' :
+        result.market_timing === 'Good timing' ? 'bg-blue-100 text-blue-800' :
+        result.market_timing === 'Early' ? 'bg-purple-100 text-purple-800' :
+        'bg-red-100 text-red-800'
+      }`}>
+        ⏱ {result.market_timing}
+      </div>
+
       {/* Score card */}
       <div className={`p-6 rounded-2xl border-2 text-center ${scoreBg}`}>
-        <div className={`text-5xl font-bold ${scoreColor} mb-1`}>
+        <div className={`text-4xl md:text-5xl font-bold ${scoreColor} mb-1`}>
           {result.validation_score}
           <span className="text-2xl font-normal opacity-50">/100</span>
         </div>
-        <div className={`text-base font-semibold ${scoreColor} mb-3`}>
-          {result.verdict}
-        </div>
+        {(() => {
+          const verdictStyle =
+            result.verdict === 'Strong Signal'
+              ? 'text-green-700 bg-green-50 border-green-200'
+              : result.verdict === 'Moderate Signal'
+              ? 'text-amber-700 bg-amber-50 border-amber-200'
+              : result.verdict === 'Weak Signal'
+              ? 'text-gray-600 bg-gray-50 border-gray-200'
+              : 'text-red-700 bg-red-50 border-red-200';
+          return (
+            <div className={`inline-block px-3 py-1 rounded-full border text-sm font-semibold mb-3 ${verdictStyle}`}>
+              {result.verdict}
+            </div>
+          );
+        })()}
         <p className="text-sm text-gray-700 leading-relaxed">{result.verdict_reason}</p>
         {countryConfig && (
           <div className="flex items-center justify-center gap-1.5 mt-3 text-xs text-gray-500">
@@ -475,36 +497,24 @@ function ValidationResults({
 
       {/* Risk factors */}
       {result.risk_factors.length > 0 && (
-        <div className="p-4 rounded-xl border border-red-200 bg-red-50 space-y-2">
-          <p className="text-xs font-semibold text-red-700 uppercase tracking-wide">
+        <div className="p-4 rounded-xl border border-amber-200 bg-amber-50 space-y-2">
+          <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide">
             Risk factors
           </p>
-          <ol className="space-y-2">
-            {result.risk_factors.map((r, i) => (
-              <li key={i} className="flex gap-2 text-sm text-red-900 leading-relaxed">
-                <span className="text-red-400 font-medium flex-shrink-0">{i + 1}.</span>
-                {r}
-              </li>
+          <div className="space-y-2">
+            {result.risk_factors.map((risk, i) => (
+              <div key={i} className="flex items-start gap-2 p-3 bg-white rounded-xl border border-amber-100">
+                <span className="text-amber-500 flex-shrink-0 text-sm mt-0.5">⚠</span>
+                <p className="text-xs text-amber-800 leading-relaxed">{risk}</p>
+              </div>
             ))}
-          </ol>
+          </div>
         </div>
       )}
 
-      {/* Market timing */}
-      <div className="p-4 rounded-xl border border-gray-200 space-y-2">
-        <div className="flex items-center justify-between">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-            Market timing
-          </p>
-          <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
-            result.market_timing === 'Perfect timing' ? 'bg-green-100 text-green-800' :
-            result.market_timing === 'Good timing' ? 'bg-blue-100 text-blue-800' :
-            result.market_timing === 'Early' ? 'bg-amber-100 text-amber-800' :
-            'bg-red-100 text-red-800'
-          }`}>
-            {result.market_timing}
-          </span>
-        </div>
+      {/* Market timing — detail */}
+      <div className="p-4 rounded-xl border border-gray-200 space-y-1">
+        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Timing analysis</p>
         <p className="text-sm text-gray-700 leading-relaxed">{result.timing_reason}</p>
       </div>
 

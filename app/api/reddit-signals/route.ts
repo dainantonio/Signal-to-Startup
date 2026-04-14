@@ -1,6 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { XMLParser } from 'fast-xml-parser';
 
+function cleanText(raw: string): string {
+  if (!raw) return '';
+  return raw
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&#x27;/g, "'")
+    .replace(/&#x2F;/g, '/')
+    .replace(/&#8217;/g, "'")
+    .replace(/&#8220;/g, '"')
+    .replace(/&#8221;/g, '"')
+    .replace(/<[^>]+>/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 const SUBREDDITS_BY_MARKET: Record<string, string[]> = {
   global: [
     'smallbusiness', 'Entrepreneur',
@@ -118,26 +137,30 @@ export async function GET(request: NextRequest) {
 
     const signals = allPosts
       .filter((p) => p.title.length > 20)
-      .map((post) => ({
-        title: post.title,
-        snippet: post.body.replace(/<[^>]+>/g, '').substring(0, 200) || post.title,
-        source: `r/${post.subreddit}`,
-        url: post.url,
-        sector: 'markets',
-        signalScore: Math.floor(Math.random() * 20 + 55),
-        type: 'reddit',
-        publishedAt: new Date(post.created).toISOString(),
-        redditMeta: {
-          subreddit: post.subreddit,
-          upvotes: post.upvotes,
-          comments: post.comments,
-          postType: 'Signal',
-          problem: post.body.replace(/<[^>]+>/g, '').substring(0, 150) || post.title,
-          startupIdea: 'Click Deep Analysis for startup idea',
-          targetUser: 'Entrepreneurs',
-          signalStrength: 6,
-        },
-      }))
+      .map((post) => {
+        const cleanTitle = cleanText(post.title);
+        const cleanBody = cleanText(post.body);
+        return {
+          title: cleanTitle,
+          snippet: (cleanBody || cleanTitle).substring(0, 200),
+          source: `r/${post.subreddit}`,
+          url: post.url,
+          sector: 'markets',
+          signalScore: Math.floor(Math.random() * 20 + 55),
+          type: 'reddit',
+          publishedAt: new Date(post.created).toISOString(),
+          redditMeta: {
+            subreddit: post.subreddit,
+            upvotes: post.upvotes,
+            comments: post.comments,
+            postType: 'Signal',
+            problem: cleanBody.substring(0, 150) || cleanTitle,
+            startupIdea: 'Click Deep Analysis for startup idea',
+            targetUser: 'Entrepreneurs',
+            signalStrength: 6,
+          },
+        };
+      })
       .sort(() => Math.random() - 0.5)
       .slice(0, 10);
 
