@@ -47,21 +47,26 @@ export function useAgentAuth() {
     useState(true);
 
   useEffect(() => {
+    console.log(
+      '[AUTH] useEffect mounting, currentUser:',
+      auth.currentUser?.email || 'none'
+    );
+
     // CRITICAL: handle redirect result on
     // mount — fires when user returns from
     // Google sign-in redirect
     getRedirectResult(auth)
       .then((result) => {
+        console.log(
+          '[AUTH] getRedirectResult called, result:',
+          result ? 'HAS RESULT' : 'NULL'
+        );
         if (result?.user) {
           console.log(
-            '[AUTH] Redirect sign-in success:',
+            '[AUTH] Redirect user:',
             result.user.email
           );
           ensureUserDocument(result.user);
-        } else {
-          console.log(
-            '[AUTH] No redirect result'
-          );
         }
       })
       .catch((err: unknown) => {
@@ -72,8 +77,8 @@ export function useAgentAuth() {
           || code === 'auth/popup-closed-by-user'
           || code === 'auth/credential-already-in-use'
         ) return;
-        console.warn(
-          '[AUTH] Redirect error:', code, err
+        console.error(
+          '[AUTH] getRedirectResult error:', err
         );
       });
 
@@ -82,18 +87,21 @@ export function useAgentAuth() {
     const unsubscribe = onAuthStateChanged(
       auth,
       (firebaseUser) => {
+        console.log(
+          '[AUTH] State change:',
+          firebaseUser
+            ? `SIGNED IN as ${firebaseUser.email}`
+            : 'SIGNED OUT'
+        );
+        console.log(
+          '[AUTH] Auth currentUser:',
+          auth.currentUser?.email || 'none'
+        );
         if (firebaseUser) {
           ensureUserDocument(firebaseUser);
           setUser(firebaseUser);
-          console.log(
-            '[AUTH] Signed in:',
-            firebaseUser.email
-          );
         } else {
           setUser(null);
-          console.log(
-            '[AUTH] Signed out'
-          );
         }
         setAuthLoading(false);
       }
@@ -108,6 +116,9 @@ export function useAgentAuth() {
       const isMobile =
         /iPhone|iPad|Android/i
           .test(navigator.userAgent);
+      console.log(
+        '[AUTH] login() called, isMobile:', isMobile
+      );
       if (isMobile) {
         await signInWithRedirect(
           auth, googleProvider
@@ -115,6 +126,9 @@ export function useAgentAuth() {
       } else {
         await signInWithPopup(
           auth, googleProvider
+        );
+        console.log(
+          '[AUTH] popup completed successfully'
         );
       }
     } catch (err: unknown) {
