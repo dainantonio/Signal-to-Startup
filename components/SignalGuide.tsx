@@ -267,7 +267,7 @@ Be specific to their context.`,
   };
 
   return (
-    <div className="fixed bottom-4 right-4 z-[60] flex flex-col items-end gap-2">
+    <div style={{ position: 'fixed', bottom: '16px', right: '16px', zIndex: 9999 }} className="flex flex-col items-end gap-2">
 
       {/* Expanded panel */}
       <AnimatePresence>
@@ -395,26 +395,44 @@ Be specific to their context.`,
         )}
       </AnimatePresence>
 
-      {/* Floating trigger button */}
-      <motion.button
+      {/* Floating trigger button — plain button, inline styles, no library dependency */}
+      <button
         type="button"
         onClick={() => {
           setIsOpen(prev => !prev);
           if (hasSomethingToSay) setHasSomethingToSay(false);
         }}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        className="w-12 h-12 bg-gray-950 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-800 transition-colors relative"
         aria-label="Signal Guide"
+        style={{
+          width: '48px',
+          height: '48px',
+          borderRadius: '50%',
+          background: '#030712',
+          color: '#fff',
+          border: 'none',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.25)',
+          position: 'relative',
+          flexShrink: 0,
+        }}
       >
-        <Sparkles className="w-5 h-5" />
-        {/* Pulsing dot when there's something to say */}
+        <Sparkles style={{ width: '20px', height: '20px' }} />
         {hasSomethingToSay && !isOpen && (
-          <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-amber-400 rounded-full border-2 border-white">
-            <span className="absolute inset-0 rounded-full bg-amber-400 animate-ping" />
-          </span>
+          <span style={{
+            position: 'absolute',
+            top: '-2px',
+            right: '-2px',
+            width: '12px',
+            height: '12px',
+            background: '#f59e0b',
+            borderRadius: '50%',
+            border: '2px solid white',
+          }} />
         )}
-      </motion.button>
+      </button>
 
     </div>
   );
