@@ -47,6 +47,8 @@ interface SignalInputProps {
   countryTags: string[];
   setCountryTags: (tags: string[]) => void;
   selectedSectors?: string[];
+  user?: { uid: string; email?: string | null; displayName?: string | null } | null;
+  login?: () => void;
 }
 
 export const SignalInput: React.FC<SignalInputProps> = ({
@@ -57,8 +59,10 @@ export const SignalInput: React.FC<SignalInputProps> = ({
   countryTags, setCountryTags,
   selectedMode, setSelectedMode,
   selectedSectors = [],
+  user,
+  login,
 }) => {
-  const [inputMode, setInputMode] = useState<'paste' | 'feed' | 'reddit'>('paste');
+  const [inputMode, setInputMode] = useState<'paste' | 'feed' | 'reddit'>('feed');
   const [redditSignals, setRedditSignals] = useState<Record<string, unknown>[]>([]);
   const [fetchingReddit, setFetchingReddit] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
@@ -374,26 +378,47 @@ export const SignalInput: React.FC<SignalInputProps> = ({
 
   return (
     <section id="step-1" className="scroll-mt-24 mb-12">
-      <div className="flex bg-slate-100 rounded-2xl p-1 mb-6">
+      {/* Mobile market selector — horizontal scroll pills, mobile only */}
+      <div className="md:hidden flex gap-2 px-4 py-3 overflow-x-auto scrollbar-hide border-b border-slate-100 -mx-4 mb-0">
         {([
-          { mode: 'paste', label: 'Paste / URL', dot: false, orange: false },
-          { mode: 'feed',   label: 'News Feed',  dot: true,  orange: false },
-          { mode: 'reddit', label: 'Reddit',     dot: true,  orange: true  },
-        ] as { mode: 'feed'|'paste'|'reddit'; label: string; dot: boolean; orange: boolean }[]).map(tab => (
-          <button
-            key={tab.mode}
+          {id:'global', flag:'🌎', label:'Global'},
+          {id:'caribbean', flag:'🌴', label:'Caribbean'},
+          {id:'africa', flag:'🌍', label:'Africa'},
+          {id:'uk', flag:'🇬🇧', label:'UK'},
+          {id:'latam', flag:'🌎', label:'LatAm'},
+        ] as { id: 'global'|'caribbean'|'africa'|'uk'|'latam'; flag: string; label: string }[]).map(m => (
+          <button key={m.id}
+            onClick={() => setSelectedMode(m.id)}
+            className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+              selectedMode === m.id
+                ? 'bg-slate-900 text-white border-slate-900'
+                : 'bg-white text-slate-600 border-slate-200 hover:border-slate-400'
+            }`}>
+            <span style={{fontSize:'11px'}}>{m.flag}</span>
+            {m.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab bar */}
+      <div className="flex gap-1.5 bg-slate-100 rounded-2xl p-1 mb-6 mt-3">
+        {([
+          {mode:'feed',   label:'News Feed',  dot:true,  dotColor:'bg-emerald-500'},
+          {mode:'paste',  label:'Paste / URL', dot:false, dotColor:''},
+          {mode:'reddit', label:'Reddit',      dot:true,  dotColor:'bg-orange-500'},
+        ] as { mode: 'feed'|'paste'|'reddit'; label: string; dot: boolean; dotColor: string }[]).map(tab => (
+          <button key={tab.mode}
             type="button"
             onClick={() => setInputMode(tab.mode)}
             className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 ${
               inputMode === tab.mode
                 ? 'bg-white text-slate-900 shadow-sm'
                 : 'text-slate-500 hover:text-slate-700'
-            }`}
-          >
+            }`}>
             {tab.dot && (
               <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
                 inputMode === tab.mode
-                  ? tab.orange ? 'bg-orange-500 animate-pulse' : 'bg-emerald-500 animate-pulse'
+                  ? tab.dotColor + ' animate-pulse'
                   : 'bg-slate-300'
               }`} />
             )}
@@ -598,6 +623,25 @@ export const SignalInput: React.FC<SignalInputProps> = ({
         </div>
       ) : inputMode === 'feed' ? (
         <div className="space-y-4">
+          {/* Welcome banner — non-signed-in users only */}
+          {!user && (
+            <div className="mb-6 p-5 bg-white border border-slate-200 rounded-2xl shadow-sm">
+              <h2 className="text-lg font-bold text-slate-900 mb-2 leading-tight">
+                Find your next business from today&apos;s news.
+              </h2>
+              <p className="text-sm text-slate-500 leading-relaxed mb-4">
+                We scan hundreds of signals daily and surface the ones worth building from — with a full plan, real costs, and funding sources for your market.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={login}
+                  className="flex-1 py-2.5 bg-slate-900 text-white rounded-xl text-sm font-semibold hover:bg-slate-700 transition-colors">
+                  Sign in to analyze
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Slim filter bar */}
           {(() => {
             const countryTag = countryTags[0] ?? '';
@@ -854,9 +898,9 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                         </div>
                       ) : (
                         /* ── NORMAL STATE ── */
-                        <div className="p-4 flex flex-col gap-3 flex-1">
-                          {/* Meta row */}
-                          <div className="flex items-center gap-2 flex-wrap">
+                        <div className="p-4 flex flex-col gap-3 flex-1 min-w-0">
+                          {/* Meta row — no wrap, truncate long sources */}
+                          <div className="flex items-center gap-2 min-w-0">
                             {multiSelectMode && (
                               <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all flex-shrink-0 ${
                                 isSelected ? 'bg-black border-black' : 'border-gray-300'
@@ -864,44 +908,41 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                                 {isSelected && <span className="text-white text-[10px]">✓</span>}
                               </div>
                             )}
-                            <span className="text-[9px] font-mono font-bold text-gray-400 uppercase tracking-wider">
+                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wide truncate max-w-[90px] flex-shrink-0">
                               {sig.source}
                             </span>
-                            <span className={`px-2 py-0.5 text-[9px] font-mono uppercase font-bold rounded-md ${cfg.badgeBg} ${cfg.badgeText}`}>{cfg.label}</span>
+                            <span className={`px-2 py-0.5 text-[9px] font-mono uppercase font-bold rounded-md flex-shrink-0 ${cfg.badgeBg} ${cfg.badgeText}`}>{cfg.label}</span>
                             {sig.isLocalSource && (
-                              <span className="px-2 py-0.5 text-[9px] font-mono uppercase font-bold rounded-md bg-green-100 text-green-700">Local</span>
+                              <span className="px-1.5 py-0.5 text-[9px] font-mono uppercase font-bold rounded-md bg-blue-50 text-blue-700 flex-shrink-0">Local</span>
                             )}
-                            {sig.isGlobalMention && (
-                              <span className="px-2 py-0.5 text-[9px] font-mono uppercase font-bold rounded-md bg-blue-100 text-blue-700">Global</span>
-                            )}
-                            <div className="ml-auto flex items-center gap-1 px-2 py-0.5 bg-amber-50 border border-amber-200 rounded-lg flex-shrink-0">
-                              <span className="text-amber-500 text-[9px]">⚡</span>
-                              <span className="text-xs font-bold font-mono text-amber-700">{Math.min(sig.signalScore || 0, 99)}</span>
+                            <div className="ml-auto flex-shrink-0 flex items-center gap-1 px-2 py-0.5 bg-amber-50 rounded-lg border border-amber-100">
+                              <span className="text-[9px] text-amber-500">⚡</span>
+                              <span className="text-[10px] font-bold font-mono text-amber-700">{Math.min(sig.signalScore || 0, 99)}</span>
                             </div>
                           </div>
-                          {/* Title */}
-                          <h3 className="text-sm font-semibold text-gray-900 leading-snug line-clamp-2">
+                          {/* Title — always clamp-2 + break-words */}
+                          <h3 className="text-sm font-semibold text-slate-900 leading-snug line-clamp-2 break-words">
                             {(sig.title || '').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/<[^>]+>/g, '')}
                           </h3>
-                          {/* Snippet */}
+                          {/* Snippet — always clamp-2 + break-words */}
                           {(() => {
                             const cleanSnippet = (sig.snippet || '')
                               .replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
                               .replace(/&lt;/g, '').replace(/&gt;/g, '').replace(/<[^>]+>/g, '')
-                              .substring(0, 160);
-                            return cleanSnippet ? (
-                              <p className="text-xs text-gray-500 leading-relaxed line-clamp-2 flex-1">{cleanSnippet}</p>
+                              .replace(/\[.*?\]/g, '').trim();
+                            return cleanSnippet.length > 20 ? (
+                              <p className="text-xs text-slate-500 leading-relaxed line-clamp-2 break-words flex-1">{cleanSnippet.substring(0, 160)}</p>
                             ) : null;
                           })()}
                           {/* Action buttons */}
                           {!multiSelectMode && (
-                            <div className="flex gap-2 pt-1">
+                            <div className="flex gap-2 pt-0.5">
                               <button
                                 type="button"
                                 onClick={() => onAnalyzeSignal(sig)}
                                 disabled={!!analyzingUrl}
                                 aria-label={`Analyze: ${sig.title}`}
-                                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-gray-900 text-white rounded-xl text-xs font-semibold hover:bg-gray-700 disabled:opacity-40 transition-colors"
+                                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-semibold hover:bg-slate-700 disabled:opacity-40 transition-all duration-150 active:scale-[0.98]"
                               >
                                 ⚡ Analyze
                               </button>
