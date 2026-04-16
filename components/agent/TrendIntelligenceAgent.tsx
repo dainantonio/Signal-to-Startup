@@ -368,7 +368,7 @@ export default function TrendIntelligenceAgent() {
   return (
     <>
       {/* Left sidebar - desktop only */}
-      <aside className="hidden md:block fixed left-0 top-0 w-[220px] h-screen bg-white border-r border-slate-100 overflow-y-auto z-40 pt-[52px] scrollbar-hide">
+      <aside className="hidden md:block fixed left-0 top-0 w-[220px] h-screen bg-white border-r border-gray-100 overflow-y-auto z-40 pt-[52px] scrollbar-hide">
         <p className="text-[9px] font-bold text-gray-400 tracking-[2px] uppercase px-4 pb-3">Market</p>
         {([
           ['global','🌎','Global / US'],
@@ -420,7 +420,7 @@ export default function TrendIntelligenceAgent() {
       </aside>
 
       {/* Right panel - desktop only */}
-      <aside className="hidden md:block fixed right-0 top-0 w-[260px] h-screen bg-white border-l border-slate-100 overflow-y-auto z-40 pt-[52px] scrollbar-hide p-3">
+      <aside className="hidden md:block fixed right-0 top-0 w-[260px] h-screen bg-white border-l border-gray-100 overflow-y-auto z-40 pt-[52px] p-3 scrollbar-hide">
         <p className="text-[9px] font-bold text-gray-400 tracking-[2px] uppercase mb-3">Agent Status</p>
         {[
           ['Signal Monitor','7:00 AM'],
@@ -441,7 +441,7 @@ export default function TrendIntelligenceAgent() {
       <div className="min-h-screen bg-gray-50 selection:bg-primary/20 md:ml-[220px] md:mr-[260px]">
 
       {/* ── Compact header ── */}
-      <header className="sticky top-0 z-50 h-[52px] bg-white border-b border-gray-100 flex items-center justify-between px-4 md:px-5">
+      <header className="sticky top-0 z-50 h-[52px] bg-white border-b border-gray-100 flex items-center justify-between px-4 md:px-5 md:ml-[220px] md:mr-[260px]">
         <Logo size="sm" showWordmark showSubbrand={false} theme="light" />
         <div className="flex items-center gap-2">
           <NotificationBell />
@@ -579,7 +579,7 @@ export default function TrendIntelligenceAgent() {
         )}
       </AnimatePresence>
 
-          <div className="max-w-4xl mx-auto px-4 md:px-6 py-6 pb-20 md:pb-6">
+          <div className="max-w-4xl mx-auto px-4 md:px-6 py-6 pb-24 md:pb-6">
 
             {/* App mode toggle */}
             <div className="flex rounded-xl border border-gray-200 p-1 bg-gray-50 w-fit mx-auto mb-6">
@@ -721,20 +721,23 @@ export default function TrendIntelligenceAgent() {
           </div>
 
           {/* Mobile bottom nav */}
-          <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-t border-slate-100 flex">
-            {([
-              { icon: '📰', label: 'Feed', action: () => { setAppMode('discover'); window.scrollTo(0, 0); } },
-              { icon: '💡', label: 'Validate', action: () => setAppMode('validate') },
-              { icon: '👁', label: 'Watchlist', action: () => { window.location.href = '/dashboard?tab=watchlist'; } },
-              { icon: '📊', label: 'Dashboard', action: () => { window.location.href = '/dashboard'; } },
-            ]).map((item, i) => (
-              <button key={i}
-                onClick={item.action}
-                className="flex-1 flex flex-col items-center gap-1 py-3 px-2 border-none bg-transparent cursor-pointer">
-                <span style={{fontSize:'18px'}}>{item.icon}</span>
-                <span className="text-[9px] font-medium text-slate-500">{item.label}</span>
-              </button>
-            ))}
+          <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-100 flex items-center">
+            <button onClick={() => { setAppMode('discover' as AppMode); window.scrollTo(0,0); }} className="flex-1 flex flex-col items-center gap-1 py-2.5 border-none bg-transparent cursor-pointer">
+              <span style={{fontSize:'18px'}}>📰</span>
+              <span style={{fontSize:'9px',color:'#666',fontWeight:500}}>Feed</span>
+            </button>
+            <button onClick={() => setAppMode('validate' as AppMode)} className="flex-1 flex flex-col items-center gap-1 py-2.5 border-none bg-transparent cursor-pointer">
+              <span style={{fontSize:'18px'}}>💡</span>
+              <span style={{fontSize:'9px',color:'#666',fontWeight:500}}>Validate</span>
+            </button>
+            <button onClick={() => { window.location.href='/dashboard?tab=watchlist'; }} className="flex-1 flex flex-col items-center gap-1 py-2.5 border-none bg-transparent cursor-pointer">
+              <span style={{fontSize:'18px'}}>👁</span>
+              <span style={{fontSize:'9px',color:'#666',fontWeight:500}}>Watchlist</span>
+            </button>
+            <button onClick={() => { window.location.href='/dashboard'; }} className="flex-1 flex flex-col items-center gap-1 py-2.5 border-none bg-transparent cursor-pointer">
+              <span style={{fontSize:'18px'}}>📊</span>
+              <span style={{fontSize:'9px',color:'#666',fontWeight:500}}>Dashboard</span>
+            </button>
           </nav>
 
     </div>

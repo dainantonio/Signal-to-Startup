@@ -401,30 +401,18 @@ export const SignalInput: React.FC<SignalInputProps> = ({
       </div>
 
       {/* Tab bar */}
-      <div className="flex gap-1.5 bg-slate-100 rounded-2xl p-1 mb-6 mt-3">
-        {([
-          {mode:'feed',   label:'News Feed',  dot:true,  dotColor:'bg-emerald-500'},
-          {mode:'paste',  label:'Paste / URL', dot:false, dotColor:''},
-          {mode:'reddit', label:'Reddit',      dot:true,  dotColor:'bg-orange-500'},
-        ] as { mode: 'feed'|'paste'|'reddit'; label: string; dot: boolean; dotColor: string }[]).map(tab => (
-          <button key={tab.mode}
-            type="button"
-            onClick={() => setInputMode(tab.mode)}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 ${
-              inputMode === tab.mode
-                ? 'bg-white text-slate-900 shadow-sm'
-                : 'text-slate-500 hover:text-slate-700'
-            }`}>
-            {tab.dot && (
-              <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
-                inputMode === tab.mode
-                  ? tab.dotColor + ' animate-pulse'
-                  : 'bg-slate-300'
-              }`} />
-            )}
-            {tab.label}
-          </button>
-        ))}
+      <div className="flex gap-1 bg-slate-100 rounded-2xl p-1 mb-6 mt-3">
+        <button type="button" onClick={() => setInputMode('feed')} className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${inputMode === 'feed' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+          <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${inputMode === 'feed' ? 'bg-emerald-500 animate-pulse' : 'bg-gray-300'}`}/>
+          News Feed
+        </button>
+        <button type="button" onClick={() => setInputMode('paste')} className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${inputMode === 'paste' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+          ✏️ Paste / URL
+        </button>
+        <button type="button" onClick={() => setInputMode('reddit')} className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${inputMode === 'reddit' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+          <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${inputMode === 'reddit' ? 'bg-orange-500 animate-pulse' : 'bg-gray-300'}`}/>
+          Reddit
+        </button>
       </div>
 
       {inputMode === 'paste' ? (
