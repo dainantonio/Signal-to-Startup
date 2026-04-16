@@ -441,7 +441,7 @@ export default function TrendIntelligenceAgent() {
       <div className="min-h-screen bg-gray-50 selection:bg-primary/20 md:ml-[220px] md:mr-[260px]">
 
       {/* ── Compact header ── */}
-      <header className="sticky top-0 z-50 h-[52px] bg-white border-b border-gray-100 flex items-center justify-between px-4 md:px-5 md:ml-[220px] md:mr-[260px]">
+      <header className="sticky top-0 z-50 h-[52px] bg-white border-b border-gray-100 flex items-center justify-between px-4 md:px-5">
         <Logo size="sm" showWordmark showSubbrand={false} theme="light" />
         <div className="flex items-center gap-2">
           <NotificationBell />
@@ -721,23 +721,51 @@ export default function TrendIntelligenceAgent() {
           </div>
 
           {/* Mobile bottom nav */}
-          <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-100 flex items-center">
-            <button onClick={() => { setAppMode('discover' as AppMode); window.scrollTo(0,0); }} className="flex-1 flex flex-col items-center gap-1 py-2.5 border-none bg-transparent cursor-pointer">
-              <span style={{fontSize:'18px'}}>📰</span>
-              <span style={{fontSize:'9px',color:'#666',fontWeight:500}}>Feed</span>
-            </button>
-            <button onClick={() => setAppMode('validate' as AppMode)} className="flex-1 flex flex-col items-center gap-1 py-2.5 border-none bg-transparent cursor-pointer">
-              <span style={{fontSize:'18px'}}>💡</span>
-              <span style={{fontSize:'9px',color:'#666',fontWeight:500}}>Validate</span>
-            </button>
-            <button onClick={() => { window.location.href='/dashboard?tab=watchlist'; }} className="flex-1 flex flex-col items-center gap-1 py-2.5 border-none bg-transparent cursor-pointer">
-              <span style={{fontSize:'18px'}}>👁</span>
-              <span style={{fontSize:'9px',color:'#666',fontWeight:500}}>Watchlist</span>
-            </button>
-            <button onClick={() => { window.location.href='/dashboard'; }} className="flex-1 flex flex-col items-center gap-1 py-2.5 border-none bg-transparent cursor-pointer">
-              <span style={{fontSize:'18px'}}>📊</span>
-              <span style={{fontSize:'9px',color:'#666',fontWeight:500}}>Dashboard</span>
-            </button>
+          <nav style={{
+            position:'fixed',
+            bottom:0,
+            left:0,
+            right:0,
+            zIndex:50,
+            background:'white',
+            borderTop:'1px solid #f1f5f9',
+            display:'flex',
+            alignItems:'center',
+          }} className="md:hidden">
+            {[
+              {icon:'📰',label:'Feed',href:null,action:'feed'},
+              {icon:'💡',label:'Validate',href:null,action:'validate'},
+              {icon:'👁',label:'Watchlist',href:'/dashboard?tab=watchlist',action:null},
+              {icon:'📊',label:'Dashboard',href:'/dashboard',action:null},
+            ].map((item,i) => (
+              <button
+                key={i}
+                onClick={() => {
+                  if (item.href) {
+                    window.location.href = item.href;
+                  } else if (item.action === 'feed') {
+                    setAppMode('discover' as AppMode);
+                    window.scrollTo(0,0);
+                  } else if (item.action === 'validate') {
+                    setAppMode('validate' as AppMode);
+                  }
+                }}
+                style={{
+                  flex:1,
+                  display:'flex',
+                  flexDirection:'column',
+                  alignItems:'center',
+                  gap:'3px',
+                  padding:'10px 4px',
+                  border:'none',
+                  background:'transparent',
+                  cursor:'pointer',
+                }}
+              >
+                <span style={{fontSize:'18px'}}>{item.icon}</span>
+                <span style={{fontSize:'9px',fontWeight:500,color:'#64748b'}}>{item.label}</span>
+              </button>
+            ))}
           </nav>
 
     </div>
