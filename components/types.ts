@@ -289,10 +289,9 @@ export interface FeedSignal {
   strength: number;
   signalScore?: number;
   market?: string;
+  type?: 'rss' | 'reddit';
   isLocalSource?: boolean;
   isGlobalMention?: boolean;
-  type?: 'rss' | 'reddit';
-  timeAgo?: string;
   redditMeta?: {
     subreddit: string;
     upvotes: number;

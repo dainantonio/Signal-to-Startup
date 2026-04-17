@@ -62,9 +62,7 @@ export const SignalInput: React.FC<SignalInputProps> = ({
   user,
   login,
 }) => {
-  const [inputMode, setInputMode] = useState<'paste' | 'feed' | 'reddit'>('feed');
-  const [redditSignals, setRedditSignals] = useState<Record<string, unknown>[]>([]);
-  const [fetchingReddit, setFetchingReddit] = useState(false);
+  const [inputMode, setInputMode] = useState<'paste' | 'feed' | 'reddit'>('paste');
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pdfStatus, setPdfStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -107,8 +105,10 @@ export const SignalInput: React.FC<SignalInputProps> = ({
   }, [urlFetchStatus]);
 
   const [signals, setSignals] = useState<FeedSignal[]>([]);
+  const [redditSignals, setRedditSignals] = useState<FeedSignal[]>([]);
   const [feedMeta, setFeedMeta] = useState<{ total: number; duplicatesRemoved: number } | null>(null);
   const [fetchingFeed, setFetchingFeed] = useState(false);
+  const [fetchingReddit, setFetchingReddit] = useState(false);
   const [articleNotice, setArticleNotice] = useState<string | null>(null);
   const [countryInput, setCountryInput] = useState('');
   const [showCountry, setShowCountry] = useState(false);
@@ -219,26 +219,24 @@ export const SignalInput: React.FC<SignalInputProps> = ({
     if (inputMode === 'feed') fetchFeed();
   }, [inputMode, fetchKey]);
 
-  const fetchRedditSignalsData = useCallback(async () => {
+  const fetchRedditSignals = useCallback(async () => {
     setFetchingReddit(true);
     try {
-      console.log('[REDDIT] fetching for market:', selectedMode);
-      const sector = selectedSectors[0] || 'default';
-      const res = await fetch(`/api/reddit-signals?market=${selectedMode}&sector=${sector}`);
+      const res = await fetch(`/api/reddit-signals?market=${selectedMode}`);
+      if (!res.ok) throw new Error('Reddit signal fetch failed');
       const data = await res.json();
-      console.log('[REDDIT] got signals:', data.signals?.length || 0, 'meta:', data.meta);
-      setRedditSignals(data.signals || []);
+      setRedditSignals(Array.isArray(data.signals) ? data.signals : []);
     } catch (err) {
-      console.error('[REDDIT] failed:', err);
+      console.error('Reddit fetch failed:', err);
       setRedditSignals([]);
     } finally {
       setFetchingReddit(false);
     }
-  }, [selectedMode, selectedSectors]);
+  }, [selectedMode]);
 
   useEffect(() => {
-    if (inputMode === 'reddit') fetchRedditSignalsData();
-  }, [inputMode, selectedMode]);
+    if (inputMode === 'reddit') fetchRedditSignals();
+  }, [inputMode, fetchRedditSignals]);
 
   // Progress animation for selected card
   useEffect(() => {
@@ -378,41 +376,21 @@ export const SignalInput: React.FC<SignalInputProps> = ({
 
   return (
     <section id="step-1" className="scroll-mt-24 mb-12">
-      {/* Mobile market selector — horizontal scroll pills, mobile only */}
-      <div className="md:hidden flex gap-2 px-4 py-3 overflow-x-auto scrollbar-hide border-b border-slate-100 -mx-4 mb-0">
-        {([
-          {id:'global', flag:'🌎', label:'Global'},
-          {id:'caribbean', flag:'🌴', label:'Caribbean'},
-          {id:'africa', flag:'🌍', label:'Africa'},
-          {id:'uk', flag:'🇬🇧', label:'UK'},
-          {id:'latam', flag:'🌎', label:'LatAm'},
-        ] as { id: 'global'|'caribbean'|'africa'|'uk'|'latam'; flag: string; label: string }[]).map(m => (
-          <button key={m.id}
-            onClick={() => setSelectedMode(m.id)}
-            className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
-              selectedMode === m.id
-                ? 'bg-slate-900 text-white border-slate-900'
-                : 'bg-white text-slate-600 border-slate-200 hover:border-slate-400'
-            }`}>
-            <span style={{fontSize:'11px'}}>{m.flag}</span>
-            {m.label}
+      <div className="relative overflow-hidden rounded-3xl border border-border/20 bg-gradient-to-b from-white to-slate-50/70 p-1.5 shadow-[0_8px_32px_rgba(15,23,42,0.08)] mb-6">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-8 bg-gradient-to-r from-transparent via-slate-200/40 to-transparent" />
+        <div className="relative flex w-full">
+          <button onClick={() => setInputMode('paste')} className={`flex-1 py-3 rounded-2xl font-mono text-[11px] uppercase tracking-wider transition-all duration-200 ${inputMode === 'paste' ? 'bg-foreground text-background shadow-lg shadow-foreground/15' : 'text-muted hover:text-foreground hover:bg-white/80'}`}>
+            Paste Signal
           </button>
-        ))}
-      </div>
-
-      {/* Tab bar */}
-      <div className="flex gap-1 bg-slate-100 rounded-2xl p-1 mb-6 mt-3">
-        <button type="button" onClick={() => setInputMode('feed')} className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${inputMode === 'feed' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-          <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${inputMode === 'feed' ? 'bg-emerald-500 animate-pulse' : 'bg-gray-300'}`}/>
-          News Feed
-        </button>
-        <button type="button" onClick={() => setInputMode('paste')} className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${inputMode === 'paste' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-          ✏️ Paste / URL
-        </button>
-        <button type="button" onClick={() => setInputMode('reddit')} className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${inputMode === 'reddit' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-          <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${inputMode === 'reddit' ? 'bg-orange-500 animate-pulse' : 'bg-gray-300'}`}/>
-          Reddit
-        </button>
+          <button onClick={() => setInputMode('feed')} className={`flex-1 py-3 rounded-2xl font-mono text-[11px] uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 ${inputMode === 'feed' ? 'bg-foreground text-background shadow-lg shadow-foreground/15' : 'text-muted hover:text-foreground hover:bg-white/80'}`}>
+            <span className={`w-2 h-2 rounded-full flex-shrink-0 ${inputMode === 'feed' ? 'bg-red-400 animate-pulse' : 'bg-gray-300'}`} />
+            Live Feed
+          </button>
+          <button onClick={() => setInputMode('reddit')} className={`flex-1 py-3 rounded-2xl font-mono text-[11px] uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 ${inputMode === 'reddit' ? 'bg-foreground text-background shadow-lg shadow-foreground/15' : 'text-muted hover:text-foreground hover:bg-white/80'}`}>
+            <span className={`w-2 h-2 rounded-full flex-shrink-0 ${inputMode === 'reddit' ? 'bg-orange-400 animate-pulse' : 'bg-gray-300'}`} />
+            Reddit Signals
+          </button>
+        </div>
       </div>
 
       {inputMode === 'paste' ? (
@@ -631,7 +609,7 @@ export const SignalInput: React.FC<SignalInputProps> = ({
           )}
 
           {/* Slim filter bar */}
-          {(() => {
+          {inputMode === 'feed' ? (() => {
             const countryTag = countryTags[0] ?? '';
             const hasActiveFilters =
               countryTags.length > 0 ||
@@ -696,10 +674,23 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                 </div>
               </div>
             );
-          })()}
+          })() : (
+            <div className="flex items-center justify-between px-3 py-2 rounded-2xl border border-orange-100 bg-gradient-to-r from-orange-50/80 to-amber-50/70">
+              <span className="text-xs font-medium text-orange-700">Community pain points and startup opportunities</span>
+              <button
+                type="button"
+                onClick={fetchRedditSignals}
+                disabled={fetchingReddit}
+                aria-label="Refresh Reddit signals"
+                className="p-2 rounded-xl border border-orange-200 bg-white text-orange-500 hover:text-orange-700 hover:border-orange-300 transition-all"
+              >
+                <RefreshCw className={`w-4 h-4 ${fetchingReddit ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
+          )}
 
           {/* Dedup count banner */}
-          {feedMeta && !fetchingFeed && (
+          {inputMode === 'feed' && feedMeta && !fetchingFeed && (
             <div className="flex items-center gap-2 text-[10px] font-mono text-muted">
               <span className="w-1.5 h-1.5 bg-secondary rounded-full flex-shrink-0" />
               Showing {feedMeta.total} articles
@@ -710,7 +701,7 @@ export const SignalInput: React.FC<SignalInputProps> = ({
           )}
 
           {/* Country tag feed banner */}
-          {countryTags.length > 0 && (
+          {inputMode === 'feed' && countryTags.length > 0 && (
             <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 text-[10px] font-mono">
               <span className="flex-shrink-0">{countryTags.map(t => COUNTRY_CONTEXT[t.toLowerCase()]?.flag ?? '🌍').join(' ')}</span>
               Showing {countryTags.join(' & ')}-relevant signals from all sources
@@ -726,7 +717,7 @@ export const SignalInput: React.FC<SignalInputProps> = ({
           )}
 
           {/* Sticky Compound Analysis Bar */}
-          {multiSelectMode && (
+          {inputMode === 'feed' && multiSelectMode && (
             <div className={`fixed bottom-0 left-0 right-0 z-[60] bg-white border-t border-gray-200 p-4 transition-all duration-300 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] ${
               selectedArticles.length > 0 ? 'translate-y-0' : 'translate-y-full'
             }`}>
@@ -781,7 +772,77 @@ export const SignalInput: React.FC<SignalInputProps> = ({
 
           {/* Feed cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {fetchingFeed
+            {inputMode === 'reddit'
+              ? fetchingReddit
+                ? Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="bg-white border border-border/10 rounded-2xl p-5 space-y-3 animate-pulse">
+                      <div className="h-4 bg-gray-100 w-24 rounded" />
+                      <div className="h-10 bg-gray-100 rounded" />
+                      <div className="h-16 bg-gray-100 rounded" />
+                      <div className="h-9 bg-gray-100 rounded-xl" />
+                    </div>
+                  ))
+                : redditSignals.length === 0
+                  ? <div className="col-span-2 text-center py-16 text-muted font-mono text-xs uppercase tracking-widest">No Reddit signals found yet.</div>
+                  : redditSignals.map((sig, i) => (
+                      <div key={sig.url || i} className="group bg-white border border-orange-100 rounded-3xl flex flex-col overflow-hidden hover:border-orange-300 hover:shadow-[0_18px_45px_rgba(251,146,60,0.18)] transition-all duration-300">
+                        <div className="h-1.5 w-full bg-gradient-to-r from-orange-400 via-amber-300 to-emerald-300" />
+                        <div className="p-4 flex flex-col gap-3 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-[9px] font-mono font-bold text-orange-500 uppercase tracking-wider">
+                              r/{sig.redditMeta?.subreddit}
+                            </span>
+                            <span className="px-2 py-0.5 text-[9px] font-mono uppercase font-bold rounded-md bg-orange-100 text-orange-700 border border-orange-200">
+                              {sig.redditMeta?.postType || 'Signal'}
+                            </span>
+                            <div className="ml-auto flex items-center gap-1 px-2 py-0.5 bg-amber-50 border border-amber-200 rounded-xl">
+                              <span className="text-amber-500 text-[9px]">◆</span>
+                              <span className="text-[10px] font-bold font-mono text-amber-700">SCORE {sig.signalScore || 0}</span>
+                            </div>
+                          </div>
+
+                          <h3 className="text-sm font-semibold text-gray-900 leading-snug line-clamp-2 group-hover:text-gray-950">{sig.title}</h3>
+
+                          <div className="bg-orange-50/90 rounded-2xl p-3 border border-orange-100">
+                            <p className="text-[9px] font-bold text-orange-600 uppercase tracking-widest mb-1">Problem identified</p>
+                            <p className="text-xs text-gray-700 leading-relaxed">{sig.redditMeta?.problem || sig.snippet}</p>
+                          </div>
+
+                          <div className="bg-emerald-50/90 rounded-2xl p-3 border border-emerald-100">
+                            <p className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest mb-1">Startup opportunity</p>
+                            <p className="text-xs text-gray-700 leading-relaxed">{sig.redditMeta?.startupIdea || 'Opportunity detected from community demand.'}</p>
+                          </div>
+
+                          <div className="flex items-center gap-3 text-[10px] text-gray-500">
+                            <span>▲ {sig.redditMeta?.upvotes?.toLocaleString() || 0} upvotes</span>
+                            <span>💬 {sig.redditMeta?.comments?.toLocaleString() || 0} comments</span>
+                          </div>
+
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const signalText = `${sig.title}. ${sig.redditMeta?.problem || sig.snippet}. Startup idea: ${sig.redditMeta?.startupIdea || ''}`;
+                                onAnalyzeSignal({ ...sig, snippet: signalText });
+                              }}
+                              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-gray-900 text-white rounded-xl text-xs font-semibold hover:bg-black transition-colors"
+                            >
+                              ⚡ Deep Analysis
+                            </button>
+                            <a
+                              href={sig.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="px-3 py-2.5 rounded-xl border border-gray-200 text-xs text-gray-600 hover:border-gray-400 hover:text-gray-900 transition-colors"
+                            >
+                              View Post
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+              : fetchingFeed
               ? Array.from({ length: 6 }).map((_, i) => (
                   <div key={i} className="bg-white border border-border/10 rounded-2xl p-5 space-y-3 animate-pulse shadow-sm">
                     <div className="flex gap-2"><div className="h-4 bg-gray-100 w-16 rounded-md" /><div className="h-4 bg-gray-100 w-10 rounded-md" /></div>
@@ -908,33 +969,64 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                               <span className="text-[10px] font-bold font-mono text-amber-700">{Math.min(sig.signalScore || 0, 99)}</span>
                             </div>
                           </div>
-                          {/* Title — always clamp-2 + break-words */}
-                          <h3 className="text-sm font-semibold text-slate-900 leading-snug line-clamp-2 break-words">
-                            {(sig.title || '').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/<[^>]+>/g, '')}
-                          </h3>
-                          {/* Snippet — always clamp-2 + break-words */}
-                          {(() => {
-                            const cleanSnippet = (sig.snippet || '')
-                              .replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
-                              .replace(/&lt;/g, '').replace(/&gt;/g, '').replace(/<[^>]+>/g, '')
-                              .replace(/\[.*?\]/g, '').trim();
-                            return cleanSnippet.length > 20 ? (
-                              <p className="text-xs text-slate-500 leading-relaxed line-clamp-2 break-words flex-1">{cleanSnippet.substring(0, 160)}</p>
-                            ) : null;
-                          })()}
-                          {/* Action buttons */}
+                          {/* Title */}
+                          <p className="text-sm font-semibold leading-snug line-clamp-2">{sig.title}</p>
+                          {/* Snippet */}
+                          <p className="text-xs text-muted leading-relaxed line-clamp-2 flex-1">{sig.snippet}</p>
+                          {/* Analyze + Watch buttons */}
                           {!multiSelectMode && (
-                            <div className="flex gap-2 pt-0.5">
+                            <div className="flex flex-col sm:flex-row gap-2">
                               <button
                                 type="button"
                                 onClick={() => onAnalyzeSignal(sig)}
                                 disabled={!!analyzingUrl}
                                 aria-label={`Analyze: ${sig.title}`}
-                                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-semibold hover:bg-slate-700 disabled:opacity-40 transition-all duration-150 active:scale-[0.98]"
+                                className="w-full sm:flex-1 min-h-10 flex items-center justify-center gap-2 py-2.5 bg-foreground text-background rounded-xl font-mono text-[10px] uppercase tracking-widest hover:bg-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                               >
-                                ⚡ Analyze
+                                <Zap className="w-3.5 h-3.5 fill-current" />
+                                Analyze 🔥
                               </button>
-                              <WatchButton article={sig} />
+
+                              <div className="relative w-full sm:w-auto">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (watching === sig.url) return;
+                                    setShowWatchMenu(prev => prev === sig.url ? null : sig.url);
+                                  }}
+                                  className={watching === sig.url
+                                    ? 'w-full sm:w-auto min-h-10 px-3 py-2 rounded-xl border border-amber-200 text-xs font-semibold text-amber-700 bg-amber-50 whitespace-nowrap shadow-sm'
+                                    : 'w-full sm:w-auto min-h-10 px-3 py-2 rounded-xl border border-gray-200 text-xs font-semibold text-gray-600 hover:border-amber-400 hover:text-amber-700 bg-white transition-all whitespace-nowrap shadow-sm hover:shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300'}
+                                >
+                                  {watching === sig.url ? 'Watching ✓' : 'Watch'}
+                                </button>
+
+                                {showWatchMenu === sig.url && (
+                                  <div
+                                    className="absolute bottom-full right-0 sm:right-0 left-0 sm:left-auto mb-2 w-full sm:w-48 bg-white border border-gray-200 rounded-2xl shadow-xl p-2 z-50"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <p className="text-xs font-semibold text-gray-600 px-2 py-1.5">Watch for how long?</p>
+                                    {[3, 5, 7, 14].map(days => (
+                                      <button
+                                        key={days}
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          addToWatchlist(sig, days);
+                                        }}
+                                        className="w-full text-left px-3 py-2.5 text-xs text-gray-700 hover:bg-amber-50 hover:text-amber-700 rounded-xl transition-colors flex items-center justify-between"
+                                      >
+                                        <span>{days} days</span>
+                                        {days === 7 && (
+                                          <span className="text-amber-500">recommended</span>
+                                        )}
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           )}
                         </div>
@@ -961,7 +1053,7 @@ export const SignalInput: React.FC<SignalInputProps> = ({
           </div>
 
           {/* Filter drawer backdrop */}
-          {showFilterDrawer && (
+          {inputMode === 'feed' && showFilterDrawer && (
             <div
               className="fixed inset-0 z-40 bg-black/20"
               onClick={() => setShowFilterDrawer(false)}
@@ -969,6 +1061,7 @@ export const SignalInput: React.FC<SignalInputProps> = ({
           )}
 
           {/* Filter drawer panel */}
+          {inputMode === 'feed' && (
           <div className={`fixed right-0 top-0 bottom-0 z-50 w-80 bg-white shadow-2xl transform transition-transform duration-300 flex flex-col ${showFilterDrawer ? 'translate-x-0' : 'translate-x-full'}`}>
             {/* Drawer header */}
             <div className="flex items-center justify-between p-4 border-b border-gray-100 flex-shrink-0">
@@ -1116,6 +1209,7 @@ export const SignalInput: React.FC<SignalInputProps> = ({
               </button>
             </div>
           </div>
+          )}
 
         </div>
       ) : (
