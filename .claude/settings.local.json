@@ -6,7 +6,8 @@
       "Bash(echo \"EXIT:$?\")",
       "Bash(git -C \"C:/Users/Dee Russell/Signal-to-Startup\" add components/SignalInput.tsx components/WatchButton.tsx)",
       "Bash(git -C 'C:/Users/Dee Russell/Signal-to-Startup' commit -m ':*)",
-      "Bash(git:*)"
+      "Bash(git:*)",
+      "Bash(npm run:*)"
     ]
   }
 }

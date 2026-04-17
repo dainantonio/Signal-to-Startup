@@ -7,7 +7,7 @@ const FROM_EMAIL = process.env.FROM_EMAIL || 'Signal to Startup <hello@entrepaIn
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('[DIGEST] VERSION 2026-04-01-09:00');
+    console.log('[DIGEST] VERSION 2026-04-15-FRESH');
     console.log('[DIGEST] START');
     console.log('[DIGEST] NODE_ENV:', process.env.NODE_ENV);
     console.log('[DIGEST] RESEND_API_KEY present:', !!process.env.RESEND_API_KEY);
@@ -65,10 +65,15 @@ export async function GET(request: NextRequest) {
 
         console.log('[DIGEST] Processing:', email);
 
+        const cutoff = new Date();
+        cutoff.setHours(cutoff.getHours() - 24);
+
         const signalsSnapshot = await db
           .collection('agent_signals')
           .where('userId', '==', userId)
           .where('read', '==', false)
+          .where('createdAt', '>=', cutoff.toISOString())
+          .orderBy('createdAt', 'desc')
           .limit(5)
           .get();
 
@@ -263,6 +268,17 @@ export async function GET(request: NextRequest) {
 
         emailsSent++;
         console.log('[DIGEST] Sent to:', email);
+
+        // Mark signals as read so they don't appear in next digest
+        const batch = db.batch();
+        signalsSnapshot.docs.forEach(doc => {
+          batch.update(doc.ref, {
+            read: true,
+            readAt: new Date().toISOString(),
+          });
+        });
+        await batch.commit();
+        console.log('[DIGEST] Marked', signalsSnapshot.size, 'signals as read');
 
       } catch (userError) {
         console.error('[DIGEST] Error for user:', userError);

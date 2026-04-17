@@ -48,20 +48,20 @@ export const AnalysisResultModal: React.FC<AnalysisResultModalProps> = ({
             className="fixed inset-x-0 bottom-0 md:inset-4 md:top-20 z-50 bg-white rounded-t-3xl md:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] md:max-h-none"
           >
             {/* Header */}
-            <div className="flex-shrink-0 bg-gradient-to-r from-gray-900 to-gray-800 text-white px-4 md:px-8 py-4 md:py-6 flex items-center justify-between border-b border-gray-700">
+            <div className="flex-shrink-0 bg-white px-4 md:px-8 py-4 md:py-6 flex items-center justify-between border-b border-gray-100">
               <div className="flex-1 min-w-0 pr-4">
-                <h2 className="text-lg md:text-2xl font-serif font-bold mb-1 truncate">
+                <h2 className="text-lg md:text-2xl font-serif font-bold mb-1 truncate text-gray-900">
                   Analysis Results
                 </h2>
                 {sourceTitle && (
-                  <p className="text-xs md:text-sm text-gray-300 truncate">
+                  <p className="text-xs md:text-sm text-gray-500 truncate">
                     Source: {sourceTitle}
                   </p>
                 )}
               </div>
               <button
                 onClick={onClose}
-                className="flex-shrink-0 p-2 hover:bg-white/10 rounded-full transition-colors"
+                className="flex-shrink-0 p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500 hover:text-gray-900"
                 aria-label="Close"
               >
                 <X className="w-5 h-5 md:w-6 md:h-6" />

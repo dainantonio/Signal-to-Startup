@@ -189,53 +189,82 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-white z-50 flex flex-col">
+    <div className="fixed inset-0 bg-gradient-to-br from-slate-50 via-white to-slate-100 z-50 flex flex-col">
 
       {/* Agent confirmation overlay */}
       {showAgentConfirm && (
-        <div className="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center p-8 text-center">
-          <div className="text-5xl mb-6">🤖</div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Your agent is activated</h2>
-          <p className="text-base text-gray-500 leading-relaxed mb-2 max-w-sm">
-            Every morning your Signal Monitor scans {countryTag || 'your market'} for opportunities
-            that match your profile — in your language, your currency, your market.
-          </p>
-          <p className="text-sm text-gray-400 mb-6 max-w-sm">
-            Your first digest arrives tomorrow morning. For now — let&apos;s find your first signal.
-          </p>
-          <div className="space-y-3 w-full max-w-xs">
-            {[
-              { time: '7:00 AM UTC', action: 'Monitor scans for new signals', icon: '📡' },
-              { time: '8:00 AM UTC', action: 'Scout analyzes top opportunities', icon: '🔍' },
-              { time: '9:00 AM UTC', action: 'Digest delivered to your inbox', icon: '📧' },
-            ].map(item => (
-              <div key={item.time} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl text-left">
-                <span className="text-xl">{item.icon}</span>
-                <div>
-                  <p className="text-xs font-semibold text-gray-900">{item.action}</p>
-                  <p className="text-xs text-gray-400">{item.time} daily</p>
-                </div>
-                <span className="ml-auto w-2 h-2 rounded-full bg-green-500" />
-              </div>
-            ))}
-          </div>
-          <p className="text-xs text-gray-400 mt-6">Taking you to your feed...</p>
+        <div className="fixed inset-0 bg-gradient-to-br from-slate-50 to-slate-100 z-50 flex flex-col items-center justify-center p-8 text-center">
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className="max-w-md mx-auto"
+          >
+            <div className="text-6xl mb-6">🤖</div>
+            <h2 className="text-3xl font-bold text-slate-900 mb-3">Your agent is activated</h2>
+            <p className="text-lg text-slate-600 leading-relaxed mb-3 max-w-sm mx-auto">
+              Every morning your Signal Monitor scans {countryTag || 'your market'} for opportunities
+              that match your profile — in your language, your currency, your market.
+            </p>
+            <p className="text-sm text-slate-500 mb-8 max-w-sm mx-auto">
+              Your first digest arrives tomorrow morning. For now — let's find your first signal.
+            </p>
+
+            <div className="space-y-4 w-full max-w-sm mx-auto mb-8">
+              {[
+                { time: '7:00 AM UTC', action: 'Monitor scans news & Reddit signals', icon: '📡', detail: '60+ sources including real-time discussions' },
+                { time: '8:00 AM UTC', action: 'AI analyzes top opportunities', icon: '🔍', detail: 'Compound signals & market insights' },
+                { time: '9:00 AM UTC', action: 'Digest delivered to your inbox', icon: '📧', detail: 'Personalized for your market & goals' },
+              ].map(item => (
+                <motion.div
+                  key={item.time}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.2 + Math.random() * 0.3 }}
+                  className="flex items-center gap-4 p-4 bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/50 text-left shadow-sm"
+                >
+                  <span className="text-2xl flex-shrink-0">{item.icon}</span>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-slate-900">{item.action}</p>
+                    <p className="text-xs text-slate-500">{item.detail}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs font-mono text-slate-400">{item.time}</p>
+                    <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 mt-1" />
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.2 }}
+              className="text-sm text-slate-500"
+            >
+              Taking you to your feed...
+            </motion.div>
+          </motion.div>
         </div>
       )}
 
       {/* Progress bar */}
-      <div className="h-1 bg-gray-100">
+      <div className="h-1.5 bg-slate-200/50">
         <motion.div
-          className="h-full bg-black"
+          className="h-full bg-gradient-to-r from-slate-900 to-slate-700"
           animate={{ width: `${(step / totalSteps) * 100}%` }}
-          transition={{ duration: 0.3 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
         />
       </div>
 
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-4 border-b border-gray-100">
+      <div className="flex items-center justify-between px-6 py-5 border-b border-slate-200/50 bg-white/80 backdrop-blur-sm">
         <Logo size="sm" showWordmark theme="light" />
-        <span className="text-xs text-gray-400">{step} of {totalSteps}</span>
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-slate-600">{step}</span>
+          <span className="text-sm text-slate-400">of</span>
+          <span className="text-sm font-medium text-slate-600">{totalSteps}</span>
+        </div>
       </div>
 
       {/* Step content */}
@@ -521,6 +550,19 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                   )}
                 </div>
               </div>
+
+              <div className="grid gap-3 sm:grid-cols-3 mt-6">
+                {[
+                  { label: 'Signal', description: 'We monitor news, Reddit and local market notes to find the right opportunities.' },
+                  { label: 'Analyze', description: 'Your agent extracts the best business idea, funding sources and first steps.' },
+                  { label: 'Launch', description: 'Saved opportunities appear in your Pipeline as execution-ready plans.' },
+                ].map(item => (
+                  <div key={item.label} className="rounded-3xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+                    <p className="text-xs uppercase tracking-[0.35em] font-semibold text-slate-500 mb-2">{item.label}</p>
+                    <p>{item.description}</p>
+                  </div>
+                ))}
+              </div>
             </motion.div>
           )}
 
@@ -528,13 +570,13 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
       </div>
 
       {/* Footer navigation */}
-      <div className="flex-shrink-0 px-4 py-4 border-t border-gray-100 bg-white">
-        <div className="max-w-lg mx-auto flex gap-3">
+      <div className="flex-shrink-0 px-6 py-6 border-t border-slate-200/50 bg-white/80 backdrop-blur-sm">
+        <div className="max-w-lg mx-auto flex gap-4">
           {step > 1 && (
             <button
               type="button"
               onClick={() => setStep(s => s - 1)}
-              className="px-5 py-3 border-2 border-gray-200 text-gray-600 rounded-xl text-sm font-medium hover:border-gray-400 transition-colors"
+              className="px-6 py-3 border-2 border-slate-200 text-slate-600 rounded-xl text-sm font-medium hover:border-slate-400 hover:bg-slate-50 transition-all duration-200"
             >
               ← Back
             </button>
@@ -544,10 +586,10 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
               type="button"
               onClick={() => setStep(s => s + 1)}
               disabled={step === 1 && !countryTag}
-              className={`flex-1 py-3 bg-black text-white rounded-xl text-sm font-semibold transition-colors ${
+              className={`flex-1 py-3 bg-gradient-to-r from-slate-900 to-slate-700 text-white rounded-xl text-sm font-semibold transition-all duration-200 ${
                 step === 1 && !countryTag
                   ? 'opacity-40 cursor-not-allowed'
-                  : 'hover:bg-gray-900'
+                  : 'hover:from-slate-800 hover:to-slate-600 shadow-sm hover:shadow-md'
               }`}
             >
               Continue →
@@ -556,14 +598,14 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             <button
               type="button"
               onClick={handleComplete}
-              className="flex-1 py-3 bg-black text-white rounded-xl text-sm font-semibold hover:bg-gray-900 transition-colors"
+              className="flex-1 py-3 bg-gradient-to-r from-slate-900 to-slate-700 text-white rounded-xl text-sm font-semibold hover:from-slate-800 hover:to-slate-600 transition-all duration-200 shadow-sm hover:shadow-md"
             >
               Take me to my feed →
             </button>
           )}
         </div>
         {step === 1 && !countryTag && (
-          <p className="text-xs text-amber-600 text-center mt-2">
+          <p className="text-sm text-amber-600 text-center mt-4 font-medium">
             Select your country to get local funding sources and cost estimates
           </p>
         )}
@@ -571,7 +613,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
           <button
             type="button"
             onClick={handleComplete}
-            className="w-full mt-2 py-2 text-xs text-gray-400 hover:text-black transition-colors"
+            className="w-full mt-4 py-2 text-sm text-slate-500 hover:text-slate-700 transition-colors"
           >
             Skip — show me all types
           </button>
@@ -580,7 +622,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
           <button
             type="button"
             onClick={handleComplete}
-            className="w-full mt-2 py-2 text-xs text-gray-400 hover:text-black transition-colors"
+            className="w-full mt-4 py-2 text-sm text-slate-500 hover:text-slate-700 transition-colors"
           >
             Skip — show me everything
           </button>

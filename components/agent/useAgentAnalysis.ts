@@ -834,12 +834,17 @@ Return ONLY valid JSON in this exact structure:
     const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
     if (!apiKey) return null;
 
+    let signalTextToUse = signalText;
+    if (!signalTextToUse || signalTextToUse.length < 20) {
+      signalTextToUse = opportunity.name + '. ' + (opportunity.description || '');
+    }
+
     try {
       const genAI = new GoogleGenAI({ apiKey });
 
       const prompt = `
         You are a business consultant helping an entrepreneur launch a new business.
-        SIGNAL: ${signalText}
+        SIGNAL: ${signalTextToUse}
         BUSINESS IDEA: ${opportunity.name}
         DESCRIPTION: ${opportunity.description}
         TARGET CUSTOMER: ${opportunity.target_customer}
@@ -980,13 +985,27 @@ Return ONLY valid JSON in this exact structure:
 
   // Generate deep dive — wraps deepDiveOpportunity with state management
   const generateDeepDive = async (opportunity: Opportunity) => {
-    setSelectedOpportunity(opportunity);
-    setDeepDiveResult(null);
-    setDeepDiveLoading(true);
-    setActiveDeepDiveTab('plan');
-    const ddResult = await deepDiveOpportunity(opportunity, input);
-    setDeepDiveLoading(false);
-    if (ddResult) setDeepDiveResult(ddResult);
+    setSelectedOpportunity(opportunity)
+    setDeepDiveResult(null)
+    setDeepDiveLoading(true)
+    setActiveDeepDiveTab('plan')
+
+    const context = input.trim()
+      || result?.trend
+      || result?.summary
+      || opportunity.name
+      || ''
+
+    try {
+      const ddResult = await deepDiveOpportunity(opportunity, context)
+      if (ddResult) {
+        setDeepDiveResult(ddResult)
+      }
+    } catch (err) {
+      console.error('[DEEP DIVE] error:', err)
+    } finally {
+      setDeepDiveLoading(false)
+    }
   };
 
   const shareOnTwitter = () => {

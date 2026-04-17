@@ -24,12 +24,12 @@ const STEPS: Step[] = [
 
 export const WorkflowStepper: React.FC<WorkflowStepperProps> = ({ currentStep, onStepClick }) => {
   return (
-    <div className="w-full max-w-4xl mx-auto mb-8">
+    <div className="w-full max-w-4xl mx-auto mb-8 px-4 py-4 rounded-3xl border border-slate-200/70 bg-slate-50 shadow-sm overflow-x-auto">
       <div className="relative flex items-center justify-between">
         {/* Progress line */}
-        <div className="absolute top-5 left-0 right-0 h-0.5 bg-gray-200" />
+        <div className="absolute top-5 left-0 right-0 h-0.5 bg-slate-200" />
         <motion.div
-          className="absolute top-5 left-0 h-0.5 bg-black"
+          className="absolute top-5 left-0 h-0.5 bg-slate-900"
           initial={{ width: '0%' }}
           animate={{ width: `${((currentStep - 1) / (STEPS.length - 1)) * 100}%` }}
           transition={{ duration: 0.3, ease: 'easeOut' }}
@@ -63,7 +63,7 @@ export const WorkflowStepper: React.FC<WorkflowStepperProps> = ({ currentStep, o
                 )}
               </button>
               <span
-                className={`text-xs font-medium whitespace-nowrap transition-colors ${
+                className={`text-[9px] md:text-[10px] font-mono uppercase tracking-widest mt-1 text-center leading-tight whitespace-nowrap transition-colors ${
                   isActive ? 'text-black font-semibold' : isCompleted ? 'text-gray-700' : 'text-gray-400'
                 }`}
               >

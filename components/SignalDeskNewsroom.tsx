@@ -20,6 +20,7 @@ import { MarketMode, FeedSignal, SectorKey, RecencyFilter, FeedFilters, SECTOR_C
 import { LOADING_STAGE_LABELS } from './agent/useAgentAnalysis';
 import { MarketModeSelector } from './MarketModeSelector';
 import { COUNTRY_CONTEXT } from '@/lib/rss-sources';
+import WatchButton from './WatchButton';
 
 const capitalize = (s: string) => s.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 const ALL_SECTORS: SectorKey[] = ['ai', 'policy', 'markets', 'funding', 'sustainability', 'realestate', 'health', 'ai_intelligence'];
@@ -77,7 +78,7 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
   showQuickEdit = false,
   onCompoundAnalysis,
 }) => {
-  const [inputMode, setInputMode] = useState<'paste' | 'feed'>('feed');
+  const [inputMode, setInputMode] = useState<'paste' | 'feed' | 'reddit'>('feed');
   const [multiSelectMode, setMultiSelectMode] = useState(false);
   const [selectedArticles, setSelectedArticles] = useState<FeedSignal[]>([]);
 
@@ -102,6 +103,12 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
     } catch {}
     return { sectors: ALL_SECTORS, recency: '3d' };
   });
+
+  const [redditSignals, setRedditSignals] = useState<FeedSignal[]>([]);
+  const [fetchingReddit, setFetchingReddit] = useState(false);
+  const [redditError, setRedditError] = useState<string | null>(null);
+  const [redditMeta, setRedditMeta] = useState<{ postCount?: number; rawFallback?: boolean } | null>(null);
+  const [showRawReddit, setShowRawReddit] = useState(false);
 
   // Card pop-out states
   const [analyzingUrl, setAnalyzingUrl] = useState<string | null>(null);
@@ -166,6 +173,63 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
   useEffect(() => {
     if (inputMode === 'feed') fetchFeed();
   }, [inputMode, fetchKey, fetchFeed]);
+
+  useEffect(() => {
+    if (inputMode !== 'reddit') return;
+    const fetchReddit = async () => {
+      setFetchingReddit(true);
+      setRedditError(null);
+      try {
+        const res = await fetch(`/api/reddit-signals?market=${selectedMode}`);
+        const data = await res.json();
+        if (!res.ok || data?.error) {
+          const message = data?.error || 'Failed to load Reddit signals';
+          setRedditSignals([]);
+          setRedditMeta(null);
+          setRedditError(message);
+          console.error('Reddit fetch failed:', message);
+          return;
+        }
+        setRedditSignals(data.signals || []);
+        setRedditMeta({ postCount: data?.meta?.postCount, rawFallback: data?.meta?.rawFallback });
+      } catch (err) {
+        setRedditError('Failed to load Reddit signals');
+        setRedditSignals([]);
+        setRedditMeta(null);
+        console.error('Reddit fetch failed:', err);
+      } finally {
+        setFetchingReddit(false);
+      }
+    };
+
+    fetchReddit();
+  }, [inputMode, selectedMode]);
+
+  const fetchRawReddit = async () => {
+    setFetchingReddit(true);
+    setRedditError(null);
+    try {
+      const res = await fetch(`/api/reddit-signals?market=${selectedMode}&raw=true`);
+      const data = await res.json();
+      if (!res.ok || data?.error) {
+        const message = data?.error || 'Failed to load raw Reddit posts';
+        setRedditSignals([]);
+        setRedditMeta(null);
+        setRedditError(message);
+        console.error('Raw Reddit fetch failed:', message);
+        return;
+      }
+      setRedditSignals(data.signals || []);
+      setRedditMeta({ postCount: data?.meta?.postCount, rawFallback: true });
+    } catch (err) {
+      setRedditError('Failed to load raw Reddit posts');
+      setRedditSignals([]);
+      setRedditMeta(null);
+      console.error('Raw Reddit fetch failed:', err);
+    } finally {
+      setFetchingReddit(false);
+    }
+  };
 
   // Progress animation for selected card
   useEffect(() => {
@@ -275,27 +339,40 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
   return (
     <section id="step-1" className="scroll-mt-24 mb-16">
       {/* Mode Toggle */}
-      <div className="flex bg-white border border-gray-200 rounded-2xl p-1.5 mb-6 shadow-sm w-fit mx-auto">
+      <div className="flex bg-gradient-to-r from-slate-50 to-slate-100 border border-slate-200/50 rounded-2xl p-1.5 mb-8 shadow-sm w-fit mx-auto backdrop-blur-sm">
         <button
           onClick={() => { setInputMode('feed'); setMultiSelectMode(false); setSelectedArticles([]); }}
-          className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all ${
+          className={`flex items-center gap-3 px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
             inputMode === 'feed'
-              ? 'bg-black text-white shadow-lg'
-              : 'text-gray-600 hover:text-black hover:bg-gray-50'
+              ? 'bg-gradient-to-r from-slate-900 to-slate-700 text-white shadow-lg'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-white/80'
           }`}
         >
           <Newspaper className="w-4 h-4" />
           Newsroom Feed
           {inputMode === 'feed' && (
-            <span className="w-2 h-2 bg-red-400 rounded-full animate-pulse" />
+            <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
           )}
         </button>
         <button
+          onClick={() => { setInputMode('reddit'); setMultiSelectMode(false); setSelectedArticles([]); setShowRawReddit(false); }}
+          className={`flex items-center gap-3 px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
+            inputMode === 'reddit'
+              ? 'bg-gradient-to-r from-orange-600 to-orange-500 text-white shadow-lg'
+              : 'text-slate-600 hover:text-orange-600 hover:bg-white/80'
+          }`}
+        >
+          <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
+            inputMode === 'reddit' ? 'bg-orange-400 animate-pulse' : 'bg-slate-300'
+          }`} />
+          Reddit Signals
+        </button>
+        <button
           onClick={() => { setInputMode('paste'); setMultiSelectMode(false); setSelectedArticles([]); }}
-          className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all ${
+          className={`flex items-center gap-3 px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
             inputMode === 'paste'
-              ? 'bg-black text-white shadow-lg'
-              : 'text-gray-600 hover:text-black hover:bg-gray-50'
+              ? 'bg-gradient-to-r from-slate-900 to-slate-700 text-white shadow-lg'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-white/80'
           }`}
         >
           <Edit3 className="w-4 h-4" />
@@ -305,12 +382,12 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
 
       {inputMode === 'paste' ? (
         /* PASTE MODE */
-        <div className="bg-white border border-gray-200 rounded-3xl shadow-sm overflow-hidden">
-          <div className="border-b border-gray-100 px-8 py-5">
+        <div className="bg-gradient-to-br from-white to-slate-50/50 border border-slate-200/50 rounded-3xl shadow-sm overflow-hidden backdrop-blur-sm">
+          <div className="border-b border-slate-200/50 px-8 py-6 bg-white/80">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-2xl font-sans font-bold text-gray-900 mb-1">Signal Desk</h2>
-                <p className="text-sm text-gray-500">Paste your market signal to extract opportunities</p>
+                <h2 className="text-2xl font-bold text-slate-900 mb-1">Signal Desk</h2>
+                <p className="text-sm text-slate-600">Paste your market signal to extract opportunities</p>
               </div>
             </div>
           </div>
@@ -332,7 +409,7 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 placeholder="Paste a news article, policy update, or market signal here..."
-                className="w-full h-64 bg-gray-50 border-0 rounded-2xl p-6 focus:ring-2 focus:ring-black focus:bg-white outline-none resize-none font-sans text-base leading-relaxed transition-all"
+                className="w-full h-64 bg-slate-50/50 border border-slate-200/50 rounded-2xl p-6 focus:ring-2 focus:ring-slate-900/20 focus:bg-white outline-none resize-none font-sans text-base leading-relaxed transition-all duration-200 shadow-inner"
               />
             </div>
 
@@ -403,16 +480,17 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
                 type="button"
                 onClick={() => analyzeSignal()}
                 disabled={!input.trim()}
-                className="w-full bg-black text-white py-5 rounded-2xl text-base font-semibold hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-3 shadow-lg active:scale-[0.98]"
+                className="w-full bg-gradient-to-r from-slate-900 to-slate-700 text-white py-5 rounded-2xl text-base font-semibold hover:from-slate-800 hover:to-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl active:scale-[0.98]"
               >
+                <Zap className="w-5 h-5" />
                 Extract Opportunities
               </button>
             )}
 
-            <div className="border-t border-gray-100 pt-6 space-y-6">
+            <div className="border-t border-slate-200/50 pt-6 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-2 uppercase tracking-wide">
+                  <label className="block text-xs font-medium text-slate-600 mb-2 uppercase tracking-wide">
                     Location
                   </label>
                   <input
@@ -420,11 +498,11 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
                     value={location}
                     onChange={e => setLocation(e.target.value)}
                     placeholder="e.g. Kingston, New York"
-                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-black focus:bg-white outline-none transition-all"
+                    className="w-full bg-slate-50/50 border border-slate-200/50 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-slate-900/20 focus:bg-white outline-none transition-all duration-200"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-2 uppercase tracking-wide">
+                  <label className="block text-xs font-medium text-slate-600 mb-2 uppercase tracking-wide">
                     Focus / Niche
                   </label>
                   <input
@@ -432,23 +510,23 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
                     value={focus}
                     onChange={e => setFocus(e.target.value)}
                     placeholder="e.g. SaaS, Healthcare"
-                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-black focus:bg-white outline-none transition-all"
+                    className="w-full bg-slate-50/50 border border-slate-200/50 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-slate-900/20 focus:bg-white outline-none transition-all duration-200"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-2 uppercase tracking-wide">
+                  <label className="block text-xs font-medium text-slate-600 mb-2 uppercase tracking-wide">
                     Market Region
                   </label>
                   <MarketModeSelector selectedMode={selectedMode} onModeChange={setSelectedMode} />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-2 uppercase tracking-wide">
+                  <label className="block text-xs font-medium text-slate-600 mb-2 uppercase tracking-wide">
                     Reading Mode
                   </label>
-                  <div className="flex rounded-xl border border-gray-200 overflow-hidden h-11">
+                  <div className="flex rounded-xl border border-slate-200/50 overflow-hidden h-11 bg-slate-50/50">
                     {([
                       { value: 'simple', label: 'Simple' },
                       { value: 'standard', label: 'Standard' },
@@ -458,9 +536,9 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
                         key={opt.value}
                         type="button"
                         onClick={() => setReadingLevel(opt.value)}
-                        className={`flex-1 py-2 text-xs font-medium ${
-                          i > 0 ? 'border-l border-gray-200' : ''
-                        } ${readingLevel === opt.value ? 'bg-black text-white' : 'text-gray-600 hover:bg-gray-50'}`}
+                        className={`flex-1 py-2 text-xs font-medium transition-all duration-200 ${
+                          i > 0 ? 'border-l border-slate-200/50' : ''
+                        } ${readingLevel === opt.value ? 'bg-gradient-to-r from-slate-900 to-slate-700 text-white' : 'text-slate-600 hover:bg-white/80'}`}
                       >
                         {opt.label}
                       </button>
@@ -475,15 +553,15 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
         /* FEED MODE */
         <div className="space-y-6">
           {/* Filter Bar */}
-          <div className="bg-white border border-gray-200 rounded-2xl px-6 py-4 shadow-sm">
+          <div className="bg-gradient-to-r from-white to-slate-50/50 border border-slate-200/50 rounded-2xl px-6 py-4 shadow-sm backdrop-blur-sm">
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div className="flex items-center gap-3">
-                <Newspaper className="w-5 h-5 text-gray-400" />
-                <span className="text-sm font-medium text-gray-600">
+                <Newspaper className="w-5 h-5 text-slate-400" />
+                <span className="text-sm font-medium text-slate-600">
                   {fetchingFeed ? 'Loading...' : `${signals.length} signals`}
                 </span>
                 {feedMeta && feedMeta.duplicatesRemoved > 0 && (
-                  <span className="text-xs text-gray-400">
+                  <span className="text-xs text-slate-400">
                     · {feedMeta.duplicatesRemoved} duplicates removed
                   </span>
                 )}
@@ -495,10 +573,10 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
                     setMultiSelectMode(!multiSelectMode);
                     setSelectedArticles([]);
                   }}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-semibold transition-all ${
+                  className={`flex items-center gap-1.5 px-4 py-2 rounded-xl border text-xs font-semibold transition-all duration-200 ${
                     multiSelectMode
-                      ? 'bg-black text-white border-black'
-                      : 'border-gray-200 text-gray-600 hover:border-gray-400'
+                      ? 'bg-gradient-to-r from-slate-900 to-slate-700 text-white border-slate-900 shadow-sm'
+                      : 'border-slate-200/50 text-slate-600 hover:border-slate-400 hover:bg-white/80'
                   }`}
                 >
                   {multiSelectMode ? '✕ Cancel' : '⊕ Compare'}
@@ -506,19 +584,19 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowFilterDrawer(true)}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:border-gray-400 transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200/50 text-sm font-medium text-slate-600 hover:border-slate-400 hover:bg-white/80 transition-all duration-200"
                 >
                   <SlidersHorizontal className="w-4 h-4" />
                   Filters
                   {(countryTags.length > 0 || filters.sectors.length < ALL_SECTORS.length) && (
-                    <span className="w-2 h-2 rounded-full bg-black" />
+                    <span className="w-2 h-2 rounded-full bg-slate-900" />
                   )}
                 </button>
                 <button
                   type="button"
                   onClick={() => fetchFeed(true)}
                   disabled={fetchingFeed}
-                  className="p-2 text-gray-400 hover:text-black transition-colors"
+                  className="p-2 text-slate-400 hover:text-slate-600 transition-colors duration-200"
                 >
                   <RefreshCw className={`w-5 h-5 ${fetchingFeed ? 'animate-spin' : ''}`} />
                 </button>
@@ -528,163 +606,292 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
 
           {/* Feed Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {fetchingFeed
-              ? Array.from({ length: 6 }).map((_, i) => (
+            {inputMode === 'reddit' ? (
+              redditError ? (
+                <div className="col-span-full text-center py-16 text-sm text-red-500">
+                  {redditError}
+                </div>
+              ) : fetchingReddit ? (
+                Array.from({ length: 4 }).map((_, i) => (
                   <div
                     key={i}
-                    className="bg-white border border-gray-200 rounded-2xl p-5 space-y-3 animate-pulse shadow-sm"
+                    className="bg-white border border-border/10 rounded-2xl p-5 space-y-3 animate-pulse"
                   >
-                    <div className="flex gap-2">
-                      <div className="h-4 bg-gray-100 w-16 rounded-md" />
-                      <div className="h-4 bg-gray-100 w-10 rounded-md" />
-                    </div>
-                    <div className="h-12 bg-gray-100 rounded-lg" />
-                    <div className="h-8 bg-gray-100 rounded-lg" />
-                    <div className="h-10 bg-gray-100 rounded-xl" />
+                    <div className="h-4 bg-gray-100 w-24 rounded" />
+                    <div className="h-10 bg-gray-100 rounded" />
+                    <div className="h-16 bg-gray-100 rounded" />
+                    <div className="h-9 bg-gray-100 rounded-xl" />
                   </div>
                 ))
-              : signals.length === 0
-              ? <div className="col-span-full text-center py-16 text-gray-500 text-sm">
-                  No signals found. Try widening your filters.
+              ) : redditSignals.length === 0 ? (
+                <div className="col-span-full text-center py-16 text-gray-500 text-sm">
+                  <p>No Reddit signals found. Try again or select a different market.</p>
+                  {redditMeta?.postCount !== undefined && (
+                    <p className="mt-2 text-xs text-gray-400">
+                      Fetched {redditMeta.postCount} Reddit posts{redditMeta.rawFallback ? ' (raw fallback mode)' : ''}.
+                    </p>
+                  )}
+                  {redditMeta?.postCount === 0 && (
+                    <p className="mt-2 text-xs text-gray-400">
+                      No Reddit posts passed the filters. Try lowering thresholds or adding more subreddits.
+                    </p>
+                  )}
+                  <button
+                    onClick={() => fetchRawReddit()}
+                    disabled={fetchingReddit}
+                    className="mt-4 px-4 py-2 bg-orange-100 text-orange-700 rounded-lg text-sm font-medium hover:bg-orange-200 disabled:opacity-50 transition-colors"
+                  >
+                    {fetchingReddit ? 'Loading...' : 'Show Raw Reddit Posts'}
+                  </button>
                 </div>
-              : signals.map((sig, i) => {
-                  const cfg = SECTOR_CONFIGS[sig.sector] ?? SECTOR_CONFIGS.markets;
-                  const key = sig.url ?? sig.title;
-                  const isAnalyzing = analyzingUrl === key;
-                  const isSuccess = successUrl === key;
-                  const isOtherAnalyzing = !!analyzingUrl && analyzingUrl !== key;
+              ) : redditSignals.map((sig, i) => {
+                const meta = sig.redditMeta;
+                return (
+                  <div
+                    key={i}
+                    className="bg-white border border-orange-100 rounded-2xl flex flex-col overflow-hidden hover:border-orange-200 hover:shadow-md transition-all"
+                  >
+                    <div className="p-4 flex flex-col gap-3 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-[9px] font-mono font-bold text-orange-400 uppercase tracking-wider">
+                          r/{meta?.subreddit || 'reddit'}
+                        </span>
+                        <span className="px-2 py-0.5 text-[9px] font-mono uppercase font-bold rounded-md bg-orange-50 text-orange-600">
+                          {meta?.postType || 'Signal'}
+                        </span>
+                        <div className="ml-auto flex items-center gap-1 px-2 py-0.5 bg-amber-50 border border-amber-200 rounded-lg">
+                          <span className="text-amber-500 text-[9px]">⚡</span>
+                          <span className="text-[10px] font-bold font-mono text-amber-700">
+                            {Math.min(sig.signalScore || 0, 99)}
+                          </span>
+                        </div>
+                      </div>
 
-                  return (
-                    <motion.div
-                      key={i}
-                      layout
-                      animate={{
-                        scale: isAnalyzing ? 1.02 : isOtherAnalyzing ? 0.97 : 1,
-                        opacity: isOtherAnalyzing ? 0.5 : 1,
-                        filter: isOtherAnalyzing ? 'blur(1px)' : 'blur(0px)',
-                      }}
-                      transition={{ duration: 0.2 }}
-                      className={`relative bg-white rounded-2xl flex flex-col overflow-hidden transition-all ${
-                        multiSelectMode
-                          ? selectedArticles.some(a => a.url === key)
-                            ? 'border-2 border-black shadow-md'
-                            : 'border-2 border-gray-200 hover:border-gray-400 cursor-pointer'
-                          : isOtherAnalyzing ? 'pointer-events-none border border-gray-200' :
-                            isAnalyzing ? 'border border-gray-200 ring-2 ring-black shadow-xl' : 'border border-gray-200 shadow-sm hover:shadow-md'
-                      }`}
-                    >
-                      {multiSelectMode ? (
-                        /* Multi-select card */
+                      <h3 className="text-sm font-semibold text-gray-900 leading-snug line-clamp-2">
+                        {sig.title}
+                      </h3>
+
+                      <div className="bg-orange-50 rounded-xl p-3">
+                        <p className="text-[9px] font-bold text-orange-600 uppercase tracking-widest mb-1">
+                          Problem identified
+                        </p>
+                        <p className="text-xs text-gray-700 leading-relaxed">
+                          {meta?.problem || sig.snippet}
+                        </p>
+                      </div>
+
+                      <div className="bg-emerald-50 rounded-xl p-3">
+                        <p className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest mb-1">
+                          Startup opportunity
+                        </p>
+                        <p className="text-xs text-gray-700 leading-relaxed">
+                          {meta?.startupIdea || 'No opportunity extracted yet.'}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-3 text-[10px] text-gray-400">
+                        <span>▲ {meta?.upvotes?.toLocaleString() ?? 0} upvotes</span>
+                        <span>💬 {meta?.comments?.toLocaleString() ?? 0} comments</span>
+                      </div>
+
+                      <div className="flex gap-2">
                         <button
                           type="button"
                           onClick={() => {
-                            setSelectedArticles(prev => {
-                              const isSelected = prev.some(a => a.url === key);
-                              if (isSelected) return prev.filter(a => a.url !== key);
-                              if (prev.length >= 5) return prev;
-                              return [...prev, sig];
-                            });
+                            const signalText = `${sig.title}. ${meta?.problem || sig.snippet}. Startup idea: ${meta?.startupIdea || ''}`;
+                            analyzeSignal(signalText, sig.title);
                           }}
-                          className="w-full text-left p-5 flex flex-col gap-3"
+                          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-gray-900 text-white rounded-xl text-xs font-semibold hover:bg-gray-700 transition-colors"
                         >
-                          <div className="flex items-start gap-3">
-                            <div className={`w-5 h-5 rounded border-2 flex-shrink-0 mt-0.5 flex items-center justify-center transition-all ${
-                              selectedArticles.some(a => a.url === key)
-                                ? 'bg-black border-black'
-                                : 'border-gray-300'
-                            }`}>
-                              {selectedArticles.some(a => a.url === key) && (
-                                <span className="text-white text-xs leading-none">✓</span>
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1.5">
+                          ⚡ Deep Analysis
+                        </button>
+                        <a
+                          href={sig.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3 py-2.5 rounded-xl border border-gray-200 text-xs text-gray-500 hover:border-gray-400 transition-colors"
+                        >
+                          View Post
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              fetchingFeed
+                ? Array.from({ length: 6 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="bg-gradient-to-br from-white to-slate-50/50 border border-slate-200/50 rounded-2xl p-5 space-y-3 animate-pulse shadow-sm backdrop-blur-sm"
+                    >
+                      <div className="flex gap-2">
+                        <div className="h-4 bg-slate-100 w-16 rounded-md" />
+                        <div className="h-4 bg-slate-100 w-10 rounded-md" />
+                      </div>
+                      <div className="h-12 bg-slate-100 rounded-lg" />
+                      <div className="h-8 bg-slate-100 rounded-lg" />
+                      <div className="h-10 bg-slate-100 rounded-xl" />
+                    </div>
+                  ))
+                : signals.length === 0
+                  ? <div className="col-span-full text-center py-16 text-gray-500 text-sm">
+                      No signals found. Try widening your filters.
+                    </div>
+                  : signals.map((sig, i) => {
+                      const cfg = SECTOR_CONFIGS[sig.sector] ?? SECTOR_CONFIGS.markets;
+                      const key = sig.url ?? sig.title;
+                      const isAnalyzing = analyzingUrl === key;
+                      const isSuccess = successUrl === key;
+                      const isOtherAnalyzing = !!analyzingUrl && analyzingUrl !== key;
+
+                      return (
+                        <motion.div
+                          key={i}
+                          layout
+                          animate={{
+                            scale: isAnalyzing ? 1.02 : isOtherAnalyzing ? 0.97 : 1,
+                            opacity: isOtherAnalyzing ? 0.5 : 1,
+                            filter: isOtherAnalyzing ? 'blur(1px)' : 'blur(0px)',
+                          }}
+                          transition={{ duration: 0.2 }}
+                          className={`relative bg-gradient-to-br from-white to-slate-50/50 rounded-2xl flex flex-col overflow-hidden transition-all duration-200 ${
+                            multiSelectMode
+                              ? selectedArticles.some(a => a.url === key)
+                                ? 'border-2 border-slate-900 shadow-lg'
+                                : 'border-2 border-slate-200/50 hover:border-slate-400 cursor-pointer'
+                              : isOtherAnalyzing ? 'pointer-events-none border border-slate-200/50' :
+                                isAnalyzing ? 'border border-slate-200/50 ring-2 ring-slate-900/20 shadow-xl' : 'border border-slate-200/50 shadow-sm hover:shadow-lg backdrop-blur-sm'
+                          }`}
+                        >
+                          {multiSelectMode ? (
+                            /* Multi-select card */
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedArticles(prev => {
+                                  const isSelected = prev.some(a => a.url === key);
+                                  if (isSelected) return prev.filter(a => a.url !== key);
+                                  if (prev.length >= 5) return prev;
+                                  return [...prev, sig];
+                                });
+                              }}
+                              className="w-full text-left p-5 flex flex-col gap-3"
+                            >
+                              <div className="flex items-start gap-3">
+                                <div className={`w-5 h-5 rounded border-2 flex-shrink-0 mt-0.5 flex items-center justify-center transition-all ${
+                                  selectedArticles.some(a => a.url === key)
+                                    ? 'bg-black border-black'
+                                    : 'border-gray-300'
+                                }`}>
+                                  {selectedArticles.some(a => a.url === key) && (
+                                    <span className="text-white text-xs leading-none">✓</span>
+                                  )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-1.5">
+                                    <span className="text-xs font-semibold text-gray-500 uppercase truncate">
+                                      {sig.source}
+                                    </span>
+                                    <span className={`px-2 py-0.5 text-xs font-semibold rounded-md ${cfg.badgeBg} ${cfg.badgeText}`}>
+                                      {cfg.label}
+                                    </span>
+                                  </div>
+                                  <p className="text-sm font-semibold leading-snug line-clamp-2 text-gray-900">{sig.title}</p>
+                                  <p className="text-xs text-gray-500 line-clamp-2 mt-1">{sig.snippet}</p>
+                                </div>
+                              </div>
+                            </button>
+                          ) : isAnalyzing ? (
+                            <div className="p-5 flex flex-col gap-3">
+                              <div className="flex items-center gap-2 flex-wrap">
                                 <span className="text-xs font-semibold text-gray-500 uppercase truncate">
                                   {sig.source}
                                 </span>
                                 <span className={`px-2 py-0.5 text-xs font-semibold rounded-md ${cfg.badgeBg} ${cfg.badgeText}`}>
                                   {cfg.label}
                                 </span>
+                                <button
+                                  type="button"
+                                  onClick={handleCardCancel}
+                                  className="ml-auto flex items-center gap-1 text-xs text-gray-500 hover:text-red-500"
+                                >
+                                  <X className="w-3 h-3" /> Cancel
+                                </button>
                               </div>
-                              <p className="text-sm font-semibold leading-snug line-clamp-2 text-gray-900">{sig.title}</p>
-                              <p className="text-xs text-gray-500 line-clamp-2 mt-1">{sig.snippet}</p>
+                              <p className="text-sm font-semibold leading-snug">{sig.title}</p>
+                              <p className="text-xs text-gray-600 leading-relaxed line-clamp-2">{sig.snippet}</p>
+                              <div className="border-t border-gray-100 pt-3" />
+                              <div className="flex items-center gap-2">
+                                <Loader2 className="w-4 h-4 animate-spin text-black" />
+                                <span className="text-xs font-semibold text-black">{analyzeStage}</span>
+                                <span className="ml-auto text-xs text-gray-500">{analyzeProgress}%</span>
+                              </div>
+                              <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
+                                <motion.div
+                                  className="h-full bg-black"
+                                  animate={{ width: `${analyzeProgress}%` }}
+                                  transition={{ duration: 0.5 }}
+                                />
+                              </div>
                             </div>
-                          </div>
-                        </button>
-                      ) : isAnalyzing ? (
-                        <div className="p-5 flex flex-col gap-3">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-xs font-semibold text-gray-500 uppercase truncate">
-                              {sig.source}
-                            </span>
-                            <span className={`px-2 py-0.5 text-xs font-semibold rounded-md ${cfg.badgeBg} ${cfg.badgeText}`}>
-                              {cfg.label}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={handleCardCancel}
-                              className="ml-auto flex items-center gap-1 text-xs text-gray-500 hover:text-red-500"
-                            >
-                              <X className="w-3 h-3" /> Cancel
-                            </button>
-                          </div>
-                          <p className="text-sm font-semibold leading-snug">{sig.title}</p>
-                          <p className="text-xs text-gray-600 leading-relaxed line-clamp-2">{sig.snippet}</p>
-                          <div className="border-t border-gray-100 pt-3" />
-                          <div className="flex items-center gap-2">
-                            <Loader2 className="w-4 h-4 animate-spin text-black" />
-                            <span className="text-xs font-semibold text-black">{analyzeStage}</span>
-                            <span className="ml-auto text-xs text-gray-500">{analyzeProgress}%</span>
-                          </div>
-                          <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
-                            <motion.div
-                              className="h-full bg-black"
-                              animate={{ width: `${analyzeProgress}%` }}
-                              transition={{ duration: 0.5 }}
-                            />
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="p-5 flex flex-col gap-3">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-xs font-semibold text-gray-500 uppercase truncate">
-                              {sig.source}
-                            </span>
-                            <span className={`px-2 py-0.5 text-xs font-semibold rounded-md ${cfg.badgeBg} ${cfg.badgeText}`}>
-                              {cfg.label}
-                            </span>
-                            {sig.isLocalSource && (
-                              <span className="px-2 py-0.5 text-xs font-semibold rounded-md bg-green-100 text-green-700">
-                                Local
-                              </span>
-                            )}
-                            <div className="ml-auto">
-                              <SignalScoreBadge score={sig.signalScore} publishedAt={sig.publishedAt} />
+                          ) : (
+                            <div className="p-4 flex flex-col gap-3 flex-1">
+                              {/* Meta row */}
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-[9px] font-mono font-bold text-gray-400 uppercase tracking-wider">
+                                  {sig.source}
+                                </span>
+                                <span className={`px-2 py-0.5 text-[9px] font-mono uppercase font-bold rounded-md ${cfg.badgeBg} ${cfg.badgeText}`}>
+                                  {cfg.label}
+                                </span>
+                                {sig.isLocalSource && (
+                                  <span className="px-2 py-0.5 text-[9px] font-mono uppercase font-bold rounded-md bg-green-100 text-green-700">
+                                    Local
+                                  </span>
+                                )}
+                                {/* Score — right aligned */}
+                                <div className="ml-auto flex items-center gap-1 px-2 py-0.5 bg-amber-50 border border-amber-200 rounded-lg">
+                                  <span className="text-amber-500 text-[9px]">⚡</span>
+                                  <span className="text-[10px] font-bold font-mono text-amber-700">
+                                    {Math.min(sig.signalScore || 0, 99)}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Title */}
+                              <h3 className="text-sm font-semibold text-gray-900 leading-snug line-clamp-2">
+                                {sig.title}
+                              </h3>
+
+                              {/* Snippet */}
+                              <p className="text-xs text-gray-500 leading-relaxed line-clamp-2 flex-1">
+                                {sig.snippet}
+                              </p>
+
+                              {/* Action buttons */}
+                              <div className="flex gap-2 pt-1">
+                                <button
+                                  type="button"
+                                  onClick={() => onAnalyzeSignal(sig)}
+                                  disabled={!!analyzingUrl}
+                                  className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-gray-900 text-white rounded-xl text-xs font-semibold hover:bg-gray-700 disabled:opacity-40 transition-colors"
+                                >
+                                  ⚡ Analyze
+                                </button>
+                                <WatchButton article={sig} />
+                              </div>
                             </div>
-                          </div>
-                          <p className="text-sm font-semibold leading-snug line-clamp-2">{sig.title}</p>
-                          <p className="text-xs text-gray-600 leading-relaxed line-clamp-2 flex-1">
-                            {sig.snippet}
-                          </p>
-                          <button
-                            type="button"
-                            onClick={() => onAnalyzeSignal(sig)}
-                            disabled={!!analyzingUrl}
-                            className="w-full flex items-center justify-center gap-2 py-2.5 bg-black text-white rounded-xl text-xs font-semibold hover:bg-gray-800 disabled:opacity-50 transition-all shadow-sm"
-                          >
-                            <Zap className="w-4 h-4" />
-                            Analyze
-                          </button>
-                        </div>
-                      )}
-                    </motion.div>
-                  );
-                })}
+                          )}
+                        </motion.div>
+                      );
+                    })
+            )}
           </div>
 
           {/* Sticky Compound Analysis Bar */}
           {multiSelectMode && (
-            <div className={`fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-2xl transition-transform duration-300 ${
+            <div className={`fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-white to-slate-50/50 border-t border-slate-200/50 shadow-2xl transition-transform duration-300 backdrop-blur-sm ${
               selectedArticles.length > 0 ? 'translate-y-0' : 'translate-y-full'
             }`}>
               <div className="max-w-3xl mx-auto px-4 py-4">
@@ -734,13 +941,13 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
           )}
 
           <div
-            className={`fixed right-0 top-0 bottom-0 z-50 w-80 bg-white shadow-2xl transform transition-transform duration-300 flex flex-col ${
+            className={`fixed right-0 top-0 bottom-0 z-50 w-80 bg-gradient-to-br from-white to-slate-50/50 shadow-2xl transform transition-transform duration-300 flex flex-col border-l border-slate-200/50 backdrop-blur-sm ${
               showFilterDrawer ? 'translate-x-0' : 'translate-x-full'
             }`}
           >
-            <div className="flex items-center justify-between p-4 border-b border-gray-200">
-              <h3 className="text-sm font-semibold">Feed Filters</h3>
-              <button onClick={() => setShowFilterDrawer(false)} className="text-gray-400 hover:text-black">
+            <div className="flex items-center justify-between p-4 border-b border-slate-200/50 bg-white/80">
+              <h3 className="text-sm font-semibold text-slate-900">Feed Filters</h3>
+              <button onClick={() => setShowFilterDrawer(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
                 ✕
               </button>
             </div>
@@ -822,13 +1029,13 @@ export const SignalDeskNewsroom: React.FC<SignalDeskNewsroomProps> = ({
               </div>
             </div>
 
-            <div className="p-4 border-t border-gray-200">
+            <div className="p-4 border-t border-slate-200/50 bg-white/80">
               <button
                 onClick={() => {
                   setShowFilterDrawer(false);
                   fetchFeed(true);
                 }}
-                className="w-full py-3 bg-black text-white rounded-xl text-sm font-semibold hover:bg-gray-900"
+                className="w-full py-3 bg-gradient-to-r from-slate-900 to-slate-700 text-white rounded-xl text-sm font-semibold hover:from-slate-800 hover:to-slate-600 transition-all duration-200 shadow-sm hover:shadow-md"
               >
                 Apply Filters
               </button>

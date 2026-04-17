@@ -38,6 +38,7 @@ import {
   FirebaseUser,
   signInWithPopup,
   signInWithRedirect,
+  getRedirectResult,
   googleProvider,
   limit,
 } from '@/firebase';
@@ -82,8 +83,21 @@ export default function DashboardPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkProcessing, setBulkProcessing] = useState(false);
 
-  // Auth listener
+  // Auth listener + redirect result
   useEffect(() => {
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result?.user) console.log('[AUTH] Dashboard redirect sign-in successful');
+      })
+      .catch((err: unknown) => {
+        const code = (err as { code?: string }).code;
+        if (
+          code === 'auth/cancelled-popup-request' ||
+          code === 'auth/popup-closed-by-user'
+        ) return;
+        console.warn('[AUTH] Dashboard redirect result error:', code);
+      });
+
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       if (user) {
@@ -278,15 +292,18 @@ export default function DashboardPage() {
 
   const login = async () => {
     try {
-      const isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
-      if (isMobile) {
+      // Use popup on all devices — redirect causes COOP issues on mobile
+      await signInWithPopup(auth, googleProvider);
+    } catch (err: unknown) {
+      const code = (err as { code?: string }).code;
+      if (
+        code === 'auth/cancelled-popup-request' ||
+        code === 'auth/popup-closed-by-user'
+      ) return;
+      if (code === 'auth/popup-blocked') {
         await signInWithRedirect(auth, googleProvider);
-      } else {
-        await signInWithPopup(auth, googleProvider);
+        return;
       }
-    } catch (err: any) {
-      if (err?.code === 'auth/cancelled-popup-request') return;
-      if (err?.code === 'auth/popup-closed-by-user') return;
       console.error('Login failed', err);
     }
   };
@@ -346,12 +363,29 @@ export default function DashboardPage() {
       <main className="max-w-7xl mx-auto px-6 py-12">
 
         {/* Page Title */}
-        <div className="mb-12 space-y-2">
-          <div className="flex items-center gap-3 mb-2">
-            <span className="text-[10px] font-mono uppercase font-bold tracking-widest">Opportunity Pipeline</span>
+        <div className="mb-8">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-xs font-mono uppercase tracking-widest text-gray-400">Opportunity Pipeline</span>
           </div>
-          <h1 className="text-4xl md:text-6xl font-serif italic font-bold tracking-tight">Strategic Dashboard</h1>
-          <p className="text-base text-muted font-medium max-w-2xl">Manage and track your saved opportunities from signal to launch.</p>
+          <h1 className="text-3xl font-bold text-gray-900 tracking-tight mb-2">Your Dashboard</h1>
+          <p className="text-sm text-gray-500">Track your saved opportunities from signal to launch.</p>
+
+          <div className="grid gap-4 sm:grid-cols-3 mt-8 mb-10">
+            {[
+              { step: '1', title: 'Capture signals', body: 'Save high-potential news, Reddit and market alerts into your feed.' },
+              { step: '2', title: 'Analyze ideas', body: 'Turn signals into Deep Dive plans with funding, pricing and next steps.' },
+              { step: '3', title: 'Execute launches', body: 'Manage progress, pitch assets, and launch momentum from one Pipeline.' },
+            ].map(card => (
+              <div key={card.step} className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-[10px] font-mono uppercase tracking-[0.35em] text-gray-400">Step {card.step}</span>
+                  <span className="text-[10px] font-semibold uppercase text-slate-600">Workflow</span>
+                </div>
+                <h2 className="text-lg font-semibold text-slate-900 mb-2">{card.title}</h2>
+                <p className="text-sm text-gray-500 leading-relaxed">{card.body}</p>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Tab switcher */}
@@ -368,8 +402,8 @@ export default function DashboardPage() {
               key={tab}
               type="button"
               onClick={() => setDashboardTab(tab)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                dashboardTab === tab ? 'bg-white text-black shadow-sm' : 'text-gray-500 hover:text-gray-700'
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${
+                dashboardTab === tab ? 'bg-gray-900 text-white' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
               }`}
             >
               {label}
@@ -746,6 +780,20 @@ export default function DashboardPage() {
               <p>The Pipeline is your execution engine. When you read the news feed and see a business opportunity you like, analyzing it generates a full "Deep Dive" business plan.</p>
               <p>Save that Deep Dive to this Pipeline to manage its lifecycle from idea to execution. It will automatically generate funding sources, cost estimates, and let you launch a real waitlist website.</p>
             </div>
+
+            <div className="grid gap-3 sm:grid-cols-3 mb-8">
+              {[
+                { title: 'Save signal', body: 'Capture the best idea from news, Reddit or your own notes.' },
+                { title: 'Analyze deeply', body: 'Transform it into a full business plan with runway, costs and growth steps.' },
+                { title: 'Launch fast', body: 'Use your saved opportunity to create landing pages, pitch decks and launch actions.' },
+              ].map(card => (
+                <div key={card.title} className="rounded-3xl border border-gray-200 bg-white p-4 text-sm text-gray-600 shadow-sm">
+                  <p className="text-xs uppercase tracking-[0.35em] font-bold text-gray-400 mb-2">{card.title}</p>
+                  <p>{card.body}</p>
+                </div>
+              ))}
+            </div>
+
             <Link href="/" className="inline-flex items-center gap-2 bg-foreground text-background px-8 py-4 rounded-2xl text-[11px] font-mono uppercase tracking-widest font-bold hover:bg-foreground/90 transition-all shadow-xl shadow-foreground/10">
               Go to News Feed <ArrowRight className="w-4 h-4" />
             </Link>
@@ -910,43 +958,35 @@ function KanbanCard({ opportunity, onStatusChange, isUpdating, selected, onSelec
   }[opp.priority] || 'bg-gray-400';
 
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
+    <div
       onClick={() => onSelect?.()}
-      className={`bg-white border p-6 rounded-2xl shadow-sm hover:shadow-xl hover:border-primary/20 transition-all duration-300 group relative overflow-hidden cursor-pointer ${
-        selected ? 'border-primary ring-1 ring-primary' : 'border-border/10'
+      className={`bg-white border border-gray-200 rounded-2xl p-5 space-y-4 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer ${
+        selected ? 'border-primary ring-1 ring-primary' : ''
       }`}
     >
-      {/* Checkbox */}
-      {onSelect && (
-        <div className="absolute top-6 left-6 z-10">
-           <div className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${
-            selected ? 'bg-primary border-primary text-white' : 'border-gray-200 bg-white group-hover:border-gray-400'
-          }`}>
-            {selected && <CheckSquare className="w-3.5 h-3.5" />}
-          </div>
-        </div>
-      )}
-      {/* Priority Strip */}
-      <div className={`absolute top-0 left-0 right-0 h-1 ${priorityColor} opacity-40`} />
+      {/* Top accent bar based on status */}
+      <div className={`h-1 rounded-full -mt-5 -mx-5 mb-4 rounded-t-2xl ${
+        opportunity.status === 'Launched' ? 'bg-green-400' : opportunity.status === 'In Progress' ? 'bg-blue-400' : 'bg-gray-200'
+      }`} />
 
-      {/* Header */}
-      <div className={`flex items-start justify-between mb-4 ${onSelect ? 'pl-10' : ''}`}>
-        <div className="flex-grow space-y-1">
-          <h3 className="font-serif italic font-bold text-base leading-tight group-hover:text-primary transition-colors">
-            {opp.name}
-          </h3>
-          <div className="flex items-center gap-2">
-            <span className="text-[9px] font-mono uppercase font-bold text-muted bg-gray-50 px-2 py-0.5 rounded border border-border/5">
-              Score: {Math.min(Math.round(opp.money_score || 0), 99)}
-            </span>
-          </div>
-        </div>
-        <GripVertical className="w-4 h-4 text-muted/20 group-hover:text-muted/50 transition-colors cursor-grab" />
+
+
+      {/* Score badge */}
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] font-mono font-bold text-gray-400 uppercase tracking-wider">
+          Score: {Math.min(opp.money_score || 0, 99)}
+        </span>
+        <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${
+          opportunity.status === 'Launched' ? 'bg-green-100 text-green-700' : opportunity.status === 'In Progress' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'
+        }`}>
+          {opportunity.status}
+        </span>
       </div>
+
+      {/* Name */}
+      <h3 className="text-sm font-bold text-gray-900 leading-snug">
+        {opp.name}
+      </h3>
 
       {/* Checklist Progress */}
       <div className="mb-4 space-y-2">
@@ -964,23 +1004,7 @@ function KanbanCard({ opportunity, onStatusChange, isUpdating, selected, onSelec
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        <div className="space-y-1 min-w-0">
-          <div className="flex items-center gap-1 text-muted">
-            <Coins className="w-3 h-3 flex-shrink-0" />
-            <p className="text-[8px] font-mono uppercase tracking-widest truncate">Cost</p>
-          </div>
-          <p className="text-xs font-bold font-mono truncate">{opportunity.marketMode ? (COUNTRY_CONTEXT[opportunity.marketMode]?.symbol || '$') : '$'}{opp.startup_cost.toLocaleString()}</p>
-        </div>
-        <div className="space-y-1">
-          <div className="flex items-center gap-1 text-muted">
-            <Target className="w-3 h-3" />
-            <p className="text-[8px] font-mono uppercase tracking-widest">Priority</p>
-          </div>
-          <p className="text-xs font-bold font-mono">{opp.priority}</p>
-        </div>
-      </div>
+
 
       {/* Action Buttons */}
       <div className="flex flex-col gap-2">
@@ -1046,7 +1070,7 @@ function KanbanCard({ opportunity, onStatusChange, isUpdating, selected, onSelec
           </AnimatePresence>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
 

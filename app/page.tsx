@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, getRedirectResult, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { auth } from '@/firebase';
 import dynamic from 'next/dynamic';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -18,7 +18,28 @@ export default function Home() {
   >('loading');
 
   useEffect(() => {
+    // Ensure redirect auth uses local persistence before checking the result.
+    setPersistence(auth, browserLocalPersistence)
+      .then(() => getRedirectResult(auth))
+      .then((result) => {
+        if (result?.user) {
+          console.log('Redirect sign-in successful:', result.user.email);
+        } else {
+          console.log('No redirect result found');
+        }
+      })
+      .catch((err: { code?: string }) => {
+        if (err?.code === 'auth/unauthorized-domain') {
+          console.error('Unauthorized domain for Firebase auth. Add this host to Firebase authorized domains.', window.location.hostname);
+        }
+        if (err?.code !== 'auth/cancelled-popup-request') {
+          console.error('Redirect auth error:', err);
+        }
+      });
+
+    // Then listen for auth state changes
     const unsubscribe = onAuthStateChanged(auth, user => {
+      console.log('Auth state changed:', user ? `authenticated (${user.email})` : 'unauthenticated');
       setAuthState(user ? 'authenticated' : 'unauthenticated');
     });
     return () => unsubscribe();

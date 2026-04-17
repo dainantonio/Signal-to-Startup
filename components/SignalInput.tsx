@@ -8,6 +8,7 @@ import { LOADING_STAGE_LABELS } from './agent/useAgentAnalysis';
 import { MarketModeSelector } from './MarketModeSelector';
 import { COUNTRY_CONTEXT } from '@/lib/rss-sources';
 import { auth, db, collection, addDoc } from '@/firebase';
+import WatchButton from './WatchButton';
 
 const capitalize = (s: string) => s.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 
@@ -46,6 +47,8 @@ interface SignalInputProps {
   countryTags: string[];
   setCountryTags: (tags: string[]) => void;
   selectedSectors?: string[];
+  user?: { uid: string; email?: string | null; displayName?: string | null } | null;
+  login?: () => void;
 }
 
 export const SignalInput: React.FC<SignalInputProps> = ({
@@ -56,6 +59,8 @@ export const SignalInput: React.FC<SignalInputProps> = ({
   countryTags, setCountryTags,
   selectedMode, setSelectedMode,
   selectedSectors = [],
+  user,
+  login,
 }) => {
   const [inputMode, setInputMode] = useState<'paste' | 'feed' | 'reddit'>('paste');
   const [pdfLoading, setPdfLoading] = useState(false);
@@ -582,8 +587,27 @@ export const SignalInput: React.FC<SignalInputProps> = ({
             </div>
           </details>
         </div>
-      ) : (
+      ) : inputMode === 'feed' ? (
         <div className="space-y-4">
+          {/* Welcome banner — non-signed-in users only */}
+          {!user && (
+            <div className="mb-6 p-5 bg-white border border-slate-200 rounded-2xl shadow-sm">
+              <h2 className="text-lg font-bold text-slate-900 mb-2 leading-tight">
+                Find your next business from today&apos;s news.
+              </h2>
+              <p className="text-sm text-slate-500 leading-relaxed mb-4">
+                We scan hundreds of signals daily and surface the ones worth building from — with a full plan, real costs, and funding sources for your market.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={login}
+                  className="flex-1 py-2.5 bg-slate-900 text-white rounded-xl text-sm font-semibold hover:bg-slate-700 transition-colors">
+                  Sign in to analyze
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Slim filter bar */}
           {inputMode === 'feed' ? (() => {
             const countryTag = countryTags[0] ?? '';
@@ -848,9 +872,7 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                       key={i}
                       layout
                       animate={{
-                        scale: isAnalyzing ? 1.04 : isOtherAnalyzing ? 0.96 : 1,
-                        opacity: isOtherAnalyzing ? 0.4 : 1,
-                        filter: isOtherAnalyzing ? 'blur(2px)' : 'blur(0px)',
+                        scale: isAnalyzing ? 1.04 : 1,
                         boxShadow: isSuccess
                           ? '0 0 0 2px #22c55e, 0 20px 60px rgba(34,197,94,0.2)'
                           : isAnalyzing
@@ -860,11 +882,11 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                           : '0 1px 3px rgba(0,0,0,0.08)',
                       }}
                       transition={{ duration: 0.3, ease: 'easeInOut' }}
-                      className={`relative bg-white border border-gray-200 rounded-2xl flex flex-col overflow-hidden ${
-                        isOtherAnalyzing ? 'pointer-events-none' : ''
-                      } ${isAnalyzing ? 'z-10 ring-2 ring-blue-400 ring-offset-2' : ''} ${
-                        multiSelectMode ? 'cursor-pointer' : ''
-                      } ${isSelected ? 'border-black bg-gray-50' : ''}`}
+                      className={`relative bg-white border rounded-2xl flex flex-col overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 ${
+                        isSelected ? 'ring-2 ring-slate-900 border-slate-900' : 'border-slate-200/60 hover:border-slate-300/60'
+                      } ${isOtherAnalyzing ? 'pointer-events-none opacity-40' : ''} ${
+                        isAnalyzing ? 'ring-2 ring-blue-400 ring-offset-2 z-10' : ''
+                      } ${multiSelectMode ? 'cursor-pointer' : ''}`}
                       onClick={() => {
                         if (!multiSelectMode) return;
                         setSelectedArticles(prev => {
@@ -925,29 +947,26 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                         </div>
                       ) : (
                         /* ── NORMAL STATE ── */
-                        <div className="p-5 flex flex-col gap-3">
-                          {/* Header row */}
-                          <div className="flex items-center gap-2 flex-wrap">
+                        <div className="p-4 flex flex-col gap-3 flex-1 min-w-0">
+                          {/* Meta row — no wrap, truncate long sources */}
+                          <div className="flex items-center gap-2 min-w-0">
                             {multiSelectMode && (
-                              <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${
+                              <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all flex-shrink-0 ${
                                 isSelected ? 'bg-black border-black' : 'border-gray-300'
                               }`}>
                                 {isSelected && <span className="text-white text-[10px]">✓</span>}
                               </div>
                             )}
-                            <span className="text-[9px] font-mono font-bold text-muted uppercase tracking-wider truncate">{sig.source}</span>
-                            <span className={`px-2 py-0.5 text-[9px] font-mono uppercase font-bold rounded-md ${cfg.badgeBg} ${cfg.badgeText}`}>{cfg.label}</span>
+                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wide truncate max-w-[90px] flex-shrink-0">
+                              {sig.source}
+                            </span>
+                            <span className={`px-2 py-0.5 text-[9px] font-mono uppercase font-bold rounded-md flex-shrink-0 ${cfg.badgeBg} ${cfg.badgeText}`}>{cfg.label}</span>
                             {sig.isLocalSource && (
-                              <span className="px-2 py-0.5 text-[9px] font-mono uppercase font-bold rounded-md bg-green-100 text-green-700">Local</span>
+                              <span className="px-1.5 py-0.5 text-[9px] font-mono uppercase font-bold rounded-md bg-blue-50 text-blue-700 flex-shrink-0">Local</span>
                             )}
-                            {sig.isGlobalMention && (
-                              <span className="px-2 py-0.5 text-[9px] font-mono uppercase font-bold rounded-md bg-blue-100 text-blue-700">Global mention</span>
-                            )}
-                            <div className="ml-auto flex items-center gap-1.5 flex-shrink-0">
-                              <SignalScoreBadge score={sig.signalScore} publishedAt={sig.publishedAt} />
-                              {sig.url && sig.url !== '#' && (
-                                <a href={sig.url} target="_blank" rel="noopener noreferrer" aria-label={`Read full article: ${sig.title}`} className="text-[9px] font-mono text-primary hover:underline" onClick={e => e.stopPropagation()}>↗</a>
-                              )}
+                            <div className="ml-auto flex-shrink-0 flex items-center gap-1 px-2 py-0.5 bg-amber-50 rounded-lg border border-amber-100">
+                              <span className="text-[9px] text-amber-500">⚡</span>
+                              <span className="text-[10px] font-bold font-mono text-amber-700">{Math.min(sig.signalScore || 0, 99)}</span>
                             </div>
                           </div>
                           {/* Title */}
@@ -1192,6 +1211,157 @@ export const SignalInput: React.FC<SignalInputProps> = ({
           </div>
           )}
 
+        </div>
+      ) : (
+        /* ── REDDIT SIGNALS ── */
+        <div className="space-y-4">
+          <div className="flex items-center justify-between px-1">
+            <p className="text-xs text-gray-500">
+              AI-analyzed Reddit posts — pain points, complaints &amp; workarounds turned into startup signals.
+            </p>
+            <button
+              type="button"
+              onClick={fetchRedditSignalsData}
+              disabled={fetchingReddit}
+              className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-900 transition-colors"
+            >
+              <RefreshCw className={`w-3 h-3 ${fetchingReddit ? 'animate-spin' : ''}`} />
+              Refresh
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {fetchingReddit
+              ? Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="bg-white border border-border/10 rounded-2xl p-5 space-y-3 animate-pulse">
+                    <div className="h-4 bg-gray-100 w-24 rounded"/>
+                    <div className="h-10 bg-gray-100 rounded"/>
+                    <div className="h-16 bg-gray-100 rounded"/>
+                    <div className="h-9 bg-gray-100 rounded-xl"/>
+                  </div>
+                ))
+              : redditSignals.length === 0
+              ? (
+                  <div className="col-span-2 text-center py-12 space-y-3">
+                    <div className="text-3xl">🟠</div>
+                    <p className="text-sm font-semibold text-gray-700">Reddit signals loading</p>
+                    <p className="text-xs text-gray-500 max-w-xs mx-auto">
+                      Fetching hot posts from r/smallbusiness, r/Entrepreneur and more. This takes a few seconds.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={fetchRedditSignalsData}
+                      className="text-xs font-medium text-orange-600 hover:text-orange-700 underline"
+                    >
+                      Try again
+                    </button>
+                  </div>
+                )
+              : redditSignals.map((sig, i) => {
+                  const meta = sig.redditMeta as { subreddit?: string; postType?: string; upvotes?: number; comments?: number; problem?: string; startupIdea?: string } | undefined;
+
+                  const problemText = (meta?.problem || '')
+                    .replace(/<[^>]+>/g, '').replace(/\[.*?\]/g, '').replace(/&amp;/g, '&').replace(/&#39;/g, "'").replace(/&quot;/g, '"').trim();
+                  const displayProblem = problemText.length > 30
+                    ? problemText.substring(0, 180)
+                    : (sig.snippet as string || '').replace(/<[^>]+>/g, '').substring(0, 180);
+
+                  return (
+                    <div key={i} className="bg-white border border-slate-200/60 rounded-2xl flex flex-col overflow-hidden shadow-sm hover:shadow-md hover:border-orange-200/60 transition-all duration-200">
+                      <div className="p-4 flex flex-col gap-3 flex-1">
+                        {/* Meta */}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-[9px] font-mono font-bold text-orange-400 uppercase tracking-wider">
+                            r/{meta?.subreddit}
+                          </span>
+                          {meta?.postType && meta.postType !== 'Signal' && meta.postType !== 'Raw' && (
+                            <span className="px-2 py-0.5 text-[9px] font-mono uppercase font-bold rounded-md bg-orange-50 text-orange-600">
+                              {meta.postType}
+                            </span>
+                          )}
+                          <div className="ml-auto flex items-center gap-1 px-2 py-0.5 bg-amber-50 border border-amber-200 rounded-lg">
+                            <span className="text-amber-500 text-[9px]">⚡</span>
+                            <span className="text-xs font-bold font-mono text-amber-700">{String(sig.signalScore ?? 0)}</span>
+                          </div>
+                        </div>
+
+                        {/* Title */}
+                        <h3 className="text-sm font-semibold text-gray-900 leading-snug line-clamp-2">
+                          {(String(sig.title ?? '')).replace(/&amp;/g, '&').replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/<[^>]+>/g, '')}
+                        </h3>
+
+                        {/* Problem */}
+                        {displayProblem.length > 30 && (
+                          <div className="bg-slate-50 border border-slate-100 rounded-xl p-3">
+                            <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">Problem identified</p>
+                            <p className="text-xs text-gray-700 leading-relaxed">{displayProblem}</p>
+                          </div>
+                        )}
+
+                        {/* Startup idea — hide placeholder text */}
+                        {meta?.startupIdea &&
+                          meta.startupIdea !== 'Click Deep Analysis' &&
+                          meta.startupIdea !== 'Click Deep Analysis for startup idea' && (
+                          <div className="bg-emerald-50 rounded-xl p-3">
+                            <p className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest mb-1">Startup opportunity</p>
+                            <p className="text-xs text-gray-700 leading-relaxed">{meta.startupIdea}</p>
+                          </div>
+                        )}
+
+                        {/* Engagement + time */}
+                        {(typeof sig.timeAgo === 'string' || (meta?.upvotes ?? 0) > 0 || (meta?.comments ?? 0) > 0) && (
+                          <div className="flex items-center gap-3 text-[10px] text-gray-400">
+                            {typeof sig.timeAgo === 'string' && sig.timeAgo && (
+                              <span>🕐 {sig.timeAgo}</span>
+                            )}
+                            {(meta?.upvotes ?? 0) > 0 && (
+                              <span>▲ {Number(meta?.upvotes ?? 0).toLocaleString()}</span>
+                            )}
+                            {(meta?.comments ?? 0) > 0 && (
+                              <span>💬 {Number(meta?.comments ?? 0).toLocaleString()}</span>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Actions */}
+                        {(() => {
+                          const isAnalyzingThisCard = analyzingUrl === String(sig.url ?? '');
+                          return (
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            disabled={!!analyzingUrl}
+                            onClick={() => {
+                              const signalText = [sig.title, meta?.problem || ''].filter(Boolean).join('. ');
+                              setInput(signalText as string);
+                              setAnalyzingUrl(String(sig.url ?? signalText));
+                              analyzeSignal(signalText as string);
+                            }}
+                            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-gray-900 text-white rounded-xl text-xs font-semibold hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          >
+                            {isAnalyzingThisCard ? (
+                              <><Loader2 className="w-3 h-3 animate-spin" /> Analyzing...</>
+                            ) : (
+                              '⚡ Analyze'
+                            )}
+                          </button>
+                          <a
+                            href={String(sig.url ?? '#')}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-3 py-2.5 rounded-xl border border-gray-200 text-xs text-gray-500 hover:border-gray-400 transition-colors flex items-center"
+                          >
+                            View Post
+                          </a>
+                        </div>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                  );
+                })
+            }
+          </div>
         </div>
       )}
 
