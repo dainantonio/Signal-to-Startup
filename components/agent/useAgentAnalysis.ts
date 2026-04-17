@@ -985,34 +985,26 @@ Return ONLY valid JSON in this exact structure:
 
   // Generate deep dive — wraps deepDiveOpportunity with state management
   const generateDeepDive = async (opportunity: Opportunity) => {
-    setSelectedOpportunity(opportunity);
-    setDeepDiveResult(null);
-    setDeepDiveLoading(true);
-    setActiveDeepDiveTab('plan');
+    setSelectedOpportunity(opportunity)
+    setDeepDiveResult(null)
+    setDeepDiveLoading(true)
+    setActiveDeepDiveTab('plan')
 
-    // Use result context when input is empty (e.g. after analyzing from feed cards)
     const context = input.trim()
       || result?.trend
       || result?.summary
       || opportunity.name
-      || opportunity.description
-      || '';
-
-    console.log('[DEEP DIVE] opportunity:', opportunity.name);
-    console.log('[DEEP DIVE] context length:', context.length);
+      || ''
 
     try {
-      const ddResult = await deepDiveOpportunity(opportunity, context);
+      const ddResult = await deepDiveOpportunity(opportunity, context)
       if (ddResult) {
-        setDeepDiveResult(ddResult);
-        console.log('[DEEP DIVE] success');
-      } else {
-        console.error('[DEEP DIVE] null result');
+        setDeepDiveResult(ddResult)
       }
     } catch (err) {
-      console.error('[DEEP DIVE] error:', err);
+      console.error('[DEEP DIVE] error:', err)
     } finally {
-      setDeepDiveLoading(false);
+      setDeepDiveLoading(false)
     }
   };
 

@@ -24,6 +24,10 @@ import { ResultsDashboard } from '../ResultsDashboard';
 import { DeepDiveModal } from '../DeepDiveModal';
 import Onboarding from '../Onboarding';
 import { PipelineProgress } from '../PipelineProgress';
+import Logo from '../Logo';
+import LeftSidebar from '../LeftSidebar';
+import NotificationBell from '../NotificationBell';
+import SignalGuide from '../SignalGuide';
 import { Search, BarChart3, Target, Rocket } from 'lucide-react';
 import { 
   auth, 
@@ -173,6 +177,10 @@ export default function TrendIntelligenceAgent() {
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedMode, setSelectedMode] = useState<MarketMode>('global');
   const [countryTags, setCountryTags] = useState<string[]>([]);
+  const [selectedSectors, setSelectedSectors] = useState<string[]>([]);
+  const toggleSector = useCallback((s: string) => {
+    setSelectedSectors(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
+  }, []);
 
   // Firebase Auth Listener
   useEffect(() => {
@@ -520,292 +528,302 @@ export default function TrendIntelligenceAgent() {
   };
 
   return (
-    <div className="min-h-screen bg-[#E4E3E0] text-[#141414] p-4 md:p-8 font-sans">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <header className="mb-12 border-b border-[#141414] pb-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
-          <div>
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tighter uppercase italic font-serif">
-              Signal to Startup
-            </h1>
-            <p className="text-sm uppercase tracking-widest opacity-60 mt-2">
-              Turn news, policy, and market signals into actionable, low-cost business opportunities.
-            </p>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 text-xs font-mono bg-[#141414] text-[#E4E3E0] px-3 py-1 rounded-full">
-              <Globe className="w-3 h-3" />
-              LIVE FEED ACTIVE
-            </div>
-            
-            {user ? (
-              <div className="flex items-center gap-3">
-                <button 
-                  onClick={() => setShowHistory(!showHistory)}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-white border border-[#141414] hover:bg-gray-50 transition-all shadow-[2px_2px_0px_0px_rgba(20,20,20,1)] relative group"
-                  title="History"
-                >
-                  <History className="w-4 h-4" />
-                  <span className="text-[10px] font-mono uppercase font-bold">History ({history.length})</span>
-                </button>
-                <Link
-                  href="/dashboard"
-                  className="flex items-center gap-2 px-3 py-1.5 bg-white border border-[#141414] hover:bg-gray-50 transition-all shadow-[2px_2px_0px_0px_rgba(20,20,20,1)]"
-                  title="Your Pipeline"
-                >
-                  <LayoutDashboard className="w-4 h-4" />
-                  <span className="text-[10px] font-mono uppercase font-bold">Pipeline</span>
-                </Link>
-                <div className="flex items-center gap-2 bg-white border border-[#141414] px-3 py-1 shadow-[2px_2px_0px_0px_rgba(20,20,20,1)]">
-                  <UserIcon className="w-3 h-3" />
-                  <span className="text-[10px] font-mono uppercase font-bold">{user.displayName?.split(' ')[0]}</span>
-                  <button onClick={logout} className="ml-2 hover:text-red-500">
-                    <LogOut className="w-3 h-3" />
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center gap-3">
-                <button 
-                  onClick={() => setShowHistory(!showHistory)}
-                  className="p-2 hover:bg-[#141414]/5 rounded-full transition-colors"
-                  title="History"
-                >
-                  <History className="w-5 h-5" />
-                </button>
-                <button 
-                  onClick={login}
-                  className="flex items-center gap-2 bg-[#141414] text-[#E4E3E0] px-4 py-2 text-[10px] font-mono uppercase tracking-widest hover:bg-[#333] transition-all shadow-[4px_4px_0px_0px_rgba(20,20,20,0.2)]"
-                >
-                  <LogIn className="w-3 h-3" />
-                  Login to Save
-                </button>
-              </div>
-            )}
-          </div>
-        </header>
+    <div style={{display:'flex', flexDirection:'column', minHeight:'100vh', background:'#f8fafc'}}>
 
-        {/* History Panel */}
-        <AnimatePresence>
-          {showHistory && (
-            <>
-              {/* Backdrop */}
-              <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setShowHistory(false)}
-                className="fixed inset-0 bg-[#141414]/40 backdrop-blur-sm z-50"
-              />
-              
-              {/* Sidebar / Bottom Sheet */}
-              <motion.div
-                initial={{ x: '100%' }}
-                animate={{ x: 0 }}
-                exit={{ x: '100%' }}
-                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                className="fixed right-0 top-0 bottom-0 w-full md:w-80 bg-[#E4E3E0] border-l-2 border-[#141414] z-50 flex flex-col shadow-[-10px_0px_30px_rgba(0,0,0,0.1)]"
-              >
-                <div className="p-6 border-b border-[#141414] flex items-center justify-between bg-white">
-                  <h3 className="text-sm font-mono uppercase font-bold tracking-widest">Intelligence History</h3>
-                  <button 
-                    onClick={() => setShowHistory(false)} 
-                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-                
-                <div className="flex-grow overflow-y-auto p-4 space-y-3">
-                  {!user ? (
-                    <div className="bg-white border-2 border-[#141414] p-6 text-center space-y-4 shadow-[4px_4px_0px_0px_rgba(20,20,20,1)]">
-                      <div className="w-12 h-12 bg-indigo-50 rounded-full flex items-center justify-center mx-auto">
-                        <LogIn className="w-6 h-6 text-indigo-600" />
+      {/* ── History overlay (fixed, outside flex body) ── */}
+      <AnimatePresence>
+        {showHistory && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowHistory(false)}
+              style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.3)', backdropFilter:'blur(4px)', zIndex:60}}
+            />
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              style={{position:'fixed', right:0, top:0, bottom:0, width:'320px', background:'white', borderLeft:'1px solid #e2e8f0', zIndex:61, display:'flex', flexDirection:'column', boxShadow:'-8px 0 24px rgba(0,0,0,0.08)'}}
+            >
+              <div style={{padding:'16px 20px', borderBottom:'1px solid #f1f5f9', display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+                <h3 style={{fontSize:'11px', fontWeight:700, textTransform:'uppercase', letterSpacing:'2px', color:'#475569'}}>History</h3>
+                <button onClick={() => setShowHistory(false)} style={{padding:'4px', borderRadius:'6px', color:'#94a3b8', cursor:'pointer', background:'none', border:'none'}}>
+                  <X size={16} />
+                </button>
+              </div>
+              <div style={{flexGrow:1, overflowY:'auto', padding:'12px'}}>
+                {!user ? (
+                  <div style={{textAlign:'center', padding:'32px 16px'}}>
+                    <LogIn size={32} style={{margin:'0 auto 12px', color:'#94a3b8'}} />
+                    <p style={{fontSize:'13px', color:'#64748b', marginBottom:'12px'}}>Sign in to save history</p>
+                    <button onClick={login} style={{width:'100%', padding:'10px', background:'#0f172a', color:'white', borderRadius:'10px', fontSize:'12px', fontWeight:600, cursor:'pointer', border:'none'}}>
+                      Sign in with Google
+                    </button>
+                  </div>
+                ) : history.length > 0 ? (
+                  history.map((item) => (
+                    <div
+                      key={item.id}
+                      style={{padding:'12px', borderRadius:'10px', border:'1px solid #f1f5f9', marginBottom:'8px', cursor:'pointer', background:'white'}}
+                      onClick={() => { setResult(item); if (item.marketMode) setSelectedMode(item.marketMode); setShowHistory(false); }}
+                    >
+                      <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'4px'}}>
+                        <span style={{fontSize:'9px', fontWeight:700, color:'#6366f1', textTransform:'uppercase', letterSpacing:'1px'}}>
+                          {item.createdAt ? new Date(item.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Unknown'}
+                        </span>
+                        <button onClick={(e) => { e.stopPropagation(); deleteAnalysis(item.id); }} style={{background:'none', border:'none', cursor:'pointer', color:'#94a3b8', padding:'2px'}}>
+                          <Trash2 size={12} />
+                        </button>
                       </div>
-                      <div className="space-y-2">
-                        <p className="font-serif italic text-lg">Sign in to save history</p>
-                        <p className="text-[10px] font-mono uppercase opacity-50">Keep track of your market signals and execution plans across sessions.</p>
-                      </div>
-                      <button 
-                        onClick={login}
-                        className="w-full flex items-center justify-center gap-2 bg-[#141414] text-[#E4E3E0] px-4 py-3 text-[10px] font-mono uppercase tracking-widest hover:bg-[#333] transition-all"
-                      >
-                        <Globe className="w-3 h-3" />
-                        Sign in with Google
-                      </button>
+                      <p style={{fontSize:'12px', fontWeight:600, color:'#1e293b', lineHeight:1.4, display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden'}}>
+                        {item.trend}
+                      </p>
                     </div>
-                  ) : history.length > 0 ? (
-                    history.map((item) => (
-                      <div 
-                        key={item.id} 
-                        className="group relative bg-white border border-[#141414] p-4 hover:shadow-[4px_4px_0px_0px_rgba(20,20,20,1)] transition-all cursor-pointer" 
-                        onClick={() => {
-                          setResult(item);
-                          if (item.marketMode) {
-                            setSelectedMode(item.marketMode);
-                          }
-                          setShowHistory(false);
-                          window.scrollTo({ top: 0, behavior: 'smooth' });
-                        }}
-                      >
-                        <div className="flex justify-between items-start mb-2">
-                          <div className="flex items-center gap-2">
-                            <span className="text-[9px] font-mono uppercase font-bold text-indigo-600">
-                              {item.createdAt ? new Date(item.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Unknown'}
-                            </span>
-                            {item.marketMode && (
-                              <span className="text-xs" title={marketModeConfigs[item.marketMode].label}>
-                                {marketModeConfigs[item.marketMode].flag}
-                              </span>
-                            )}
-                          </div>
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              deleteAnalysis(item.id);
-                            }}
-                            className="text-gray-400 hover:text-red-500 transition-colors"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                        <h4 className="text-xs font-serif italic font-bold leading-tight line-clamp-2">
-                          {item.trend.length > 60 ? `${item.trend.substring(0, 60)}...` : item.trend}
-                        </h4>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-20 opacity-30">
-                      <History className="w-12 h-12 mx-auto mb-4 opacity-20" />
-                      <p className="text-[10px] font-mono uppercase tracking-widest">No intelligence logs found</p>
-                    </div>
-                  )}
-                </div>
-                
-                {user && (
-                  <div className="p-4 border-t border-[#141414] bg-white">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-xs">
-                        {user.displayName?.[0] || 'U'}
-                      </div>
-                      <div className="flex-grow">
-                        <p className="text-[10px] font-mono uppercase font-bold leading-none">{user.displayName}</p>
-                        <p className="text-[8px] font-mono opacity-40 truncate">{user.email}</p>
-                      </div>
-                      <button onClick={logout} className="p-2 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-full transition-colors">
-                        <LogOut className="w-4 h-4" />
-                      </button>
-                    </div>
+                  ))
+                ) : (
+                  <div style={{textAlign:'center', padding:'40px 16px', color:'#94a3b8'}}>
+                    <History size={32} style={{margin:'0 auto 8px', opacity:0.4}} />
+                    <p style={{fontSize:'11px'}}>No history yet</p>
                   </div>
                 )}
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
-
-        {result && (
-          <PipelineProgress currentStep={currentStep} steps={pipelineSteps} />
+              </div>
+              {user && (
+                <div style={{padding:'12px 16px', borderTop:'1px solid #f1f5f9', display:'flex', alignItems:'center', gap:'10px'}}>
+                  <div style={{width:'32px', height:'32px', borderRadius:'50%', background:'#e0e7ff', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'13px', fontWeight:700, color:'#4f46e5', flexShrink:0}}>
+                    {user.displayName?.[0] || 'U'}
+                  </div>
+                  <div style={{flex:1, minWidth:0}}>
+                    <p style={{fontSize:'11px', fontWeight:600, color:'#1e293b', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>{user.displayName}</p>
+                    <p style={{fontSize:'9px', color:'#94a3b8', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>{user.email}</p>
+                  </div>
+                  <button onClick={logout} style={{background:'none', border:'none', cursor:'pointer', color:'#94a3b8', padding:'4px'}}>
+                    <LogOut size={14} />
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          </>
         )}
+      </AnimatePresence>
 
-        <SignalInput
-          input={input}
-          setInput={setInput}
-          urlInput={urlInput}
-          setUrlInput={setUrlInput}
-          fetchingUrl={fetchingUrl}
-          fetchUrl={fetchUrl}
-          location={location}
-          setLocation={setLocation}
-          focus={focus}
-          setFocus={setFocus}
-          loading={loading}
-          result={result}
-          analyzeSignal={analyzeSignal}
-          analyzeCompoundSignal={() => {}}
-          cancelAnalysis={() => {}}
-          selectedMode={selectedMode}
-          setSelectedMode={setSelectedMode}
-          countryTags={countryTags}
-          setCountryTags={setCountryTags}
-          user={user}
-          login={login}
-        />
-
-        {/* Results Section */}
-        <AnimatePresence mode="wait">
-          {error && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-8 font-mono text-sm"
+      {/* ── Header ── */}
+      <header style={{position:'sticky', top:0, zIndex:50, height:'52px', background:'white', borderBottom:'1px solid #f1f5f9', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 16px', flexShrink:0}}>
+        <Logo size="sm" showWordmark showSubbrand={false} theme="light" />
+        <div style={{display:'flex', alignItems:'center', gap:'8px'}}>
+          <NotificationBell />
+          <button
+            onClick={() => setShowHistory(!showHistory)}
+            style={{display:'flex', alignItems:'center', gap:'6px', padding:'6px 10px', borderRadius:'8px', border:'1px solid #e2e8f0', background:'white', cursor:'pointer', fontSize:'11px', fontWeight:600, color:'#475569'}}
+          >
+            <History size={14} />
+            <span className="hidden sm:inline">History</span>
+            {history.length > 0 && (
+              <span style={{background:'#6366f1', color:'white', borderRadius:'999px', fontSize:'9px', fontWeight:700, padding:'1px 5px'}}>{history.length}</span>
+            )}
+          </button>
+          {user ? (
+            <div style={{display:'flex', alignItems:'center', gap:'8px'}}>
+              <Link href="/dashboard" style={{display:'flex', alignItems:'center', gap:'6px', padding:'6px 10px', borderRadius:'8px', border:'1px solid #e2e8f0', background:'white', textDecoration:'none', fontSize:'11px', fontWeight:600, color:'#475569'}}>
+                <LayoutDashboard size={14} />
+                <span className="hidden sm:inline">Pipeline</span>
+              </Link>
+              <button
+                onClick={logout}
+                style={{display:'flex', alignItems:'center', gap:'6px', padding:'6px 10px', borderRadius:'8px', border:'1px solid #e2e8f0', background:'white', cursor:'pointer', fontSize:'11px', fontWeight:600, color:'#475569'}}
+                title={user.displayName || 'Signed in'}
+              >
+                <div style={{width:'22px', height:'22px', borderRadius:'50%', background:'#e0e7ff', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'11px', fontWeight:700, color:'#4f46e5'}}>
+                  {user.displayName?.[0] || 'U'}
+                </div>
+                <LogOut size={12} />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={login}
+              style={{display:'flex', alignItems:'center', gap:'6px', padding:'7px 14px', borderRadius:'8px', background:'#0f172a', color:'white', cursor:'pointer', fontSize:'11px', fontWeight:600, border:'none'}}
             >
-              {error}
-            </motion.div>
+              <LogIn size={13} />
+              Sign in
+            </button>
           )}
+        </div>
+      </header>
 
-          {!result && !loading && !error && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.5 }}
-            >
-              <Onboarding onComplete={() => {}} />
-            </motion.div>
-          )}
+      {/* ── Body row ── */}
+      <div style={{display:'flex', flex:1, overflow:'hidden'}}>
+
+        {/* Left sidebar */}
+        <div
+          style={{width:'220px', flexShrink:0, background:'white', borderRight:'1px solid #f1f5f9', overflowY:'auto'}}
+          className="hidden md:flex flex-col"
+        >
+          <LeftSidebar
+            selectedMode={selectedMode}
+            setSelectedMode={setSelectedMode}
+            selectedSectors={selectedSectors}
+            toggleSector={toggleSector}
+            onValidate={() => {}}
+            onDashboard={() => { window.location.href = '/dashboard'; }}
+            watchlistCount={0}
+          />
+        </div>
+
+        {/* Main content */}
+        <div style={{flex:1, overflowY:'auto', overflowX:'hidden', background:'#f8fafc'}}>
+          <div style={{maxWidth:'896px', margin:'0 auto', padding:'24px 16px 96px'}}>
+
+            {result && <PipelineProgress currentStep={currentStep} steps={pipelineSteps} />}
+
+            <SignalInput
+              input={input}
+              setInput={setInput}
+              urlInput={urlInput}
+              setUrlInput={setUrlInput}
+              fetchingUrl={fetchingUrl}
+              fetchUrl={fetchUrl}
+              location={location}
+              setLocation={setLocation}
+              focus={focus}
+              setFocus={setFocus}
+              loading={loading}
+              result={result}
+              analyzeSignal={analyzeSignal}
+              analyzeCompoundSignal={() => {}}
+              cancelAnalysis={() => {}}
+              selectedMode={selectedMode}
+              setSelectedMode={setSelectedMode}
+              countryTags={countryTags}
+              setCountryTags={setCountryTags}
+              user={user}
+              login={login}
+            />
+
+            {/* Results */}
+            <AnimatePresence mode="wait">
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  style={{background:'#fee2e2', border:'1px solid #fca5a5', color:'#dc2626', padding:'12px 16px', borderRadius:'10px', marginBottom:'24px', fontSize:'13px'}}
+                >
+                  {error}
+                </motion.div>
+              )}
+
+              {!result && !loading && !error && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <Onboarding onComplete={() => {}} />
+                </motion.div>
+              )}
+
+              {result && (
+                <ResultsDashboard
+                  result={result}
+                  filteredOpportunities={filteredOpportunities}
+                  filterType={filterType}
+                  setFilterType={setFilterType}
+                  grantOnly={grantOnly}
+                  setGrantOnly={setGrantOnly}
+                  generateDeepDive={generateDeepDive}
+                  shareOnTwitter={shareOnTwitter}
+                  shareOnLinkedIn={shareOnLinkedIn}
+                />
+              )}
+            </AnimatePresence>
+
+            {/* Deep dive modal */}
+            <AnimatePresence>
+              {selectedOpportunity && (
+                <DeepDiveModal
+                  selectedOpportunity={selectedOpportunity}
+                  setSelectedOpportunity={setSelectedOpportunity}
+                  cancelDeepDive={() => { setSelectedOpportunity(null); setDeepDiveResult(null); }}
+                  deepDiveLoading={deepDiveLoading}
+                  deepDiveResult={deepDiveResult}
+                  activeDeepDiveTab={activeDeepDiveTab}
+                  setActiveDeepDiveTab={setActiveDeepDiveTab}
+                  generateDeepDive={generateDeepDive}
+                  copyToClipboard={copyToClipboard}
+                  copied={copied}
+                  selectedMode={selectedMode}
+                />
+              )}
+            </AnimatePresence>
+
+          </div>
+        </div>
+
+        {/* Right panel */}
+        <div
+          style={{width:'240px', flexShrink:0, background:'white', borderLeft:'1px solid #f1f5f9', overflowY:'auto', padding:'16px 12px'}}
+          className="hidden md:block"
+        >
+          <p style={{fontSize:'9px', fontWeight:700, color:'#94a3b8', letterSpacing:'2px', textTransform:'uppercase', marginBottom:'12px'}}>Agent Status</p>
+          {[
+            { icon:'📡', label:'Signal Feed', status:'Live', color:'#10b981' },
+            { icon:'🤖', label:'AI Analysis', status:'Ready', color:'#6366f1' },
+            { icon:'🌎', label:'Market Intel', status:'Active', color:'#f59e0b' },
+            { icon:'💡', label:'Opportunity Engine', status:'Online', color:'#10b981' },
+          ].map((row, i) => (
+            <div key={i} style={{display:'flex', alignItems:'center', gap:'8px', padding:'8px', borderRadius:'8px', marginBottom:'4px', background:'#f8fafc'}}>
+              <span style={{fontSize:'14px'}}>{row.icon}</span>
+              <div style={{flex:1, minWidth:0}}>
+                <p style={{fontSize:'10px', fontWeight:600, color:'#475569', lineHeight:1.2}}>{row.label}</p>
+              </div>
+              <span style={{fontSize:'8px', fontWeight:700, color:row.color, textTransform:'uppercase', letterSpacing:'0.5px'}}>{row.status}</span>
+            </div>
+          ))}
 
           {result && (
-            <ResultsDashboard 
-              result={result}
-              filteredOpportunities={filteredOpportunities}
-              filterType={filterType}
-              setFilterType={setFilterType}
-              grantOnly={grantOnly}
-              setGrantOnly={setGrantOnly}
-              generateDeepDive={generateDeepDive}
-              shareOnTwitter={shareOnTwitter}
-              shareOnLinkedIn={shareOnLinkedIn}
-            />
+            <>
+              <div style={{height:'1px', background:'#f1f5f9', margin:'16px 0'}} />
+              <p style={{fontSize:'9px', fontWeight:700, color:'#94a3b8', letterSpacing:'2px', textTransform:'uppercase', marginBottom:'8px'}}>Last Analysis</p>
+              <p style={{fontSize:'11px', color:'#475569', lineHeight:1.5, display:'-webkit-box', WebkitLineClamp:4, WebkitBoxOrient:'vertical', overflow:'hidden'}}>
+                {result.trend}
+              </p>
+              <p style={{fontSize:'9px', color:'#94a3b8', marginTop:'6px'}}>{result.opportunities?.length ?? 0} opportunities found</p>
+            </>
           )}
-        </AnimatePresence>
+        </div>
 
-        <AnimatePresence>
-          {selectedOpportunity && (
-        <DeepDiveModal
-          selectedOpportunity={selectedOpportunity}
-          setSelectedOpportunity={setSelectedOpportunity}
-          cancelDeepDive={() => { setSelectedOpportunity(null); setDeepDiveResult(null); }}
-          deepDiveLoading={deepDiveLoading}
-          deepDiveResult={deepDiveResult}
-          activeDeepDiveTab={activeDeepDiveTab}
-          setActiveDeepDiveTab={setActiveDeepDiveTab}
-          generateDeepDive={generateDeepDive}
-          copyToClipboard={copyToClipboard}
-          copied={copied}
-          selectedMode={selectedMode}
-        />
-          )}
-        </AnimatePresence>
-
-        {/* Footer Info */}
-        {!result && !loading && (
-          <footer className="mt-24 border-t border-[#141414] pt-8 grid grid-cols-1 md:grid-cols-3 gap-8 opacity-40">
-            <div>
-              <p className="text-[10px] font-mono uppercase tracking-widest mb-2">System Status</p>
-              <p className="text-xs">All intelligence modules operational. Monitoring global signals 24/7.</p>
-            </div>
-            <div>
-              <p className="text-[10px] font-mono uppercase tracking-widest mb-2">Methodology</p>
-              <p className="text-xs">First-principles thinking applied to market inefficiencies and regulatory shifts.</p>
-            </div>
-            <div>
-              <p className="text-[10px] font-mono uppercase tracking-widest mb-2">Disclaimer</p>
-              <p className="text-xs">Analysis is for informational purposes. Execution risk is inherent in all ventures.</p>
-            </div>
-          </footer>
-        )}
       </div>
+
+      {/* ── Mobile bottom nav ── */}
+      <nav style={{position:'fixed', bottom:0, left:0, right:0, zIndex:50, background:'white', borderTop:'1px solid #f1f5f9', alignItems:'center'}} className="flex md:hidden">
+        {[
+          { icon:'📰', label:'Feed', action: () => {} },
+          { icon:'✏️', label:'Paste', action: () => {} },
+          { icon:'👽', label:'Reddit', action: () => {} },
+          { icon:'📊', label:'Dashboard', action: () => { window.location.href = '/dashboard'; } },
+        ].map((item, i) => (
+          <button
+            key={i}
+            onClick={item.action}
+            style={{flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'8px 0', background:'none', border:'none', cursor:'pointer', gap:'2px'}}
+          >
+            <span style={{fontSize:'18px'}}>{item.icon}</span>
+            <span style={{fontSize:'9px', fontWeight:500, color:'#64748b'}}>{item.label}</span>
+          </button>
+        ))}
+      </nav>
+
+      {/* ── SignalGuide ── */}
+      <SignalGuide
+        currentResult={result}
+        selectedMode={selectedMode}
+        lastAction={result ? 'analyzed' : 'idle'}
+      />
+
     </div>
   );
 }
