@@ -46,7 +46,7 @@ export default function WatchButton({ article }: WatchButtonProps) {
 
   if (added) {
     return (
-      <span className="flex items-center gap-1 px-3 py-2 text-xs font-medium text-amber-700 bg-amber-50 rounded-xl border border-amber-200">
+      <span className="inline-flex items-center justify-center px-3 py-2 rounded-xl border border-amber-200 text-xs font-semibold text-amber-700 bg-amber-50 whitespace-nowrap shadow-sm">
         Watching ✓
       </span>
     );
@@ -60,13 +60,13 @@ export default function WatchButton({ article }: WatchButtonProps) {
           e.stopPropagation();
           setShowMenu(!showMenu);
         }}
-        className="flex items-center gap-1 px-3 py-2 rounded-xl border border-gray-200 text-xs font-medium text-gray-500 hover:border-amber-400 hover:text-amber-600 bg-white transition-all"
+        className="inline-flex items-center justify-center min-h-10 px-3 py-2 rounded-xl border border-gray-200 text-xs font-semibold text-gray-600 hover:border-amber-400 hover:text-amber-700 bg-white transition-all whitespace-nowrap shadow-sm hover:shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
       >
         Watch
       </button>
 
       {showMenu && (
-        <div className="absolute bottom-full right-0 mb-2 w-44 bg-white border border-gray-200 rounded-xl shadow-xl p-2 z-50">
+        <div className="absolute bottom-full right-0 mb-2 w-48 max-w-[85vw] bg-white border border-gray-200 rounded-2xl shadow-xl p-2 z-50">
           <p className="text-xs font-semibold text-gray-600 px-2 py-1.5">Watch for how long?</p>
           {[3, 5, 7, 14].map(days => (
             <button
@@ -76,7 +76,7 @@ export default function WatchButton({ article }: WatchButtonProps) {
                 e.stopPropagation();
                 watch(days);
               }}
-              className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-amber-50 hover:text-amber-700 rounded-lg transition-colors flex items-center justify-between"
+              className="w-full text-left px-3 py-2.5 text-xs text-gray-700 hover:bg-amber-50 hover:text-amber-700 rounded-xl transition-colors flex items-center justify-between"
             >
               <span>{days} days</span>
               {days === 7 && (
