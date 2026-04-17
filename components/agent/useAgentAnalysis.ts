@@ -834,12 +834,17 @@ Return ONLY valid JSON in this exact structure:
     const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
     if (!apiKey) return null;
 
+    let signalTextToUse = signalText;
+    if (!signalTextToUse || signalTextToUse.length < 20) {
+      signalTextToUse = opportunity.name + '. ' + (opportunity.description || '');
+    }
+
     try {
       const genAI = new GoogleGenAI({ apiKey });
 
       const prompt = `
         You are a business consultant helping an entrepreneur launch a new business.
-        SIGNAL: ${signalText}
+        SIGNAL: ${signalTextToUse}
         BUSINESS IDEA: ${opportunity.name}
         DESCRIPTION: ${opportunity.description}
         TARGET CUSTOMER: ${opportunity.target_customer}
@@ -980,23 +985,34 @@ Return ONLY valid JSON in this exact structure:
 
   // Generate deep dive — wraps deepDiveOpportunity with state management
   const generateDeepDive = async (opportunity: Opportunity) => {
-    console.log('[DEEP DIVE] triggered for:', opportunity.name);
     setSelectedOpportunity(opportunity);
     setDeepDiveResult(null);
     setDeepDiveLoading(true);
     setActiveDeepDiveTab('plan');
 
-    // Use result trend/summary as context when input is empty (e.g. after feed analysis)
-    const context = input.trim() || result?.trend || result?.summary || opportunity.name;
-    console.log('[DEEP DIVE] Starting for:', opportunity.name, 'context length:', context.length);
+    // Use result context when input is empty (e.g. after analyzing from feed cards)
+    const context = input.trim()
+      || result?.trend
+      || result?.summary
+      || opportunity.name
+      || opportunity.description
+      || '';
 
-    const ddResult = await deepDiveOpportunity(opportunity, context);
-    setDeepDiveLoading(false);
-    if (ddResult) {
-      setDeepDiveResult(ddResult);
-      console.log('[DEEP DIVE] Complete, tabs:', Object.keys(ddResult).join(', '));
-    } else {
-      console.error('[DEEP DIVE] No result returned');
+    console.log('[DEEP DIVE] opportunity:', opportunity.name);
+    console.log('[DEEP DIVE] context length:', context.length);
+
+    try {
+      const ddResult = await deepDiveOpportunity(opportunity, context);
+      if (ddResult) {
+        setDeepDiveResult(ddResult);
+        console.log('[DEEP DIVE] success');
+      } else {
+        console.error('[DEEP DIVE] null result');
+      }
+    } catch (err) {
+      console.error('[DEEP DIVE] error:', err);
+    } finally {
+      setDeepDiveLoading(false);
     }
   };
 

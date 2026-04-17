@@ -1193,14 +1193,16 @@ export const SignalInput: React.FC<SignalInputProps> = ({
 
                         {/* Title */}
                         <h3 className="text-sm font-semibold text-gray-900 leading-snug line-clamp-2">
-                          {(String(sig.title ?? '')).replace(/&amp;/g, '&').replace(/&#39;/g, "'").replace(/<[^>]+>/g, '')}
+                          {(String(sig.title ?? '')).replace(/&amp;/g, '&').replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/<[^>]+>/g, '')}
                         </h3>
 
                         {/* Problem */}
-                        <div className="bg-slate-50 border border-slate-100 rounded-xl p-3">
-                          <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">Problem identified</p>
-                          <p className="text-xs text-gray-700 leading-relaxed">{displayProblem}</p>
-                        </div>
+                        {displayProblem.length > 30 && (
+                          <div className="bg-slate-50 border border-slate-100 rounded-xl p-3">
+                            <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">Problem identified</p>
+                            <p className="text-xs text-gray-700 leading-relaxed">{displayProblem}</p>
+                          </div>
+                        )}
 
                         {/* Startup idea — hide placeholder text */}
                         {meta?.startupIdea &&

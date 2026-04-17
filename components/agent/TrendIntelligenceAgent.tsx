@@ -441,7 +441,7 @@ export default function TrendIntelligenceAgent() {
       <div className="min-h-screen bg-gray-50 selection:bg-primary/20 md:ml-[220px] md:mr-[260px]">
 
       {/* ── Compact header ── */}
-      <header className="sticky top-0 z-50 h-[52px] bg-white border-b border-gray-100 flex items-center justify-between px-4 md:px-5 md:ml-[220px] md:mr-[260px]">
+      <header className="sticky top-0 z-50 h-[52px] bg-white border-b border-gray-100 flex items-center justify-between px-4 md:px-5">
         <Logo size="sm" showWordmark showSubbrand={false} theme="light" />
         <div className="flex items-center gap-2">
           <NotificationBell />
