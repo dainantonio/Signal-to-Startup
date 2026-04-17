@@ -17,13 +17,13 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Link from 'next/link';
-import { Opportunity, AnalysisResult, DeepDiveResult, MarketMode } from './types';
-import { SignalInput } from './SignalInput';
-import { marketModeConfigs } from './MarketModeSelector';
-import { ResultsDashboard } from './ResultsDashboard';
-import { DeepDiveModal } from './DeepDiveModal';
-import { Onboarding } from './Onboarding';
-import { PipelineProgress } from './PipelineProgress';
+import { Opportunity, AnalysisResult, DeepDiveResult, MarketMode } from '../types';
+import { SignalInput } from '../SignalInput';
+import { marketModeConfigs } from '../MarketModeSelector';
+import { ResultsDashboard } from '../ResultsDashboard';
+import { DeepDiveModal } from '../DeepDiveModal';
+import Onboarding from '../Onboarding';
+import { PipelineProgress } from '../PipelineProgress';
 import { Search, BarChart3, Target, Rocket } from 'lucide-react';
 import { 
   auth, 
@@ -43,7 +43,7 @@ import {
   FirebaseUser,
   handleFirestoreError,
   OperationType
-} from '../firebase';
+} from '../../firebase';
 
 // Define the response schema for Gemini
 const responseSchema = {
@@ -168,10 +168,11 @@ export default function TrendIntelligenceAgent() {
   const [selectedOpportunity, setSelectedOpportunity] = useState<Opportunity | null>(null);
   const [deepDiveResult, setDeepDiveResult] = useState<DeepDiveResult | null>(null);
   const [deepDiveLoading, setDeepDiveLoading] = useState(false);
-  const [activeDeepDiveTab, setActiveDeepDiveTab] = useState<'plan' | 'costs' | 'grants' | 'checklist' | 'investors'>('plan');
+  const [activeDeepDiveTab, setActiveDeepDiveTab] = useState<'plan' | 'costs' | 'grants' | 'checklist' | 'investors' | 'strategy'>('plan');
   const [copied, setCopied] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedMode, setSelectedMode] = useState<MarketMode>('global');
+  const [countryTags, setCountryTags] = useState<string[]>([]);
 
   // Firebase Auth Listener
   useEffect(() => {
@@ -706,7 +707,7 @@ export default function TrendIntelligenceAgent() {
           <PipelineProgress currentStep={currentStep} steps={pipelineSteps} />
         )}
 
-        <SignalInput 
+        <SignalInput
           input={input}
           setInput={setInput}
           urlInput={urlInput}
@@ -718,10 +719,16 @@ export default function TrendIntelligenceAgent() {
           focus={focus}
           setFocus={setFocus}
           loading={loading}
+          result={result}
           analyzeSignal={analyzeSignal}
-          exampleSignals={exampleSignals}
+          analyzeCompoundSignal={() => {}}
+          cancelAnalysis={() => {}}
           selectedMode={selectedMode}
           setSelectedMode={setSelectedMode}
+          countryTags={countryTags}
+          setCountryTags={setCountryTags}
+          user={user}
+          login={login}
         />
 
         {/* Results Section */}
@@ -744,7 +751,7 @@ export default function TrendIntelligenceAgent() {
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.5 }}
             >
-              <Onboarding />
+              <Onboarding onComplete={() => {}} />
             </motion.div>
           )}
 
@@ -754,12 +761,8 @@ export default function TrendIntelligenceAgent() {
               filteredOpportunities={filteredOpportunities}
               filterType={filterType}
               setFilterType={setFilterType}
-              minScore={minScore}
-              setMinScore={setMinScore}
               grantOnly={grantOnly}
               setGrantOnly={setGrantOnly}
-              maxCost={maxCost}
-              setMaxCost={setMaxCost}
               generateDeepDive={generateDeepDive}
               shareOnTwitter={shareOnTwitter}
               shareOnLinkedIn={shareOnLinkedIn}
@@ -769,9 +772,10 @@ export default function TrendIntelligenceAgent() {
 
         <AnimatePresence>
           {selectedOpportunity && (
-        <DeepDiveModal 
+        <DeepDiveModal
           selectedOpportunity={selectedOpportunity}
           setSelectedOpportunity={setSelectedOpportunity}
+          cancelDeepDive={() => { setSelectedOpportunity(null); setDeepDiveResult(null); }}
           deepDiveLoading={deepDiveLoading}
           deepDiveResult={deepDiveResult}
           activeDeepDiveTab={activeDeepDiveTab}
