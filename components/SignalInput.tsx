@@ -62,7 +62,7 @@ export const SignalInput: React.FC<SignalInputProps> = ({
   user,
   login,
 }) => {
-  const [inputMode, setInputMode] = useState<'paste' | 'feed' | 'reddit'>('paste');
+  const [inputMode, setInputMode] = useState<'paste' | 'feed' | 'reddit'>('feed');
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pdfStatus, setPdfStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
