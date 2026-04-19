@@ -235,7 +235,7 @@ export const SignalInput: React.FC<SignalInputProps> = ({
   }, [selectedMode]);
 
   useEffect(() => {
-    if (inputMode === 'reddit') fetchRedditSignals();
+    if ((inputMode as string) === 'reddit') fetchRedditSignals();
   }, [inputMode, fetchRedditSignals]);
 
   // Progress animation for selected card
@@ -386,8 +386,8 @@ export const SignalInput: React.FC<SignalInputProps> = ({
             <span className={`w-2 h-2 rounded-full flex-shrink-0 ${inputMode === 'feed' ? 'bg-red-400 animate-pulse' : 'bg-gray-300'}`} />
             Live Feed
           </button>
-          <button onClick={() => setInputMode('reddit')} className={`flex-1 py-3 rounded-2xl font-mono text-[11px] uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 ${inputMode === 'reddit' ? 'bg-foreground text-background shadow-lg shadow-foreground/15' : 'text-muted hover:text-foreground hover:bg-white/80'}`}>
-            <span className={`w-2 h-2 rounded-full flex-shrink-0 ${inputMode === 'reddit' ? 'bg-orange-400 animate-pulse' : 'bg-gray-300'}`} />
+          <button onClick={() => setInputMode('reddit')} className={`flex-1 py-3 rounded-2xl font-mono text-[11px] uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 ${(inputMode as string) === 'reddit' ? 'bg-foreground text-background shadow-lg shadow-foreground/15' : 'text-muted hover:text-foreground hover:bg-white/80'}`}>
+            <span className={`w-2 h-2 rounded-full flex-shrink-0 ${(inputMode as string) === 'reddit' ? 'bg-orange-400 animate-pulse' : 'bg-gray-300'}`} />
             Reddit Signals
           </button>
         </div>
@@ -772,7 +772,7 @@ export const SignalInput: React.FC<SignalInputProps> = ({
 
           {/* Feed cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {inputMode === 'reddit'
+            {(inputMode as string) === 'reddit'
               ? fetchingReddit
                 ? Array.from({ length: 4 }).map((_, i) => (
                     <div key={i} className="bg-white border border-border/10 rounded-2xl p-5 space-y-3 animate-pulse">
@@ -1221,7 +1221,7 @@ export const SignalInput: React.FC<SignalInputProps> = ({
             </p>
             <button
               type="button"
-              onClick={fetchRedditSignalsData}
+              onClick={fetchRedditSignals}
               disabled={fetchingReddit}
               className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-900 transition-colors"
             >
@@ -1250,7 +1250,7 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                     </p>
                     <button
                       type="button"
-                      onClick={fetchRedditSignalsData}
+                      onClick={fetchRedditSignals}
                       className="text-xs font-medium text-orange-600 hover:text-orange-700 underline"
                     >
                       Try again
@@ -1309,10 +1309,10 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                         )}
 
                         {/* Engagement + time */}
-                        {(typeof sig.timeAgo === 'string' || (meta?.upvotes ?? 0) > 0 || (meta?.comments ?? 0) > 0) && (
+                        {(typeof (sig as any).timeAgo === 'string' || (meta?.upvotes ?? 0) > 0 || (meta?.comments ?? 0) > 0) && (
                           <div className="flex items-center gap-3 text-[10px] text-gray-400">
-                            {typeof sig.timeAgo === 'string' && sig.timeAgo && (
-                              <span>🕐 {sig.timeAgo}</span>
+                            {typeof (sig as any).timeAgo === 'string' && (sig as any).timeAgo && (
+                              <span>🕐 {(sig as any).timeAgo}</span>
                             )}
                             {(meta?.upvotes ?? 0) > 0 && (
                               <span>▲ {Number(meta?.upvotes ?? 0).toLocaleString()}</span>
@@ -1368,3 +1368,7 @@ export const SignalInput: React.FC<SignalInputProps> = ({
     </section>
   );
 };
+
+
+
+

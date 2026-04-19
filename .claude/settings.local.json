@@ -7,7 +7,10 @@
       "Bash(git -C \"C:/Users/Dee Russell/Signal-to-Startup\" add components/SignalInput.tsx components/WatchButton.tsx)",
       "Bash(git -C 'C:/Users/Dee Russell/Signal-to-Startup' commit -m ':*)",
       "Bash(git:*)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(cp /tmp/my_globals.css \"/c/Users/Dee Russell/Signal-to-Startup/app/globals.css\")",
+      "Bash(cp /tmp/my_SignalInput.tsx \"/c/Users/Dee Russell/Signal-to-Startup/components/SignalInput.tsx\")",
+      "Bash(vercel --prod --force)"
     ]
   }
 }
