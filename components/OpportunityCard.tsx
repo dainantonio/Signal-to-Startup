@@ -3,9 +3,8 @@
 import React from 'react';
 import Link from 'next/link';
 import { motion } from 'motion/react';
-import { ChevronRight, Sparkles, Target, Zap, Coins } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { Opportunity } from './types';
-import { getLabels } from './utils/labels';
 
 interface OpportunityCardProps {
   opp: Opportunity;
@@ -16,162 +15,108 @@ interface OpportunityCardProps {
   countryTags?: string[];
   readingLevel?: 'simple' | 'standard' | 'advanced';
 }
-
 export const OpportunityCard: React.FC<OpportunityCardProps> = ({
   opp, index, isBestIdea, generateDeepDive, isReadOnly = false, countryTags = [], readingLevel = 'standard'
 }) => {
-  const labels = getLabels(readingLevel);
   const colors = {
-    High:   { badge: 'bg-emerald-100 text-emerald-800', accent: 'bg-emerald-500' },
-    Medium: { badge: 'bg-amber-100 text-amber-800',     accent: 'bg-amber-500'   },
-    Low:    { badge: 'bg-gray-100 text-gray-700',       accent: 'bg-gray-400'    },
-  }[opp.priority as 'High' | 'Medium' | 'Low'] ?? {
-    badge: 'bg-gray-100 text-gray-700', accent: 'bg-gray-400',
+    High:   { bg: 'bg-indigo-50',  text: 'text-indigo-900',  border: 'border-indigo-200',  accent: 'bg-indigo-600',  light: 'bg-indigo-100',  ring: 'ring-indigo-500' },
+    Medium: { bg: 'bg-emerald-50', text: 'text-emerald-900', border: 'border-emerald-200', accent: 'bg-emerald-600', light: 'bg-emerald-100', ring: 'ring-emerald-500' },
+    Low:    { bg: 'bg-slate-50', text: 'text-slate-900', border: 'border-slate-200', accent: 'bg-slate-500', light: 'bg-slate-100', ring: 'ring-slate-400' },
+    bg: 'bg-gray-50', text: 'text-gray-900', border: 'border-gray-200', accent: 'bg-gray-600', light: 'bg-gray-100', ring: 'ring-gray-400'
   };
-
-  // Determine edition label (like newspaper section tags)
-  const getEditionLabel = () => {
-    if (opp.money_score >= 80) return { text: 'ROI', color: 'bg-emerald-600' };
-    if (opp.speed_to_launch >= 8) return { text: 'Fast', color: 'bg-blue-600' };
-    if (opp.urgency >= 8) return { text: 'Urgent', color: 'bg-red-600' };
-    return null;
-  };
-
-  const editionLabel = getEditionLabel();
 
   return (
     <motion.div
       layout
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: index * 0.05 }}
-      className={`group bg-white border flex flex-col relative overflow-hidden rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 ${isBestIdea ? 'border-emerald-200 ring-2 ring-emerald-300' : 'border-gray-200 hover:border-gray-300'}`}
+      transition={{ duration: 0.3, delay: index * 0.06 }}
+      className={`bg-white border-2 border-[#141414] flex flex-col relative overflow-hidden shadow-[4px_4px_0px_0px_rgba(20,20,20,1)] ${isBestIdea ? `ring-2 ${colors.ring} ring-offset-2` : ''}`}
     >
-      {/* Edition Label (top-left like newspaper section tag) */}
-      {editionLabel && (
-        <div className="absolute top-0 left-0 z-10">
-          <div className={`${editionLabel.color} text-white px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-br-lg`}>
-            {editionLabel.text}
-          </div>
-        </div>
-      )}
+      {/* Priority strip */}
+      <div className={`h-1.5 w-full ${colors.accent} flex-shrink-0`} />
 
-      {/* Best Idea Badge */}
-      {isBestIdea && (
-        <div className="absolute top-3 right-3 z-10">
-          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-black text-white rounded-lg text-xs font-semibold shadow-lg">
-            <Sparkles className="w-3.5 h-3.5" />
-            Top Pick
-          </div>
-        </div>
-      )}
-
-      <div className="p-4 md:p-6 flex flex-col flex-1">
-        {/* Header - cleaner, mobile responsive */}
-        <div className="mb-4 pt-2">
-          <h4 className="text-lg md:text-xl font-serif font-bold text-gray-900 leading-tight mb-3 break-words hyphens-auto">
-            {opp.name}
-          </h4>
-          <p className="text-sm text-gray-600 leading-relaxed break-words">
-            {opp.description}
-          </p>
-        </div>
-
-        {/* Metadata chips - mobile friendly */}
-        <div className="flex flex-wrap gap-2 mb-6">
-          {opp.grant_eligible && (
-            <span className="text-xs px-2.5 py-1 rounded-md font-medium bg-green-50 text-green-700 border border-green-200 whitespace-nowrap">
-              Grant Eligible
-            </span>
-          )}
-          {countryTags.length > 0 && opp.local_fit >= 7 && (
-            <span className="text-xs px-2.5 py-1 rounded-md font-medium bg-blue-50 text-blue-700 border border-blue-200 whitespace-nowrap">
-              Local Fit {opp.local_fit}/10
-            </span>
-          )}
-        </div>
-
-        {/* Key metrics */}
-        {readingLevel === 'simple' ? (
-          <div className="mb-6 pb-6 border-b border-gray-100 space-y-1.5">
-            <p className="text-sm text-gray-700">
-              <span className="font-medium text-gray-500">Startup cost:</span>{' '}
-              <span className="font-bold">${opp.startup_cost.toLocaleString()}</span>
-            </p>
-            <p className="text-sm text-gray-700">
-              <span className="font-medium text-gray-500">Time to launch:</span>{' '}
-              <span className="font-bold">
-                {opp.speed_to_launch >= 8 ? 'Fast (1–2 weeks)'
-                  : opp.speed_to_launch >= 6 ? 'Medium (2–4 weeks)'
-                  : 'Slow (1–3 months)'}
+      <div className="p-5 flex flex-col flex-1 gap-4">
+        {/* Header row */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-wrap items-center gap-1.5 mb-2">
+              <span className={`text-[9px] font-mono px-1.5 py-0.5 uppercase font-bold border ${colors.light} ${colors.text} ${colors.border}`}>
+                {opp.priority}
               </span>
-            </p>
+              {isBestIdea && (
+                <span className="text-[9px] font-mono uppercase font-bold text-indigo-600 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 bg-indigo-600 rounded-full animate-pulse" />
+                  Top Pick
+                </span>
+              )}
+            </div>
+            <h4 className="font-serif italic text-xl md:text-2xl tracking-tight leading-tight">{opp.name}</h4>
           </div>
-        ) : labels.metricsVisible ? (
-          <div className="grid grid-cols-3 gap-3 md:gap-4 mb-6 pb-6 border-b border-gray-100">
-            <div className="min-w-0">
-              <p className="text-xs text-gray-500 mb-1 font-medium truncate">Cost</p>
-              <p className="text-sm md:text-base font-bold text-gray-900 truncate">
-                ${opp.startup_cost.toLocaleString()}
-              </p>
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs text-gray-500 mb-1 font-medium truncate">Speed</p>
-              <p className="text-sm md:text-base font-bold text-gray-900">
-                {opp.speed_to_launch}/10
-              </p>
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs text-gray-500 mb-1 font-medium truncate">ROI</p>
-              <p className="text-sm md:text-base font-bold text-gray-900">
-                {Math.min(Math.round(opp.money_score || 0), 99)}
-              </p>
-            </div>
-          </div>
-        ) : null}
 
-        {/* Target customer - mobile responsive */}
-        <div className="mb-6">
-          <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">
-            Target
-          </p>
-          <p className="text-sm text-gray-700 leading-snug break-words">
-            {opp.target_customer}
-          </p>
+          {/* Money Score */}
+          <div className={`flex-shrink-0 flex flex-col items-center ${colors.bg} border ${colors.border} px-3 py-2 rounded-sm min-w-[56px]`}>
+            <span className={`text-[8px] font-mono uppercase ${colors.text} font-bold leading-none mb-1`}>Score</span>
+            <span className={`text-xl font-bold ${colors.text} leading-none font-serif italic`}>{Math.round(opp.money_score)}</span>
+          </div>
         </div>
 
-        {/* Compound Advantage */}
-        {opp.compound_advantage && (
-          <div className="mb-6 p-3 bg-purple-50 border border-purple-100 rounded-xl">
-            <p className="text-[10px] font-bold text-purple-700 mb-1 uppercase tracking-widest flex items-center gap-1.5">
-              <Sparkles className="w-3 h-3" /> Compound Advantage
-            </p>
-            <p className="text-xs text-purple-900 leading-relaxed italic">
-              {opp.compound_advantage}
-            </p>
+        {/* Description */}
+        <p className="text-sm font-sans leading-relaxed text-gray-600">{opp.description}</p>
+
+        {/* Money Score bar */}
+        <div className="space-y-1.5">
+          <div className="flex justify-between items-center">
+            <span className="text-[10px] font-mono uppercase opacity-50">Money Score</span>
+            <span className="text-[10px] font-mono font-bold">{Math.round(opp.money_score)}/100</span>
           </div>
-        )}
+          <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${opp.money_score}%` }}
+              transition={{ duration: 1.2, ease: 'easeOut', delay: index * 0.06 }}
+              className={`h-full ${colors.accent}`}
+            />
+          </div>
+        </div>
 
-        {/* Spacer to push CTA to bottom */}
-        <div className="flex-1" />
+        {/* Key stats row */}
+        <div className="grid grid-cols-3 gap-2 pt-1 border-t border-dashed border-[#141414]/20">
+          <div className={`${colors.bg} border ${colors.border} p-2.5 rounded-sm text-center`}>
+            <p className="text-[8px] font-mono uppercase opacity-50 mb-1">Cost</p>
+            <p className={`text-xs font-bold font-mono ${colors.text}`}>${opp.startup_cost.toLocaleString()}</p>
+          </div>
+          <div className="bg-gray-50 border border-gray-100 p-2.5 rounded-sm text-center">
+            <p className="text-[8px] font-mono uppercase opacity-50 mb-1">Speed</p>
+            <p className="text-xs font-bold font-mono">{opp.speed_to_launch}/10</p>
+          </div>
+          <div className="bg-gray-50 border border-gray-100 p-2.5 rounded-sm text-center">
+            <p className="text-[8px] font-mono uppercase opacity-50 mb-1">Ease</p>
+            <p className="text-xs font-bold font-mono">{10 - opp.difficulty}/10</p>
+          </div>
+        </div>
 
-        {/* Fixed CTA at bottom - consistent height across all cards */}
+        {/* Target customer */}
+        <div>
+          <p className="text-[9px] font-mono uppercase opacity-40 mb-1">Target Customer</p>
+          <p className="text-xs font-sans font-medium text-gray-700 leading-snug">{opp.target_customer}</p>
+        </div>
+
+        {/* CTA */}
         {isReadOnly ? (
           <Link
             href="/"
-            className="w-full bg-black text-white py-4 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 hover:bg-gray-800 shadow-sm"
+            className={`mt-auto w-full ${colors.accent} text-white py-3.5 text-[10px] font-mono uppercase tracking-widest font-bold transition-all flex items-center justify-center gap-2 shadow-[2px_2px_0px_0px_rgba(20,20,20,0.3)] hover:shadow-none hover:translate-x-px hover:translate-y-px`}
           >
-            Run Analysis
-            <ChevronRight className="w-4 h-4" />
+            Run your own analysis →
           </Link>
         ) : (
           <button
-            type="button"
             onClick={() => generateDeepDive(opp)}
-            className="w-full flex items-center justify-center gap-2 mt-3 py-3 px-4 bg-gray-900 hover:bg-gray-700 text-white rounded-xl text-sm font-semibold transition-all active:scale-[0.98]"
+            className={`mt-auto w-full ${colors.accent} text-white py-3.5 text-[10px] font-mono uppercase tracking-widest font-bold transition-all flex items-center justify-center gap-2 shadow-[2px_2px_0px_0px_rgba(20,20,20,0.3)] hover:shadow-none hover:translate-x-px hover:translate-y-px group`}
           >
-            <span>⚡</span>
-            Open Execution Suite
+            Generate Execution Suite
+            <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
           </button>
         )}
       </div>

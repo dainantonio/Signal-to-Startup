@@ -2,13 +2,9 @@
 
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { Share2, Twitter, Linkedin, AlertTriangle, Users, ChevronRight, Link as LinkIcon, Check, TrendingUp, Zap, Sparkles, ArrowRight, Search, Download, Printer } from 'lucide-react';
+import { Share2, Twitter, Linkedin, AlertTriangle, Users, ChevronRight, Link as LinkIcon, Check, TrendingUp, Zap } from 'lucide-react';
 import { AnalysisResult, Opportunity } from './types';
 import { OpportunityCard } from './OpportunityCard';
-import { COUNTRY_CONTEXT } from '@/lib/rss-sources';
-import confetti from 'canvas-confetti';
-import { auth, db, collection, addDoc } from '../firebase';
-
 interface ResultsDashboardProps {
   result: AnalysisResult;
   filteredOpportunities: Opportunity[];
@@ -19,11 +15,14 @@ interface ResultsDashboardProps {
   generateDeepDive: (opp: Opportunity) => void;
   shareOnTwitter: () => void;
   shareOnLinkedIn: () => void;
+  minScore?: number;
+  setMinScore?: (score: number) => void;
+  maxCost?: number;
+  setMaxCost?: (val: number) => void;
   countryTags?: string[];
   isAgentResult?: boolean;
   readingLevel?: 'simple' | 'standard' | 'advanced';
 }
-
 export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
   result, filteredOpportunities, filterType, setFilterType,
   grantOnly, setGrantOnly, generateDeepDive, shareOnTwitter, shareOnLinkedIn,
@@ -31,96 +30,9 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
 }) => {
   const [copied, setCopied] = useState(false);
   const [nextMoveDone, setNextMoveDone] = useState(false);
-
   const isSimple = readingLevel === 'simple';
-
-  // In simple mode show only the top opportunity
-  const displayOpportunities = isSimple
-    ? filteredOpportunities.slice(0, 1)
-    : filteredOpportunities;
-
-  const downloadReport = () => {
-    const sep = '─'.repeat(50);
-    const lines: string[] = [
-      'SIGNAL TO STARTUP — ANALYSIS REPORT',
-      `Generated: ${new Date().toLocaleDateString()}`,
-      sep,
-      '',
-      `TREND: ${result.trend}`,
-      '',
-      'SUMMARY',
-      result.summary,
-      '',
-      'AFFECTED GROUPS',
-      result.affected_groups.map(g => `• ${g}`).join('\n'),
-      '',
-      'PROBLEMS IDENTIFIED',
-      result.problems.map((p, i) => `${i + 1}. ${p}`).join('\n'),
-      '',
-      sep,
-      'OPPORTUNITIES',
-      sep,
-      ...result.opportunities.flatMap((opp, i) => [
-        '',
-        `${i + 1}. ${opp.name.toUpperCase()}`,
-        opp.description,
-        `Target: ${opp.target_customer}`,
-        `Why now: ${opp.why_now}`,
-        `Monetization: ${opp.monetization}`,
-        `Startup cost: $${opp.startup_cost.toLocaleString()}`,
-        `Money score: ${Math.min(Math.round(opp.money_score || 0), 99)}/100`,
-        `Speed to launch: ${opp.speed_to_launch}/10`,
-      ]),
-      '',
-      sep,
-      'BEST IDEA',
-      sep,
-      '',
-      result.best_idea.name,
-      result.best_idea.reason,
-      `Who should build this: ${result.best_idea.who_should_build}`,
-      `Cost estimate: ${result.best_idea.cost_estimate}`,
-      `Speed: ${result.best_idea.speed_rating}`,
-      '',
-      'FIRST STEPS',
-      result.best_idea.first_steps.map((s, i) => `${i + 1}. ${s}`).join('\n'),
-      '',
-      sep,
-      'signal-to-startup.vercel.app',
-    ];
-    const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `signal-analysis-${Date.now()}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const printAnalysis = () => {
-    const style = document.createElement('style');
-    style.id = 'print-style';
-    style.innerHTML = `
-      @media print {
-        body > * { display: none !important; }
-        #export-content { display: block !important; position: static; font-family: Georgia, serif; padding: 2rem; }
-        #export-content h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
-        #export-content h2 { font-size: 1.1rem; margin: 1.2rem 0 0.4rem; border-top: 1px solid #ccc; padding-top: 0.6rem; }
-        #export-content p, #export-content li { font-size: 0.9rem; line-height: 1.5; margin: 0.25rem 0; }
-        #export-content .opp-block { margin: 0.75rem 0; padding: 0.5rem 0; border-top: 1px dashed #eee; }
-        #export-content footer { margin-top: 2rem; font-size: 0.75rem; color: #999; border-top: 1px solid #eee; padding-top: 0.5rem; }
-      }
-    `;
-    document.head.appendChild(style);
-    window.print();
-    document.getElementById('print-style')?.remove();
-  };
-
+  const displayOpportunities = isSimple ? filteredOpportunities.slice(0, 1) : filteredOpportunities;
   const copyLink = () => {
-    const url = result.id ? `${window.location.origin}/analysis/${result.id}` : window.location.href;
-    navigator.clipboard.writeText(url);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
   };
 
   const avgCost = filteredOpportunities.length > 0
@@ -137,442 +49,176 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
     : Math.round(avgSpeedVal) >= 4 ? '2–3 weeks'
     : '30+ days';
 
-  // ── Your Next Move card ──────────────────────────────────────────────────
-  const nextMoveCard = result.today_action ? (
-    <div className="mx-4 md:mx-0 mb-8 p-5 bg-emerald-50 border-2 border-emerald-200 rounded-2xl">
-      <div className="flex items-center gap-2 mb-3">
-        <span className="text-lg">
-          {result.today_action_type === 'talk' ? '💬'
-            : result.today_action_type === 'research' ? '🔍'
-            : result.today_action_type === 'build' ? '🔨'
-            : result.today_action_type === 'apply' ? '📝'
-            : '🧪'}
-        </span>
-        <span className="text-xs font-bold uppercase tracking-widest text-emerald-700">
-          Your Next Move
-        </span>
-        <span className="ml-auto text-xs px-2 py-0.5 bg-emerald-200 text-emerald-800 rounded-full font-medium">
-          Do this today
-        </span>
-      </div>
-      <p className="text-sm font-medium text-gray-900 leading-relaxed mb-4">
-        {result.today_action}
-      </p>
-      <button
-        onClick={async () => {
-          try {
-            confetti({
-              particleCount: 100,
-              spread: 70,
-              origin: { y: 0.6 },
-              colors: ['#10B981', '#34D399', '#059669', '#FCD34D']
-            });
-            if (auth.currentUser && result.today_action) {
-              await addDoc(collection(db, 'user_actions'), {
-                userId: auth.currentUser.uid,
-                actionText: result.today_action,
-                actionType: 'next_move',
-                completedAt: new Date().toISOString()
-              });
-            } else {
-              const key = `s2s_next_move_done_${result.trend?.slice(0, 20)}`;
-              localStorage.setItem(key, 'true');
-            }
-          } catch (err) {
-            console.error('Failed to save action', err);
-          }
-          setNextMoveDone(true);
-        }}
-        className="text-xs px-4 py-2 bg-emerald-600 text-white rounded-lg font-semibold hover:bg-emerald-700 transition-colors"
-      >
-        {nextMoveDone ? '✓ Done!' : '✓ I did this'}
-      </button>
-    </div>
-  ) : null;
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.4 }}
-      className="space-y-12"
+      className="space-y-8"
     >
-      {/* Agent-discovered badge */}
-      {isAgentResult && (
-        <div className="flex items-center gap-2 px-4 py-2.5 bg-purple-50 rounded-xl border border-purple-200">
-          <span className="text-lg">🤖</span>
-          <div>
-            <p className="text-xs font-semibold text-purple-800">Discovered by your agent</p>
-            <p className="text-xs text-purple-600">Pre-analyzed while you were away</p>
+      {/* Analysis Summary */}
+      <section id="step-2" className="scroll-mt-24">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="w-8 h-8 rounded-full bg-[#141414] text-[#E4E3E0] flex items-center justify-center font-mono text-xs flex-shrink-0">02</div>
+          <h2 className="text-2xl font-serif italic border-b border-[#141414] pb-2 flex-grow">Analysis</h2>
+        </div>
+
+        {/* Trend headline */}
+        <div className="bg-white border-2 border-[#141414] p-5 md:p-8 shadow-[4px_4px_0px_0px_rgba(20,20,20,1)] mb-4">
+          <h3 className="text-3xl md:text-5xl font-serif italic tracking-tight leading-tight mb-4 border-b border-[#141414]/20 pb-4">
+            {result.trend}
+          </h3>
+          <p className="text-base md:text-lg text-gray-700 leading-relaxed">{result.summary}</p>
+        </div>
+
+        {/* Affected groups + Problems — stacked on mobile, side by side on md+ */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-white border-2 border-[#141414] p-5 shadow-[2px_2px_0px_0px_rgba(20,20,20,1)]">
+            <h4 className="text-[10px] font-mono uppercase font-bold tracking-widest flex items-center gap-2 text-indigo-600 mb-3">
+              <Users className="w-3.5 h-3.5" /> Impacted Groups
+            </h4>
+            <div className="flex flex-wrap gap-2">
+              {result.affected_groups.map((g, i) => (
+                <span key={i} className="px-2.5 py-1 bg-indigo-50 border border-indigo-100 text-indigo-900 text-[10px] font-mono uppercase font-bold rounded-sm">
+                  {g}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-white border-2 border-[#141414] p-5 shadow-[2px_2px_0px_0px_rgba(20,20,20,1)]">
+            <h4 className="text-[10px] font-mono uppercase font-bold tracking-widest flex items-center gap-2 text-amber-600 mb-3">
+              <AlertTriangle className="w-3.5 h-3.5" /> New Problems
+            </h4>
+            <ul className="space-y-2">
+              {result.problems.map((p, i) => (
+                <li key={i} className="flex items-start gap-2.5 text-sm text-gray-700">
+                  <span className="mt-2 w-1.5 h-1.5 bg-amber-400 rounded-full flex-shrink-0" />
+                  {p}
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
-      )}
+      </section>
 
-      {/* ── SIMPLE MODE ─────────────────────────────────────────────────────── */}
-      {isSimple ? (
-        <>
-          {/* 1. Your Next Move — first and prominent */}
-          {nextMoveCard}
-
-          {/* 2. Trend headline (brief) */}
-          <div className="bg-white border border-border/10 p-4 md:p-8 rounded-3xl shadow-sm">
-            <div className="flex items-center gap-2 text-primary mb-4">
-              <Sparkles className="w-4 h-4" />
-              <span className="text-xs font-mono uppercase font-bold tracking-wide">What&apos;s happening</span>
-            </div>
-            <h3 className="text-base md:text-lg font-sans font-semibold leading-snug mb-3 text-foreground">
-              {result.trend}
-            </h3>
-            <p className="text-sm md:text-base text-muted leading-relaxed">{result.summary}</p>
+      {/* Opportunity Matrix */}
+      <section id="step-3" className="scroll-mt-24">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-[#141414] text-[#E4E3E0] flex items-center justify-center font-mono text-xs flex-shrink-0">03</div>
+            <h2 className="text-2xl font-serif italic border-b border-[#141414] pb-2 flex-grow">
+              Opportunities <span className="text-base opacity-40 font-sans font-normal not-italic">({filteredOpportunities.length})</span>
+            </h2>
           </div>
 
-          {/* 3. Top opportunity card (1 only, no filter bar) */}
-          {displayOpportunities.length > 0 && (
-            <section>
-              <div className="grid grid-cols-1 gap-6">
-                {displayOpportunities.map((opp, i) => (
-                  <OpportunityCard
-                    key={i} opp={opp} index={i}
-                    isBestIdea={opp.name === result.best_idea.name}
-                    generateDeepDive={generateDeepDive}
-                    countryTags={countryTags}
-                    readingLevel={readingLevel}
-                  />
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* 4. Execution CTA — simplified */}
-          <section className="bg-foreground text-background p-8 md:p-12 rounded-[2.5rem] shadow-2xl shadow-foreground/20 relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-12 opacity-[0.05]">
-              <Zap className="w-64 h-64 -mr-16 -mt-16" />
+          {/* Filters — scrollable row on mobile */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 flex-shrink-0">
+            <div className="flex bg-white border-2 border-[#141414] p-0.5 shadow-[2px_2px_0px_0px_rgba(20,20,20,1)] flex-shrink-0">
+              {[
+                { id: 'top', label: 'ROI' },
+                { id: 'hot', label: 'Urgent' },
+                { id: 'fast', label: 'Fast' },
+              ].map(t => (
+                <button key={t.id} onClick={() => setFilterType(t.id as any)}
+                  className={`px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider transition-all ${filterType === t.id ? 'bg-[#141414] text-white' : 'hover:bg-gray-100'}`}>
+                  {t.label}
+                </button>
+              ))}
             </div>
-            <div className="relative z-10 space-y-6">
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/20 text-primary-foreground rounded-full text-[10px] font-mono uppercase font-bold tracking-widest">
-                <Sparkles className="w-3 h-3" /> Best Idea For You
+
+            <button onClick={() => setGrantOnly(!grantOnly)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 border-2 border-[#141414] text-[10px] font-mono uppercase tracking-wider transition-all flex-shrink-0 ${grantOnly ? 'bg-emerald-500 text-white border-emerald-600' : 'bg-white hover:bg-gray-50'}`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${grantOnly ? 'bg-white' : 'bg-gray-400'}`} />
+              Grant
+            </button>
+          </div>
+        </div>
+
+        {filteredOpportunities.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {filteredOpportunities.map((opp, i) => (
+              <OpportunityCard
+                key={i} opp={opp} index={i}
+                isBestIdea={opp.name === result.best_idea.name}
+                generateDeepDive={generateDeepDive}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-16 border-2 border-dashed border-[#141414]/20 bg-white">
+            <p className="font-mono text-xs uppercase tracking-widest opacity-30">No opportunities match the current filter</p>
+          </div>
+        )}
+      </section>
+
+      {/* Execution CTA */}
+      <section id="step-4" className="scroll-mt-24 bg-[#141414] text-[#E4E3E0] p-6 md:p-10 shadow-[6px_6px_0px_0px_rgba(20,20,20,0.2)]">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-8 h-8 rounded-full bg-[#E4E3E0] text-[#141414] flex items-center justify-center font-mono text-xs flex-shrink-0">04</div>
+          <h2 className="text-2xl md:text-4xl font-serif italic tracking-tight">Execute</h2>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+          <div className="space-y-4">
+            <h3 className="text-xl md:text-2xl font-serif italic leading-snug">{result.best_idea.name}</h3>
+            <p className="text-sm opacity-60 leading-relaxed">{result.best_idea.reason}</p>
+
+            <div className="grid grid-cols-2 gap-4 pt-2">
+              <div>
+                <p className="text-[9px] font-mono uppercase opacity-40 mb-1">Est. Cost</p>
+                <p className="text-lg font-serif italic text-emerald-400">{result.best_idea.cost_estimate}</p>
               </div>
-              <h3 className="text-xl md:text-2xl font-sans font-semibold leading-snug">{result.best_idea.name}</h3>
-              <p className="text-sm md:text-base opacity-70 leading-relaxed">{result.best_idea.reason}</p>
+              <div>
+                <p className="text-[9px] font-mono uppercase opacity-40 mb-1">Launch Speed</p>
+                <p className="text-lg font-serif italic">{result.best_idea.speed_rating}</p>
+              </div>
+              <div>
+                <p className="text-[9px] font-mono uppercase opacity-40 mb-1">Avg. Cost</p>
+                <p className="text-base font-mono">{avgCost}</p>
+              </div>
+              <div>
+                <p className="text-[9px] font-mono uppercase opacity-40 mb-1">Avg. Speed</p>
+                <p className="text-base font-mono">{avgSpeed}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="bg-white/5 border border-white/10 p-5 space-y-4">
+              <p className="text-[10px] font-mono uppercase opacity-40">First steps</p>
+              <ol className="space-y-3">
+                {result.best_idea.first_steps.map((step, i) => (
+                  <li key={i} className="flex gap-3 text-sm">
+                    <span className="font-serif italic text-xl opacity-30 leading-none flex-shrink-0">0{i + 1}</span>
+                    <span className="leading-snug opacity-80">{step}</span>
+                  </li>
+                ))}
+              </ol>
               <button
                 onClick={() => { const top = filteredOpportunities[0]; if (top) generateDeepDive(top); }}
-                className="w-full bg-background text-foreground py-5 rounded-2xl font-mono text-xs uppercase tracking-widest font-bold hover:bg-white transition-all flex items-center justify-center gap-3 group shadow-xl shadow-black/20"
+                className="w-full bg-[#E4E3E0] text-[#141414] py-4 text-[11px] font-mono uppercase tracking-widest font-bold hover:bg-white transition-all flex items-center justify-center gap-2 group"
               >
-                Show me how to start <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                Start Execution Suite <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
               </button>
-              <p className="text-xs text-gray-400 text-center">
-                We&apos;ll walk you through every step. No experience needed.
-              </p>
             </div>
-          </section>
-        </>
-      ) : (
-        /* ── STANDARD / ADVANCED MODE ──────────────────────────────────────── */
-        <>
-          {/* Country-tailored banner */}
-          {countryTags.length > 0 && (
-            <div className="flex items-center gap-3 px-5 py-3 bg-primary/5 border border-primary/15 rounded-2xl text-sm font-medium">
-              <span className="text-lg">{countryTags.map(t => COUNTRY_CONTEXT[t.toLowerCase()]?.flag ?? '🌍').join(' ')}</span>
-              <span>
-                Analysis tailored for{' '}
-                <strong>{countryTags.join(' & ')}</strong> small businesses
-                {countryTags.some(t => COUNTRY_CONTEXT[t.toLowerCase()]?.currency && COUNTRY_CONTEXT[t.toLowerCase()]?.currency !== 'USD') && (
-                  <span className="text-muted text-xs font-mono ml-2">
-                    · Costs shown in USD &amp; local currency
-                  </span>
-                )}
-              </span>
-            </div>
-          )}
-
-          {/* Your Next Move — before Intelligence Briefing */}
-          {nextMoveCard}
-
-          {/* Intelligence Briefing */}
-          <section id="step-2" className="scroll-mt-24">
-            {/* AI Verdict Banner */}
-            {result.ai_verdict && (
-              <div className={`px-5 py-4 rounded-2xl border text-sm font-medium mb-6 flex items-start gap-3 shadow-sm ${
-                result.ai_verdict === 'Truth'
-                  ? 'bg-green-50 border-green-200 text-green-800'
-                  : result.ai_verdict === 'Emerging'
-                  ? 'bg-amber-50 border-amber-200 text-amber-800'
-                  : 'bg-red-50 border-red-200 text-red-800'
-              }`}>
-                <div className="mt-0.5">
-                  {result.ai_verdict === 'Truth' ? <Check className="w-5 h-5" />
-                    : result.ai_verdict === 'Emerging' ? <Zap className="w-5 h-5" />
-                    : <AlertTriangle className="w-5 h-5" />}
-                </div>
-                <div>
-                  <p className="font-bold uppercase tracking-tight text-xs mb-1">
-                    {result.ai_verdict === 'Truth' ? '✓ AI Truth'
-                      : result.ai_verdict === 'Emerging'
-                      ? '⚡ Emerging Signal'
-                      : '⚠ AI Fad'}
-                  </p>
-                  <p className="leading-relaxed opacity-90">{result.ai_evidence}</p>
-                  {result.real_world_roi && (
-                    <p className="mt-2 text-xs font-mono bg-white/50 px-2 py-1 rounded inline-block">
-                      ROI Evidence: {result.real_world_roi}
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Compound Analysis Header */}
-            {result.isCompound && (
-              <div className="bg-black text-white p-6 md:p-10 rounded-3xl shadow-2xl mb-6 relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-8 opacity-10">
-                  <Sparkles className="w-32 h-32" />
-                </div>
-                <div className="relative z-10">
-                  <div className="flex items-center gap-3 mb-6">
-                    <span className="px-3 py-1 bg-white/20 rounded-full text-[10px] font-mono uppercase font-bold tracking-widest backdrop-blur-sm">
-                      Compound Signal
-                    </span>
-                    <div className="flex items-center gap-1.5 px-3 py-1 bg-primary/30 rounded-full text-[10px] font-mono uppercase font-bold tracking-widest backdrop-blur-sm">
-                      <TrendingUp className="w-3 h-3" />
-                      Convergence: {result.convergence_score}%
-                    </div>
-                  </div>
-
-                  <h3 className="text-2xl md:text-3xl font-sans font-bold leading-tight mb-4">
-                    {result.compound_trend}
-                  </h3>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8 pt-8 border-t border-white/10">
-                    <div>
-                      <h4 className="text-[10px] font-mono uppercase font-bold tracking-widest text-white/50 mb-4">
-                        Signal Connections
-                      </h4>
-                      <ul className="space-y-3">
-                        {result.signal_connections?.map((conn, i) => (
-                          <li key={i} className="flex items-start gap-3 text-sm text-white/80">
-                            <span className="mt-1.5 w-1.5 h-1.5 bg-primary rounded-full flex-shrink-0" />
-                            {conn}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div className="bg-white/5 p-5 rounded-2xl backdrop-blur-sm border border-white/10">
-                      <h4 className="text-[10px] font-mono uppercase font-bold tracking-widest text-white/50 mb-3">
-                        Compound Advantage
-                      </h4>
-                      <p className="text-sm text-white/90 leading-relaxed italic">
-                        &quot;The whole is greater than the sum of its parts. These signals converging creates a market gap that individual signals miss.&quot;
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Trend headline */}
-            <div className="bg-white border border-border/10 p-4 md:p-8 rounded-3xl shadow-sm mb-4 md:mb-6">
-              <div className="w-full">
-                <div className="flex items-center gap-2 text-primary mb-4">
-                  <Sparkles className="w-4 h-4" />
-                  <span className="text-xs font-mono uppercase font-bold tracking-wide">Emerging Trend Identified</span>
-                </div>
-                <h3 className="text-base md:text-lg font-sans font-semibold leading-snug mb-3 text-foreground w-full">
-                  {result.trend}
-                </h3>
-                <p className="text-sm md:text-base text-muted leading-relaxed w-full">{result.summary}</p>
-              </div>
-            </div>
-
-            {/* Affected groups + Problems */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6 items-stretch">
-              <div className="bg-white border border-border/10 p-4 md:p-8 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 h-full">
-                <h4 className="text-[10px] font-mono uppercase font-bold tracking-widest flex items-center gap-2 text-primary mb-4">
-                  <Users className="w-4 h-4" /> Impacted Groups
-                </h4>
-                <div className="grid grid-cols-1 gap-1.5">
-                  {result.affected_groups.map((g, i) => (
-                    <span key={i} className="w-full px-2 py-1 bg-primary/5 border border-primary/10 text-primary text-[10px] font-mono uppercase font-bold rounded-lg">
-                      {g}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <div className="bg-white border border-border/10 p-4 md:p-8 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 h-full">
-                <h4 className="text-[10px] font-mono uppercase font-bold tracking-widest flex items-center gap-2 text-accent mb-5">
-                  <AlertTriangle className="w-4 h-4" /> Market Friction &amp; Problems
-                </h4>
-                <ul className="space-y-3">
-                  {result.problems.map((p, i) => (
-                    <li key={i} className="flex items-start gap-3 text-sm text-muted font-medium">
-                      <span className="mt-1.5 w-1.5 h-1.5 bg-accent rounded-full flex-shrink-0" />
-                      {p}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </section>
-
-          {/* Opportunity Matrix */}
-          <section id="step-3" className="scroll-mt-24">
-            <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
-              <span className="text-xs font-mono text-muted uppercase tracking-widest">{filteredOpportunities.length} opportunities</span>
-              {/* Filters */}
-              <div className="flex items-center gap-3 overflow-x-auto pb-1 sm:pb-0 flex-shrink-0 no-scrollbar">
-                <div className="flex bg-white border border-border/10 p-1 rounded-xl shadow-sm flex-shrink-0">
-                  {[
-                    { id: 'top', label: 'ROI' },
-                    { id: 'hot', label: 'Urgent' },
-                    { id: 'fast', label: 'Fast' },
-                  ].map(t => (
-                    <button key={t.id} onClick={() => setFilterType(t.id as 'top' | 'hot' | 'fast')}
-                      className={`px-4 py-2 rounded-lg text-[10px] font-mono uppercase font-bold tracking-wider transition-all duration-200 ${filterType === t.id ? 'bg-foreground text-background shadow-lg shadow-foreground/5' : 'text-muted hover:text-foreground hover:bg-gray-50'}`}>
-                      {t.label}
-                    </button>
-                  ))}
-                </div>
-
-                <button onClick={() => setGrantOnly(!grantOnly)}
-                  className={`flex items-center gap-2 px-4 py-3 rounded-xl border transition-all duration-200 flex-shrink-0 text-[10px] font-mono uppercase font-bold tracking-wider ${grantOnly ? 'bg-secondary text-white border-secondary shadow-lg shadow-secondary/20' : 'bg-white border-border/10 text-muted hover:text-foreground hover:bg-gray-50 shadow-sm'}`}>
-                  <span className={`w-1.5 h-1.5 rounded-full ${grantOnly ? 'bg-white animate-pulse' : 'bg-gray-300'}`} />
-                  Grant Eligible
-                </button>
-              </div>
-            </div>
-
-            {displayOpportunities.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {displayOpportunities.map((opp, i) => (
-                  <OpportunityCard
-                    key={i} opp={opp} index={i}
-                    isBestIdea={opp.name === result.best_idea.name}
-                    generateDeepDive={generateDeepDive}
-                    countryTags={countryTags}
-                    readingLevel={readingLevel}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-20 border border-dashed border-border/20 bg-white rounded-3xl">
-                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-muted/30">
-                  <Search className="w-8 h-8" />
-                </div>
-                <p className="font-mono text-[10px] uppercase tracking-widest text-muted">No opportunities match the current filter</p>
-              </div>
-            )}
-          </section>
-
-          {/* Execution CTA */}
-          <section id="step-4" className="scroll-mt-24 bg-foreground text-background p-8 md:p-12 rounded-[2.5rem] shadow-2xl shadow-foreground/20 relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-12 opacity-[0.05]">
-              <Zap className="w-64 h-64 -mr-16 -mt-16" />
-            </div>
-
-            <div className="relative z-10">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start mt-2">
-                <div className="space-y-6">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/20 text-primary-foreground rounded-full text-[10px] font-mono uppercase font-bold tracking-widest">
-                    <Sparkles className="w-3 h-3" /> Best Path Forward
-                  </div>
-                  <h3 className="text-xl md:text-2xl font-sans font-semibold leading-snug">{result.best_idea.name}</h3>
-                  <p className="text-sm md:text-base opacity-70 leading-relaxed">{result.best_idea.reason}</p>
-
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 pt-4">
-                    <div className="space-y-1">
-                      <p className="text-[9px] font-mono uppercase opacity-40 tracking-widest">Est. Cost</p>
-                      <p className="text-base font-sans font-semibold text-secondary">{result.best_idea.cost_estimate}</p>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-[9px] font-mono uppercase opacity-40 tracking-widest">Launch Speed</p>
-                      <p className="text-base font-sans font-semibold">{result.best_idea.speed_rating}</p>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-[9px] font-mono uppercase opacity-40 tracking-widest">Avg. Cost</p>
-                      <p className="text-base font-mono font-bold">{avgCost}</p>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-[9px] font-mono uppercase opacity-40 tracking-widest">Avg. Speed</p>
-                      <p className="text-base font-mono font-bold">{avgSpeed}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-6">
-                  <div className="bg-white/5 backdrop-blur-sm border border-white/10 p-8 rounded-3xl space-y-6">
-                    <p className="text-[10px] font-mono uppercase opacity-40 tracking-widest">Immediate First Steps</p>
-                    <ol className="space-y-5">
-                      {result.best_idea.first_steps.map((step, i) => (
-                        <li key={i} className="flex gap-3 text-sm">
-                          <span className="font-mono text-xs opacity-30 leading-none flex-shrink-0 pt-0.5">0{i + 1}</span>
-                          <span className="leading-relaxed opacity-90">{step}</span>
-                        </li>
-                      ))}
-                    </ol>
-                    <button
-                      onClick={() => { const top = filteredOpportunities[0]; if (top) generateDeepDive(top); }}
-                      className="w-full bg-background text-foreground py-5 rounded-2xl font-mono text-xs uppercase tracking-widest font-bold hover:bg-white transition-all flex items-center justify-center gap-3 group shadow-xl shadow-black/20"
-                    >
-                      Start Execution Suite <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Share + Export bar */}
-              <div className="flex flex-wrap items-center gap-6 mt-12 pt-8 border-t border-white/10">
-                <span className="text-[10px] font-mono uppercase opacity-30 flex items-center gap-2 tracking-widest"><Share2 className="w-4 h-4" /> Share Intelligence</span>
-                <div className="flex flex-wrap items-center gap-4">
-                  <button onClick={copyLink} className="flex items-center gap-2 text-[10px] font-mono uppercase font-bold opacity-50 hover:opacity-100 transition-all hover:translate-y-[-1px]">
-                    {copied ? <><Check className="w-4 h-4 text-secondary" />Copied</> : <><LinkIcon className="w-4 h-4" />Copy Link</>}
-                  </button>
-                  <button onClick={shareOnTwitter} className="flex items-center gap-2 text-[10px] font-mono uppercase font-bold opacity-50 hover:opacity-100 transition-all hover:translate-y-[-1px]">
-                    <Twitter className="w-4 h-4" />Twitter
-                  </button>
-                  <button onClick={shareOnLinkedIn} className="flex items-center gap-2 text-[10px] font-mono uppercase font-bold opacity-50 hover:opacity-100 transition-all hover:translate-y-[-1px]">
-                    <Linkedin className="w-4 h-4" />LinkedIn
-                  </button>
-                  <button onClick={downloadReport} className="flex items-center gap-2 text-[10px] font-mono uppercase font-bold opacity-50 hover:opacity-100 transition-all hover:translate-y-[-1px]">
-                    <Download className="w-4 h-4" />Download
-                  </button>
-                  <button onClick={printAnalysis} className="flex items-center gap-2 text-[10px] font-mono uppercase font-bold opacity-50 hover:opacity-100 transition-all hover:translate-y-[-1px]">
-                    <Printer className="w-4 h-4" />Print
-                  </button>
-                </div>
-              </div>
-            </div>
-          </section>
-        </>
-      )}
-
-      {/* Hidden print-only export content */}
-      <div id="export-content" style={{ display: 'none' }}>
-        <h1>Signal to Startup — Analysis Report</h1>
-        <p style={{ color: '#999', fontSize: '0.8rem' }}>Generated: {new Date().toLocaleDateString()} · signal-to-startup.vercel.app</p>
-        <h2>Trend</h2>
-        <p><strong>{result.trend}</strong></p>
-        <h2>Summary</h2>
-        <p>{result.summary}</p>
-        <h2>Affected Groups</h2>
-        <ul>{result.affected_groups.map((g, i) => <li key={i}>{g}</li>)}</ul>
-        <h2>Problems Identified</h2>
-        <ul>{result.problems.map((p, i) => <li key={i}>{p}</li>)}</ul>
-        <h2>Opportunities</h2>
-        {result.opportunities.map((opp, i) => (
-          <div key={i} className="opp-block">
-            <p><strong>{i + 1}. {opp.name}</strong></p>
-            <p>{opp.description}</p>
-            <p>Target: {opp.target_customer} · Why now: {opp.why_now}</p>
-            <p>Monetization: {opp.monetization} · Cost: ${opp.startup_cost.toLocaleString()} · Score: {Math.min(Math.round(opp.money_score || 0), 99)}/100</p>
           </div>
-        ))}
-        <h2>Best Idea: {result.best_idea.name}</h2>
-        <p>{result.best_idea.reason}</p>
-        <p>Who should build: {result.best_idea.who_should_build}</p>
-        <p>Cost: {result.best_idea.cost_estimate} · Speed: {result.best_idea.speed_rating}</p>
-        <h2>First Steps</h2>
-        <ol>{result.best_idea.first_steps.map((s, i) => <li key={i}>{s}</li>)}</ol>
-        <footer>Generated by Signal to Startup — signal-to-startup.vercel.app</footer>
-      </div>
+        </div>
+
+        {/* Share bar */}
+        <div className="flex flex-wrap items-center gap-4 mt-6 pt-5 border-t border-white/10">
+          <span className="text-[10px] font-mono uppercase opacity-30 flex items-center gap-2"><Share2 className="w-3.5 h-3.5" /> Share</span>
+          <button onClick={copyLink} className="flex items-center gap-1.5 text-[10px] font-mono uppercase opacity-50 hover:opacity-100 transition-opacity">
+            {copied ? <><Check className="w-3.5 h-3.5 text-emerald-400" />Copied</> : <><LinkIcon className="w-3.5 h-3.5" />Copy Link</>}
+          </button>
+          <button onClick={shareOnTwitter} className="flex items-center gap-1.5 text-[10px] font-mono uppercase opacity-50 hover:opacity-100 transition-opacity">
+            <Twitter className="w-3.5 h-3.5" />Twitter
+          </button>
+          <button onClick={shareOnLinkedIn} className="flex items-center gap-1.5 text-[10px] font-mono uppercase opacity-50 hover:opacity-100 transition-opacity">
+            <Linkedin className="w-3.5 h-3.5" />LinkedIn
+          </button>
+        </div>
+      </section>
     </motion.div>
   );
 };
