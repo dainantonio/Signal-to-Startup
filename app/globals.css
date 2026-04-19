@@ -3,7 +3,7 @@
 @plugin "@tailwindcss/typography";
 
 @theme {
-  --color-background: #FAFAF9;
+  --color-background: #f8f8f6;
   --color-foreground: #0F0F0F;
   --color-primary: #0F0F0F;
   --color-secondary: #059669;
@@ -234,3 +234,17 @@
 }
 
 /* Print styles are handled inline by DeepDiveModal and Checklist components. */
+
+.truncate-source {
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

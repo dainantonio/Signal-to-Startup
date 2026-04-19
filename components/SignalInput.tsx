@@ -376,20 +376,55 @@ export const SignalInput: React.FC<SignalInputProps> = ({
 
   return (
     <section id="step-1" className="scroll-mt-24 mb-12">
-      <div className="relative overflow-hidden rounded-3xl border border-border/20 bg-gradient-to-b from-white to-slate-50/70 p-1.5 shadow-[0_8px_32px_rgba(15,23,42,0.08)] mb-6">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-8 bg-gradient-to-r from-transparent via-slate-200/40 to-transparent" />
-        <div className="relative flex w-full">
-          <button onClick={() => setInputMode('paste')} className={`flex-1 py-3 rounded-2xl font-mono text-[11px] uppercase tracking-wider transition-all duration-200 ${inputMode === 'paste' ? 'bg-foreground text-background shadow-lg shadow-foreground/15' : 'text-muted hover:text-foreground hover:bg-white/80'}`}>
-            Paste Signal
-          </button>
-          <button onClick={() => setInputMode('feed')} className={`flex-1 py-3 rounded-2xl font-mono text-[11px] uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 ${inputMode === 'feed' ? 'bg-foreground text-background shadow-lg shadow-foreground/15' : 'text-muted hover:text-foreground hover:bg-white/80'}`}>
-            <span className={`w-2 h-2 rounded-full flex-shrink-0 ${inputMode === 'feed' ? 'bg-red-400 animate-pulse' : 'bg-gray-300'}`} />
-            Live Feed
-          </button>
-          <button onClick={() => setInputMode('reddit')} className={`flex-1 py-3 rounded-2xl font-mono text-[11px] uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 ${inputMode === 'reddit' ? 'bg-foreground text-background shadow-lg shadow-foreground/15' : 'text-muted hover:text-foreground hover:bg-white/80'}`}>
-            <span className={`w-2 h-2 rounded-full flex-shrink-0 ${inputMode === 'reddit' ? 'bg-orange-400 animate-pulse' : 'bg-gray-300'}`} />
-            Reddit Signals
-          </button>
+      {/* Feed header + tab bar */}
+      <div style={{background:'white',borderBottom:'1px solid #e8e8e4',padding:'20px 24px 0'}}>
+        <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:'20px'}}>
+          <div>
+            <h2 style={{fontSize:'18px',fontWeight:700,color:'#0a0a0a',letterSpacing:'-0.3px',marginBottom:'4px'}}>
+              Market intelligence feed
+            </h2>
+            <p style={{fontSize:'12px',color:'#777',lineHeight:1.5}}>
+              Signals scored by opportunity strength. Click any card to analyze.
+            </p>
+          </div>
+          <div style={{display:'flex',gap:'24px',flexShrink:0}}>
+            {[
+              {num:'50',label:'Live signals'},
+              {num:'87',label:'Top score today'},
+              {num:'3',label:'Agents active'},
+            ].map((s,i) => (
+              <div key={i} style={{textAlign:'right'}}>
+                <div style={{fontSize:'20px',fontWeight:700,color:'#0a0a0a',fontVariantNumeric:'tabular-nums',letterSpacing:'-0.5px'}}>{s.num}</div>
+                <div style={{fontSize:'9px',color:'#bbb',letterSpacing:'1px',textTransform:'uppercase',marginTop:'2px'}}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div style={{display:'flex',borderBottom:'1px solid #e8e8e4',marginBottom:'0',background:'white'}}>
+          {[
+            {mode:'feed',label:'News Feed',dot:'#22c55e'},
+            {mode:'paste',label:'Paste / URL',dot:null},
+            {mode:'reddit',label:'Reddit',dot:'#f97316'},
+          ].map(tab => (
+            <button
+              key={tab.mode}
+              type="button"
+              onClick={() => setInputMode(tab.mode as 'feed'|'paste'|'reddit')}
+              style={{
+                padding:'12px 20px',fontSize:'12px',
+                fontWeight: inputMode===tab.mode ? 600 : 500,
+                color: inputMode===tab.mode ? '#0a0a0a' : '#999',
+                border:'none',background:'transparent',cursor:'pointer',
+                display:'flex',alignItems:'center',gap:'7px',
+                borderBottom: inputMode===tab.mode ? '2px solid #0a0a0a' : '2px solid transparent',
+                marginBottom:'-1px',
+              }}>
+              {tab.dot && (
+                <span style={{width:'6px',height:'6px',borderRadius:'50%',background:inputMode===tab.mode ? tab.dot : '#ddd',flexShrink:0}}/>
+              )}
+              {tab.label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -771,78 +806,8 @@ export const SignalInput: React.FC<SignalInputProps> = ({
           )}
 
           {/* Feed cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {inputMode === 'reddit'
-              ? fetchingReddit
-                ? Array.from({ length: 4 }).map((_, i) => (
-                    <div key={i} className="bg-white border border-border/10 rounded-2xl p-5 space-y-3 animate-pulse">
-                      <div className="h-4 bg-gray-100 w-24 rounded" />
-                      <div className="h-10 bg-gray-100 rounded" />
-                      <div className="h-16 bg-gray-100 rounded" />
-                      <div className="h-9 bg-gray-100 rounded-xl" />
-                    </div>
-                  ))
-                : redditSignals.length === 0
-                  ? <div className="col-span-2 text-center py-16 text-muted font-mono text-xs uppercase tracking-widest">No Reddit signals found yet.</div>
-                  : redditSignals.map((sig, i) => (
-                      <div key={sig.url || i} className="group bg-white border border-orange-100 rounded-3xl flex flex-col overflow-hidden hover:border-orange-300 hover:shadow-[0_18px_45px_rgba(251,146,60,0.18)] transition-all duration-300">
-                        <div className="h-1.5 w-full bg-gradient-to-r from-orange-400 via-amber-300 to-emerald-300" />
-                        <div className="p-4 flex flex-col gap-3 flex-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-[9px] font-mono font-bold text-orange-500 uppercase tracking-wider">
-                              r/{sig.redditMeta?.subreddit}
-                            </span>
-                            <span className="px-2 py-0.5 text-[9px] font-mono uppercase font-bold rounded-md bg-orange-100 text-orange-700 border border-orange-200">
-                              {sig.redditMeta?.postType || 'Signal'}
-                            </span>
-                            <div className="ml-auto flex items-center gap-1 px-2 py-0.5 bg-amber-50 border border-amber-200 rounded-xl">
-                              <span className="text-amber-500 text-[9px]">◆</span>
-                              <span className="text-[10px] font-bold font-mono text-amber-700">SCORE {sig.signalScore || 0}</span>
-                            </div>
-                          </div>
-
-                          <h3 className="text-sm font-semibold text-gray-900 leading-snug line-clamp-2 group-hover:text-gray-950">{sig.title}</h3>
-
-                          <div className="bg-orange-50/90 rounded-2xl p-3 border border-orange-100">
-                            <p className="text-[9px] font-bold text-orange-600 uppercase tracking-widest mb-1">Problem identified</p>
-                            <p className="text-xs text-gray-700 leading-relaxed">{sig.redditMeta?.problem || sig.snippet}</p>
-                          </div>
-
-                          <div className="bg-emerald-50/90 rounded-2xl p-3 border border-emerald-100">
-                            <p className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest mb-1">Startup opportunity</p>
-                            <p className="text-xs text-gray-700 leading-relaxed">{sig.redditMeta?.startupIdea || 'Opportunity detected from community demand.'}</p>
-                          </div>
-
-                          <div className="flex items-center gap-3 text-[10px] text-gray-500">
-                            <span>▲ {sig.redditMeta?.upvotes?.toLocaleString() || 0} upvotes</span>
-                            <span>💬 {sig.redditMeta?.comments?.toLocaleString() || 0} comments</span>
-                          </div>
-
-                          <div className="flex gap-2">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const signalText = `${sig.title}. ${sig.redditMeta?.problem || sig.snippet}. Startup idea: ${sig.redditMeta?.startupIdea || ''}`;
-                                onAnalyzeSignal({ ...sig, snippet: signalText });
-                              }}
-                              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-gray-900 text-white rounded-xl text-xs font-semibold hover:bg-black transition-colors"
-                            >
-                              ⚡ Deep Analysis
-                            </button>
-                            <a
-                              href={sig.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={(e) => e.stopPropagation()}
-                              className="px-3 py-2.5 rounded-xl border border-gray-200 text-xs text-gray-600 hover:border-gray-400 hover:text-gray-900 transition-colors"
-                            >
-                              View Post
-                            </a>
-                          </div>
-                        </div>
-                      </div>
-                    ))
-              : fetchingFeed
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3" style={{background:'#f8f8f6',padding:'20px 24px'}}>
+            {fetchingFeed
               ? Array.from({ length: 6 }).map((_, i) => (
                   <div key={i} className="bg-white border border-border/10 rounded-2xl p-5 space-y-3 animate-pulse shadow-sm">
                     <div className="flex gap-2"><div className="h-4 bg-gray-100 w-16 rounded-md" /><div className="h-4 bg-gray-100 w-10 rounded-md" /></div>
@@ -882,11 +847,20 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                           : '0 1px 3px rgba(0,0,0,0.08)',
                       }}
                       transition={{ duration: 0.3, ease: 'easeInOut' }}
-                      className={`relative bg-white border rounded-2xl flex flex-col overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 ${
-                        isSelected ? 'ring-2 ring-slate-900 border-slate-900' : 'border-slate-200/60 hover:border-slate-300/60'
-                      } ${isOtherAnalyzing ? 'pointer-events-none opacity-40' : ''} ${
-                        isAnalyzing ? 'ring-2 ring-blue-400 ring-offset-2 z-10' : ''
-                      } ${multiSelectMode ? 'cursor-pointer' : ''}`}
+                      className={`relative ${isOtherAnalyzing ? 'pointer-events-none' : ''} ${isAnalyzing ? 'z-10' : ''}`}
+                      style={{
+                        background:'white',
+                        border: isSelected
+                          ? '2px solid #0a0a0a'
+                          : isAnalyzing
+                          ? '2px solid #3b82f6'
+                          : '1px solid #e8e8e4',
+                        borderRadius:'12px',
+                        display:'flex',flexDirection:'column',
+                        overflow:'hidden',
+                        opacity: isOtherAnalyzing ? 0.4 : 1,
+                        cursor: multiSelectMode ? 'pointer' : 'default',
+                      }}
                       onClick={() => {
                         if (!multiSelectMode) return;
                         setSelectedArticles(prev => {
@@ -948,7 +922,7 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                       ) : (
                         /* ── NORMAL STATE ── */
                         <div className="p-4 flex flex-col gap-3 flex-1 min-w-0">
-                          {/* Meta row — no wrap, truncate long sources */}
+                          {/* Meta row */}
                           <div className="flex items-center gap-2 min-w-0">
                             {multiSelectMode && (
                               <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all flex-shrink-0 ${
@@ -957,76 +931,57 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                                 {isSelected && <span className="text-white text-[10px]">✓</span>}
                               </div>
                             )}
-                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wide truncate max-w-[90px] flex-shrink-0">
+                            <span style={{fontSize:'9px',fontWeight:700,color:'#aaa',letterSpacing:'0.8px',textTransform:'uppercase',maxWidth:'90px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',flexShrink:0}}>
                               {sig.source}
                             </span>
-                            <span className={`px-2 py-0.5 text-[9px] font-mono uppercase font-bold rounded-md flex-shrink-0 ${cfg.badgeBg} ${cfg.badgeText}`}>{cfg.label}</span>
-                            {sig.isLocalSource && (
-                              <span className="px-1.5 py-0.5 text-[9px] font-mono uppercase font-bold rounded-md bg-blue-50 text-blue-700 flex-shrink-0">Local</span>
-                            )}
-                            <div className="ml-auto flex-shrink-0 flex items-center gap-1 px-2 py-0.5 bg-amber-50 rounded-lg border border-amber-100">
-                              <span className="text-[9px] text-amber-500">⚡</span>
-                              <span className="text-[10px] font-bold font-mono text-amber-700">{Math.min(sig.signalScore || 0, 99)}</span>
+                            <span style={{
+                              fontSize:'9px',fontWeight:600,padding:'2px 7px',borderRadius:'4px',textTransform:'uppercase',flexShrink:0,
+                              ...(cfg.label === 'Funding' || sig.sector === 'funding'
+                                ? {background:'#f0fdf4',color:'#166534'}
+                                : cfg.label === 'Policy' || sig.sector === 'policy'
+                                ? {background:'#fefce8',color:'#854d0e'}
+                                : cfg.label === 'AI & Tech' || sig.sector === 'ai'
+                                ? {background:'#eff6ff',color:'#1e40af'}
+                                : sig.isLocalSource
+                                ? {background:'#e0f2fe',color:'#075985'}
+                                : {background:'#faf5ff',color:'#6b21a8'}
+                              ),
+                            }}>
+                              {sig.isLocalSource ? 'Local' : cfg.label}
+                            </span>
+                            <div style={{marginLeft:'auto',flexShrink:0,display:'flex',alignItems:'center',gap:'3px',padding:'2px 8px',border:'1px solid #fde68a',background:'#fffbeb',borderRadius:'6px'}}>
+                              <span style={{fontSize:'9px',color:'#d97706'}}>⚡</span>
+                              <span style={{fontSize:'11px',fontWeight:700,color:'#92400e',fontVariantNumeric:'tabular-nums'}}>
+                                {Math.min(sig.signalScore||0,99)}
+                              </span>
                             </div>
                           </div>
                           {/* Title */}
-                          <p className="text-sm font-semibold leading-snug line-clamp-2">{sig.title}</p>
+                          <h3 style={{fontSize:'12px',fontWeight:600,color:'#0a0a0a',lineHeight:1.45,display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden'}}>
+                            {(sig.title||'').replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/&#39;/g,"'")}
+                          </h3>
                           {/* Snippet */}
-                          <p className="text-xs text-muted leading-relaxed line-clamp-2 flex-1">{sig.snippet}</p>
-                          {/* Analyze + Watch buttons */}
+                          {(() => {
+                            const clean=(sig.snippet||'')
+                              .replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/&#39;/g,"'")
+                              .replace(/<[^>]+>/g,'').replace(/\[.*?\]/g,'').trim();
+                            return clean.length > 20 ? (
+                              <p style={{fontSize:'11px',color:'#777',lineHeight:1.55,display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden',flex:1}}>
+                                {clean.substring(0,160)}
+                              </p>
+                            ) : null;
+                          })()}
+                          {/* Actions */}
                           {!multiSelectMode && (
-                            <div className="flex flex-col sm:flex-row gap-2">
+                            <div style={{display:'flex',gap:'8px'}}>
                               <button
                                 type="button"
                                 onClick={() => onAnalyzeSignal(sig)}
                                 disabled={!!analyzingUrl}
-                                aria-label={`Analyze: ${sig.title}`}
-                                className="w-full sm:flex-1 min-h-10 flex items-center justify-center gap-2 py-2.5 bg-foreground text-background rounded-xl font-mono text-[10px] uppercase tracking-widest hover:bg-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                              >
-                                <Zap className="w-3.5 h-3.5 fill-current" />
-                                Analyze 🔥
+                                style={{flex:1,height:'34px',background:'#0a0a0a',color:'white',border:'none',borderRadius:'8px',fontSize:'11px',fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:'5px',opacity:analyzingUrl ? 0.4 : 1}}>
+                                ⚡ Analyze
                               </button>
-
-                              <div className="relative w-full sm:w-auto">
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (watching === sig.url) return;
-                                    setShowWatchMenu(prev => prev === sig.url ? null : sig.url);
-                                  }}
-                                  className={watching === sig.url
-                                    ? 'w-full sm:w-auto min-h-10 px-3 py-2 rounded-xl border border-amber-200 text-xs font-semibold text-amber-700 bg-amber-50 whitespace-nowrap shadow-sm'
-                                    : 'w-full sm:w-auto min-h-10 px-3 py-2 rounded-xl border border-gray-200 text-xs font-semibold text-gray-600 hover:border-amber-400 hover:text-amber-700 bg-white transition-all whitespace-nowrap shadow-sm hover:shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300'}
-                                >
-                                  {watching === sig.url ? 'Watching ✓' : 'Watch'}
-                                </button>
-
-                                {showWatchMenu === sig.url && (
-                                  <div
-                                    className="absolute bottom-full right-0 sm:right-0 left-0 sm:left-auto mb-2 w-full sm:w-48 bg-white border border-gray-200 rounded-2xl shadow-xl p-2 z-50"
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    <p className="text-xs font-semibold text-gray-600 px-2 py-1.5">Watch for how long?</p>
-                                    {[3, 5, 7, 14].map(days => (
-                                      <button
-                                        key={days}
-                                        type="button"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          addToWatchlist(sig, days);
-                                        }}
-                                        className="w-full text-left px-3 py-2.5 text-xs text-gray-700 hover:bg-amber-50 hover:text-amber-700 rounded-xl transition-colors flex items-center justify-between"
-                                      >
-                                        <span>{days} days</span>
-                                        {days === 7 && (
-                                          <span className="text-amber-500">recommended</span>
-                                        )}
-                                      </button>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
+                              <WatchButton article={sig} />
                             </div>
                           )}
                         </div>
@@ -1221,7 +1176,7 @@ export const SignalInput: React.FC<SignalInputProps> = ({
             </p>
             <button
               type="button"
-              onClick={fetchRedditSignalsData}
+              onClick={fetchRedditSignals}
               disabled={fetchingReddit}
               className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-900 transition-colors"
             >
@@ -1250,7 +1205,7 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                     </p>
                     <button
                       type="button"
-                      onClick={fetchRedditSignalsData}
+                      onClick={fetchRedditSignals}
                       className="text-xs font-medium text-orange-600 hover:text-orange-700 underline"
                     >
                       Try again
@@ -1267,95 +1222,74 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                     : (sig.snippet as string || '').replace(/<[^>]+>/g, '').substring(0, 180);
 
                   return (
-                    <div key={i} className="bg-white border border-slate-200/60 rounded-2xl flex flex-col overflow-hidden shadow-sm hover:shadow-md hover:border-orange-200/60 transition-all duration-200">
-                      <div className="p-4 flex flex-col gap-3 flex-1">
+                    <div key={i} style={{background:'white',border:'1px solid #e8e8e4',borderRadius:'12px',display:'flex',flexDirection:'column',overflow:'hidden'}}>
+                      <div style={{padding:'16px',display:'flex',flexDirection:'column',gap:'11px',flex:1,minWidth:0}}>
                         {/* Meta */}
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-[9px] font-mono font-bold text-orange-400 uppercase tracking-wider">
+                        <div style={{display:'flex',alignItems:'center',gap:'7px'}}>
+                          <span style={{fontSize:'9px',fontWeight:700,color:'#9a3412',letterSpacing:'0.8px',textTransform:'uppercase',flexShrink:0}}>
                             r/{meta?.subreddit}
                           </span>
                           {meta?.postType && meta.postType !== 'Signal' && meta.postType !== 'Raw' && (
-                            <span className="px-2 py-0.5 text-[9px] font-mono uppercase font-bold rounded-md bg-orange-50 text-orange-600">
+                            <span style={{fontSize:'9px',fontWeight:600,padding:'2px 7px',borderRadius:'4px',background:'#fff7ed',color:'#9a3412',textTransform:'uppercase'}}>
                               {meta.postType}
                             </span>
                           )}
-                          <div className="ml-auto flex items-center gap-1 px-2 py-0.5 bg-amber-50 border border-amber-200 rounded-lg">
-                            <span className="text-amber-500 text-[9px]">⚡</span>
-                            <span className="text-xs font-bold font-mono text-amber-700">{String(sig.signalScore ?? 0)}</span>
+                          <div style={{marginLeft:'auto',flexShrink:0,display:'flex',alignItems:'center',gap:'3px',padding:'2px 8px',border:'1px solid #fde68a',background:'#fffbeb',borderRadius:'6px'}}>
+                            <span style={{fontSize:'9px',color:'#d97706'}}>⚡</span>
+                            <span style={{fontSize:'11px',fontWeight:700,color:'#92400e',fontVariantNumeric:'tabular-nums'}}>
+                              {Math.min(Number(sig.signalScore)||0,99)}
+                            </span>
                           </div>
                         </div>
 
                         {/* Title */}
-                        <h3 className="text-sm font-semibold text-gray-900 leading-snug line-clamp-2">
-                          {(String(sig.title ?? '')).replace(/&amp;/g, '&').replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/<[^>]+>/g, '')}
+                        <h3 style={{fontSize:'12px',fontWeight:600,color:'#0a0a0a',lineHeight:1.45,display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden'}}>
+                          {String(sig.title||'').replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/&#39;/g,"'")}
                         </h3>
 
                         {/* Problem */}
-                        {displayProblem.length > 30 && (
-                          <div className="bg-slate-50 border border-slate-100 rounded-xl p-3">
-                            <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">Problem identified</p>
-                            <p className="text-xs text-gray-700 leading-relaxed">{displayProblem}</p>
-                          </div>
-                        )}
+                        {(() => {
+                          const prob=(meta?.problem||'').replace(/<[^>]+>/g,'').replace(/\[.*?\]/g,'').replace(/https?:\/\/\S+/g,'').trim();
+                          return prob.length > 30 ? (
+                            <div style={{background:'#f8f8f6',borderRadius:'8px',padding:'10px 12px',border:'1px solid #f0f0ee'}}>
+                              <p style={{fontSize:'9px',fontWeight:700,color:'#bbb',letterSpacing:'1.5px',textTransform:'uppercase',marginBottom:'5px'}}>Problem signal</p>
+                              <p style={{fontSize:'11px',color:'#555',lineHeight:1.55,display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden'}}>
+                                {prob.substring(0,180)}
+                              </p>
+                            </div>
+                          ) : null;
+                        })()}
 
-                        {/* Startup idea — hide placeholder text */}
-                        {meta?.startupIdea &&
-                          meta.startupIdea !== 'Click Deep Analysis' &&
-                          meta.startupIdea !== 'Click Deep Analysis for startup idea' && (
-                          <div className="bg-emerald-50 rounded-xl p-3">
-                            <p className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest mb-1">Startup opportunity</p>
-                            <p className="text-xs text-gray-700 leading-relaxed">{meta.startupIdea}</p>
-                          </div>
-                        )}
-
-                        {/* Engagement + time */}
-                        {(typeof sig.timeAgo === 'string' || (meta?.upvotes ?? 0) > 0 || (meta?.comments ?? 0) > 0) && (
-                          <div className="flex items-center gap-3 text-[10px] text-gray-400">
-                            {typeof sig.timeAgo === 'string' && sig.timeAgo && (
-                              <span>🕐 {sig.timeAgo}</span>
-                            )}
-                            {(meta?.upvotes ?? 0) > 0 && (
-                              <span>▲ {Number(meta?.upvotes ?? 0).toLocaleString()}</span>
-                            )}
-                            {(meta?.comments ?? 0) > 0 && (
-                              <span>💬 {Number(meta?.comments ?? 0).toLocaleString()}</span>
-                            )}
+                        {/* Engagement */}
+                        {((meta?.upvotes??0)>0 || (meta?.comments??0)>0) && (
+                          <div style={{display:'flex',gap:'12px',fontSize:'10px',color:'#bbb'}}>
+                            {(meta?.upvotes??0)>0 && <span>▲ {Number(meta!.upvotes).toLocaleString()}</span>}
+                            {(meta?.comments??0)>0 && <span>💬 {Number(meta!.comments).toLocaleString()}</span>}
                           </div>
                         )}
 
                         {/* Actions */}
-                        {(() => {
-                          const isAnalyzingThisCard = analyzingUrl === String(sig.url ?? '');
-                          return (
-                        <div className="flex gap-2">
+                        <div style={{display:'flex',gap:'8px'}}>
                           <button
                             type="button"
                             disabled={!!analyzingUrl}
                             onClick={() => {
-                              const signalText = [sig.title, meta?.problem || ''].filter(Boolean).join('. ');
-                              setInput(signalText as string);
-                              setAnalyzingUrl(String(sig.url ?? signalText));
-                              analyzeSignal(signalText as string);
+                              const text=`${sig.title}. ${meta?.problem??''}`;
+                              setInput(text as string);
+                              setAnalyzingUrl(String(sig.url ?? text));
+                              analyzeSignal(text as string);
                             }}
-                            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-gray-900 text-white rounded-xl text-xs font-semibold hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                          >
-                            {isAnalyzingThisCard ? (
-                              <><Loader2 className="w-3 h-3 animate-spin" /> Analyzing...</>
-                            ) : (
-                              '⚡ Analyze'
-                            )}
+                            style={{flex:1,height:'34px',background:'#0a0a0a',color:'white',border:'none',borderRadius:'8px',fontSize:'11px',fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:'5px'}}>
+                            ⚡ Analyze
                           </button>
                           <a
-                            href={String(sig.url ?? '#')}
+                            href={String(sig.url??'#')}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="px-3 py-2.5 rounded-xl border border-gray-200 text-xs text-gray-500 hover:border-gray-400 transition-colors flex items-center"
-                          >
-                            View Post
+                            style={{height:'34px',padding:'0 12px',border:'1px solid #e8e8e4',background:'white',borderRadius:'8px',fontSize:'11px',color:'#666',display:'flex',alignItems:'center',textDecoration:'none'}}>
+                            View
                           </a>
                         </div>
-                          );
-                        })()}
                       </div>
                     </div>
                   );
