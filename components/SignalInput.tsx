@@ -771,7 +771,7 @@ export const SignalInput: React.FC<SignalInputProps> = ({
           )}
 
           {/* Feed cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div style={{display:'flex', flexDirection:'column', background:'white', border:'1px solid #e8e8e4', borderRadius:'8px', overflow:'hidden'}}>
             {(inputMode as string) === 'reddit'
               ? fetchingReddit
                 ? Array.from({ length: 4 }).map((_, i) => (
@@ -882,11 +882,8 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                           : '0 1px 3px rgba(0,0,0,0.08)',
                       }}
                       transition={{ duration: 0.3, ease: 'easeInOut' }}
-                      className={`relative bg-white border rounded-2xl flex flex-col overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 ${
-                        isSelected ? 'ring-2 ring-slate-900 border-slate-900' : 'border-slate-200/60 hover:border-slate-300/60'
-                      } ${isOtherAnalyzing ? 'pointer-events-none opacity-40' : ''} ${
-                        isAnalyzing ? 'ring-2 ring-blue-400 ring-offset-2 z-10' : ''
-                      } ${multiSelectMode ? 'cursor-pointer' : ''}`}
+                      className={`${isOtherAnalyzing ? 'pointer-events-none opacity-40' : ''} ${multiSelectMode ? 'cursor-pointer' : ''}`}
+                      style={{borderBottom:'1px solid #f5f5f3', background:'white', transition:'background 0.1s'}}
                       onClick={() => {
                         if (!multiSelectMode) return;
                         setSelectedArticles(prev => {
@@ -947,88 +944,25 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                         </div>
                       ) : (
                         /* ── NORMAL STATE ── */
-                        <div className="p-4 flex flex-col gap-3 flex-1 min-w-0">
-                          {/* Meta row — no wrap, truncate long sources */}
-                          <div className="flex items-center gap-2 min-w-0">
-                            {multiSelectMode && (
-                              <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all flex-shrink-0 ${
-                                isSelected ? 'bg-black border-black' : 'border-gray-300'
-                              }`}>
-                                {isSelected && <span className="text-white text-[10px]">✓</span>}
-                              </div>
-                            )}
-                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wide truncate max-w-[90px] flex-shrink-0">
-                              {sig.source}
-                            </span>
-                            <span className={`px-2 py-0.5 text-[9px] font-mono uppercase font-bold rounded-md flex-shrink-0 ${cfg.badgeBg} ${cfg.badgeText}`}>{cfg.label}</span>
-                            {sig.isLocalSource && (
-                              <span className="px-1.5 py-0.5 text-[9px] font-mono uppercase font-bold rounded-md bg-blue-50 text-blue-700 flex-shrink-0">Local</span>
-                            )}
-                            <div className="ml-auto flex-shrink-0 flex items-center gap-1 px-2 py-0.5 bg-amber-50 rounded-lg border border-amber-100">
-                              <span className="text-[9px] text-amber-500">⚡</span>
-                              <span className="text-[10px] font-bold font-mono text-amber-700">{Math.min(sig.signalScore || 0, 99)}</span>
-                            </div>
+                        <div style={{display:'grid', gridTemplateColumns:'90px 80px 1fr 44px 64px 90px', gap:0, padding:'10px 16px', alignItems:'center'}}>
+                          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wide truncate">{sig.source}</span>
+                          <span className={`px-2 py-0.5 text-[9px] font-mono uppercase font-bold rounded-md ${cfg.badgeBg} ${cfg.badgeText}`}>{cfg.label}</span>
+                          <p className="text-sm font-semibold" style={{whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>{sig.title}</p>
+                          <div className="flex items-center gap-1 px-2 py-0.5 bg-amber-50 rounded-lg border border-amber-100">
+                            <span className="text-[9px] text-amber-500">⚡</span>
+                            <span className="text-[10px] font-bold font-mono text-amber-700">{Math.min(sig.signalScore || 0, 99)}</span>
                           </div>
-                          {/* Title */}
-                          <p className="text-sm font-semibold leading-snug line-clamp-2">{sig.title}</p>
-                          {/* Snippet */}
-                          <p className="text-xs text-muted leading-relaxed line-clamp-2 flex-1">{sig.snippet}</p>
-                          {/* Analyze + Watch buttons */}
-                          {!multiSelectMode && (
-                            <div className="flex flex-col sm:flex-row gap-2">
-                              <button
-                                type="button"
-                                onClick={() => onAnalyzeSignal(sig)}
-                                disabled={!!analyzingUrl}
-                                aria-label={`Analyze: ${sig.title}`}
-                                className="w-full sm:flex-1 min-h-10 flex items-center justify-center gap-2 py-2.5 bg-foreground text-background rounded-xl font-mono text-[10px] uppercase tracking-widest hover:bg-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                              >
-                                <Zap className="w-3.5 h-3.5 fill-current" />
-                                Analyze 🔥
-                              </button>
-
-                              <div className="relative w-full sm:w-auto">
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (watching === sig.url) return;
-                                    setShowWatchMenu(prev => prev === sig.url ? null : sig.url);
-                                  }}
-                                  className={watching === sig.url
-                                    ? 'w-full sm:w-auto min-h-10 px-3 py-2 rounded-xl border border-amber-200 text-xs font-semibold text-amber-700 bg-amber-50 whitespace-nowrap shadow-sm'
-                                    : 'w-full sm:w-auto min-h-10 px-3 py-2 rounded-xl border border-gray-200 text-xs font-semibold text-gray-600 hover:border-amber-400 hover:text-amber-700 bg-white transition-all whitespace-nowrap shadow-sm hover:shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300'}
-                                >
-                                  {watching === sig.url ? 'Watching ✓' : 'Watch'}
-                                </button>
-
-                                {showWatchMenu === sig.url && (
-                                  <div
-                                    className="absolute bottom-full right-0 sm:right-0 left-0 sm:left-auto mb-2 w-full sm:w-48 bg-white border border-gray-200 rounded-2xl shadow-xl p-2 z-50"
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    <p className="text-xs font-semibold text-gray-600 px-2 py-1.5">Watch for how long?</p>
-                                    {[3, 5, 7, 14].map(days => (
-                                      <button
-                                        key={days}
-                                        type="button"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          addToWatchlist(sig, days);
-                                        }}
-                                        className="w-full text-left px-3 py-2.5 text-xs text-gray-700 hover:bg-amber-50 hover:text-amber-700 rounded-xl transition-colors flex items-center justify-between"
-                                      >
-                                        <span>{days} days</span>
-                                        {days === 7 && (
-                                          <span className="text-amber-500">recommended</span>
-                                        )}
-                                      </button>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          )}
+                          <span className="text-[10px] text-slate-400 font-mono tabular-nums truncate">{sig.publishedAt ? timeAgo(sig.publishedAt) : ''}</span>
+                          <button
+                            type="button"
+                            onClick={() => onAnalyzeSignal(sig)}
+                            disabled={!!analyzingUrl}
+                            aria-label={`Analyze: ${sig.title}`}
+                            className="flex items-center justify-center gap-1 py-1.5 px-2 bg-foreground text-background rounded-lg font-mono text-[9px] uppercase tracking-widest hover:bg-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                          >
+                            <Zap className="w-3 h-3 fill-current" />
+                            Analyze
+                          </button>
                         </div>
                       )}
 

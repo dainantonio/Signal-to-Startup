@@ -372,53 +372,6 @@ export default function TrendIntelligenceAgentNewsroom() {
           </div>
         </header>
 
-        <section className="mb-10 rounded-[2rem] border border-slate-200/70 bg-white/90 shadow-sm backdrop-blur-xl p-6">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-            <div className="max-w-2xl space-y-4">
-              <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-xs font-semibold text-slate-700">
-                <Sparkles className="w-4 h-4 text-slate-500" />
-                Workflow-first startup discovery
-              </div>
-              <h1 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">
-                Turn signals into launch-ready execution with a clear workflow.
-              </h1>
-              <p className="text-sm text-slate-600 leading-relaxed">
-                Start with news, Reddit, or your own market notes. Your agent sorts, scores,
-                and surfaces the best opportunities so you can act without extra research.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              {[
-                { title: 'Signal feed', value: 'News + Reddit', tone: 'bg-slate-50 text-slate-900' },
-                { title: 'Personalized', value: 'Your market', tone: 'bg-emerald-50 text-emerald-700' },
-                { title: 'Actionable', value: 'Launch-ready', tone: 'bg-amber-50 text-amber-700' },
-              ].map(card => (
-                <div key={card.title} className={`rounded-3xl border border-slate-200 p-5 ${card.tone}`}>
-                  <p className="text-xs uppercase tracking-[0.3em] font-semibold mb-3 text-slate-500">{card.title}</p>
-                  <p className="text-lg font-semibold">{card.value}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="mt-8">
-            <WorkflowStepper currentStep={currentStep} />
-          </div>
-        </section>
-
-        <div className="mb-8 rounded-3xl border border-slate-200/70 bg-slate-50 p-5 text-sm text-slate-700">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="leading-relaxed">
-              Tip: Use the newsroom workflow to move smoothly between signal discovery, Reddit analysis, and compound opportunity generation.
-            </p>
-            <div className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-semibold text-slate-600 shadow-sm">
-              <span className="h-2 w-2 rounded-full bg-emerald-500" />
-              New Reddit signal mode included
-            </div>
-          </div>
-        </div>
-
         {/* Signal Desk */}
         <SignalDeskNewsroom
           input={analysis.input}
