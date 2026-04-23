@@ -3,7 +3,6 @@
 import React from 'react';
 import Link from 'next/link';
 import { motion } from 'motion/react';
-import { ChevronRight } from 'lucide-react';
 import { Opportunity } from './types';
 
 interface OpportunityCardProps {
@@ -20,8 +19,6 @@ export const OpportunityCard: React.FC<OpportunityCardProps> = ({
   opp, index, isBestIdea, generateDeepDive, isReadOnly = false,
 }) => {
   const score = Math.round(opp.money_score);
-  const scoreColor = score >= 70 ? 'text-emerald-600' : score >= 50 ? 'text-amber-600' : 'text-slate-400';
-  const scoreBg = score >= 70 ? 'bg-emerald-50 border-emerald-200' : score >= 50 ? 'bg-amber-50 border-amber-200' : 'bg-slate-50 border-slate-200';
 
   const priorityColors: Record<string, string> = {
     High:   'bg-indigo-50 text-indigo-700 border-indigo-200',
@@ -59,45 +56,53 @@ export const OpportunityCard: React.FC<OpportunityCardProps> = ({
           </div>
 
           {/* Score badge */}
-          <div className={`flex-shrink-0 flex flex-col items-center border px-3 py-2 rounded-lg min-w-[52px] ${scoreBg}`}>
-            <span className="text-[9px] font-semibold text-slate-500 uppercase leading-none mb-1">Score</span>
-            <span className={`text-xl font-bold leading-none ${scoreColor}`}>{score}</span>
+          <div style={{
+            flexShrink: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            padding: '6px 10px',
+            background: score >= 70 ? '#F0FDF4' : score >= 50 ? '#FFFBEB' : '#F8F8F6',
+            border: `1px solid ${score >= 70 ? '#BBF7D0' : score >= 50 ? '#FDE68A' : '#E8E8E4'}`,
+            borderRadius: '8px',
+            minWidth: '44px',
+          }}>
+            <span style={{
+              fontSize: '20px',
+              fontWeight: 800,
+              color: score >= 70 ? '#16A34A' : score >= 50 ? '#D97706' : '#94A3B8',
+              fontVariantNumeric: 'tabular-nums',
+              lineHeight: 1,
+            }}>
+              {score}
+            </span>
           </div>
         </div>
 
         {/* Description */}
         <p className="text-sm font-sans leading-relaxed text-gray-600">{opp.description}</p>
 
-        {/* Score bar */}
-        <div className="space-y-1.5">
-          <div className="flex justify-between items-center">
-            <span className="text-[10px] font-semibold text-slate-400 uppercase">Money Score</span>
-            <span className="text-[10px] font-semibold text-slate-600">{score}/100</span>
-          </div>
-          <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${opp.money_score}%` }}
-              transition={{ duration: 1.2, ease: 'easeOut', delay: index * 0.06 }}
-              className={`h-full rounded-full ${score >= 70 ? 'bg-emerald-500' : score >= 50 ? 'bg-amber-400' : 'bg-slate-300'}`}
-            />
-          </div>
-        </div>
-
         {/* Key stats */}
-        <div className="grid grid-cols-3 gap-2 pt-1 border-t border-slate-100">
-          <div className="bg-slate-50 border border-slate-100 p-2.5 rounded-lg text-center">
-            <p className="text-[9px] font-semibold text-slate-400 uppercase mb-1">Cost</p>
-            <p className="text-xs font-bold text-slate-700">${opp.startup_cost.toLocaleString()}</p>
-          </div>
-          <div className="bg-slate-50 border border-slate-100 p-2.5 rounded-lg text-center">
-            <p className="text-[9px] font-semibold text-slate-400 uppercase mb-1">Speed</p>
-            <p className="text-xs font-bold text-slate-700">{opp.speed_to_launch}/10</p>
-          </div>
-          <div className="bg-slate-50 border border-slate-100 p-2.5 rounded-lg text-center">
-            <p className="text-[9px] font-semibold text-slate-400 uppercase mb-1">Ease</p>
-            <p className="text-xs font-bold text-slate-700">{10 - opp.difficulty}/10</p>
-          </div>
+        <div style={{ display: 'flex', gap: 0, paddingTop: '12px', borderTop: '1px solid #F5F5F3' }}>
+          {[
+            { label: 'Cost', value: `$${opp.startup_cost.toLocaleString()}` },
+            { label: 'Speed', value: `${opp.speed_to_launch}/10` },
+            { label: 'Ease', value: `${10 - opp.difficulty}/10` },
+          ].map((m, i) => (
+            <div key={i} style={{
+              flex: 1,
+              textAlign: 'center',
+              borderRight: i < 2 ? '1px solid #F5F5F3' : 'none',
+              padding: '0 8px',
+            }}>
+              <p style={{ fontSize: '9px', fontWeight: 700, color: '#BBB', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '3px' }}>
+                {m.label}
+              </p>
+              <p style={{ fontSize: '13px', fontWeight: 700, color: '#0A0A0A', fontVariantNumeric: 'tabular-nums' }}>
+                {m.value}
+              </p>
+            </div>
+          ))}
         </div>
 
         {/* Target customer */}
@@ -117,10 +122,9 @@ export const OpportunityCard: React.FC<OpportunityCardProps> = ({
         ) : (
           <button
             onClick={() => generateDeepDive(opp)}
-            className="mt-auto w-full bg-gray-900 text-white h-11 rounded-lg text-sm font-semibold transition-colors hover:bg-gray-800 flex items-center justify-center gap-2 group"
+            className="mt-auto w-full bg-gray-900 text-white h-11 rounded-lg text-sm font-semibold transition-colors hover:bg-gray-800 flex items-center justify-center"
           >
-            Generate Execution Suite
-            <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+            ⚡ Open Execution Suite
           </button>
         )}
       </div>

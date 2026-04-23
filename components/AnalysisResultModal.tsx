@@ -50,21 +50,21 @@ export const AnalysisResultModal: React.FC<AnalysisResultModalProps> = ({
             {/* Header */}
             <div className="flex-shrink-0 bg-white px-4 md:px-8 py-4 md:py-6 flex items-center justify-between border-b border-gray-100">
               <div className="flex-1 min-w-0 pr-4">
-                <h2 className="text-lg md:text-2xl font-serif font-bold mb-1 truncate text-gray-900">
+                <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#0A0A0A', letterSpacing: '-0.3px', margin: 0 }}>
                   Analysis Results
                 </h2>
                 {sourceTitle && (
-                  <p className="text-xs md:text-sm text-gray-500 truncate">
-                    Source: {sourceTitle}
+                  <p style={{ fontSize: '11px', color: '#999', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '280px', marginTop: '2px' }}>
+                    {sourceTitle}
                   </p>
                 )}
               </div>
               <button
                 onClick={onClose}
-                className="flex-shrink-0 p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500 hover:text-gray-900"
                 aria-label="Close"
+                style={{ width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #E8E8E4', borderRadius: '8px', background: 'white', cursor: 'pointer', fontSize: '16px', flexShrink: 0 }}
               >
-                <X className="w-5 h-5 md:w-6 md:h-6" />
+                <X className="w-4 h-4 text-gray-600" />
               </button>
             </div>
 
