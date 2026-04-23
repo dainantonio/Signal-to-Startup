@@ -376,27 +376,24 @@ export const SignalInput: React.FC<SignalInputProps> = ({
 
   return (
     <section id="step-1" className="scroll-mt-24 mb-12">
-      <div className="relative overflow-hidden rounded-3xl border border-border/20 bg-gradient-to-b from-white to-slate-50/70 p-1.5 shadow-[0_8px_32px_rgba(15,23,42,0.08)] mb-6">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-8 bg-gradient-to-r from-transparent via-slate-200/40 to-transparent" />
-        <div className="relative flex w-full">
-          <button onClick={() => setInputMode('paste')} className={`flex-1 py-3 rounded-2xl font-mono text-[11px] uppercase tracking-wider transition-all duration-200 ${inputMode === 'paste' ? 'bg-foreground text-background shadow-lg shadow-foreground/15' : 'text-muted hover:text-foreground hover:bg-white/80'}`}>
-            Paste Signal
-          </button>
-          <button onClick={() => setInputMode('feed')} className={`flex-1 py-3 rounded-2xl font-mono text-[11px] uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 ${inputMode === 'feed' ? 'bg-foreground text-background shadow-lg shadow-foreground/15' : 'text-muted hover:text-foreground hover:bg-white/80'}`}>
-            <span className={`w-2 h-2 rounded-full flex-shrink-0 ${inputMode === 'feed' ? 'bg-red-400 animate-pulse' : 'bg-gray-300'}`} />
-            Live Feed
-          </button>
-          <button onClick={() => setInputMode('reddit')} className={`flex-1 py-3 rounded-2xl font-mono text-[11px] uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 ${(inputMode as string) === 'reddit' ? 'bg-foreground text-background shadow-lg shadow-foreground/15' : 'text-muted hover:text-foreground hover:bg-white/80'}`}>
-            <span className={`w-2 h-2 rounded-full flex-shrink-0 ${(inputMode as string) === 'reddit' ? 'bg-orange-400 animate-pulse' : 'bg-gray-300'}`} />
-            Reddit Signals
-          </button>
-        </div>
+      <div className="bg-white border border-slate-200 rounded-xl p-1 mb-6 flex w-full">
+        <button onClick={() => setInputMode('paste')} className={`flex-1 py-2.5 rounded-lg text-xs font-semibold transition-all duration-200 ${inputMode === 'paste' ? 'bg-gray-900 text-white shadow-sm' : 'text-slate-500 hover:text-gray-900 hover:bg-slate-50'}`}>
+          Paste Signal
+        </button>
+        <button onClick={() => setInputMode('feed')} className={`flex-1 py-2.5 rounded-lg text-xs font-semibold transition-all duration-200 flex items-center justify-center gap-2 ${inputMode === 'feed' ? 'bg-gray-900 text-white shadow-sm' : 'text-slate-500 hover:text-gray-900 hover:bg-slate-50'}`}>
+          <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${inputMode === 'feed' ? 'bg-red-400 animate-pulse' : 'bg-gray-300'}`} />
+          Live Feed
+        </button>
+        <button onClick={() => setInputMode('reddit')} className={`flex-1 py-2.5 rounded-lg text-xs font-semibold transition-all duration-200 flex items-center justify-center gap-2 ${(inputMode as string) === 'reddit' ? 'bg-gray-900 text-white shadow-sm' : 'text-slate-500 hover:text-gray-900 hover:bg-slate-50'}`}>
+          <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${(inputMode as string) === 'reddit' ? 'bg-orange-400 animate-pulse' : 'bg-gray-300'}`} />
+          Reddit Signals
+        </button>
       </div>
 
       {inputMode === 'paste' ? (
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-[10px] font-mono uppercase tracking-widest text-muted font-bold">Paste an article URL</label>
+            <label className="text-xs font-semibold text-slate-500">Paste an article URL</label>
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="flex-1 relative group">
                 <input
@@ -411,7 +408,7 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                 {urlInput && <button type="button" onClick={() => { setUrlInput(''); if (setUrlFetchStatus) setUrlFetchStatus('idle'); }} className="absolute right-4 top-1/2 -translate-y-1/2 text-muted hover:text-foreground"><X className="w-4 h-4" /></button>}
               </div>
               <button onClick={fetchUrl} disabled={fetchingUrl || !urlInput.trim()}
-                className="bg-foreground text-background px-8 py-4 rounded-xl font-mono text-[11px] uppercase tracking-widest hover:bg-foreground/90 disabled:opacity-40 transition-all shadow-lg shadow-foreground/5 flex-shrink-0 flex items-center justify-center gap-2">
+                className="bg-gray-900 text-white px-6 py-3 rounded-xl text-sm font-semibold hover:bg-gray-800 disabled:opacity-40 transition-all flex-shrink-0 flex items-center justify-center gap-2">
                 {fetchingUrl ? <><Loader2 className="w-4 h-4 animate-spin" /> Fetching...</> : 'Fetch Article'}
               </button>
             </div>
@@ -447,7 +444,7 @@ export const SignalInput: React.FC<SignalInputProps> = ({
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={pdfLoading}
-                className="flex items-center gap-2 px-4 py-2 bg-white border border-border/10 rounded-xl text-[10px] font-mono uppercase tracking-widest font-bold text-muted hover:text-foreground hover:border-border/30 hover:bg-gray-50 disabled:opacity-40 transition-all shadow-sm"
+                className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-500 hover:text-gray-900 hover:border-slate-300 hover:bg-gray-50 disabled:opacity-40 transition-all"
               >
                 {pdfLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileUp className="w-3.5 h-3.5" />}
                 {pdfLoading ? 'Reading PDF...' : 'Upload PDF File'}
@@ -463,7 +460,7 @@ export const SignalInput: React.FC<SignalInputProps> = ({
             </div>
           </div>
           <div className="space-y-1.5">
-            <label className="text-[10px] font-mono uppercase tracking-widest text-muted font-bold">Or paste signal directly</label>
+            <label className="text-xs font-semibold text-slate-500">Or paste signal directly</label>
             <div className="relative group">
               <textarea ref={textareaRef} value={input} onChange={e => setInput(e.target.value)} placeholder="Paste a news article, policy update, or market signal here..."
                 className="w-full h-48 md:h-64 bg-white border border-border/10 rounded-2xl p-6 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none resize-none font-sans text-base leading-relaxed transition-all shadow-sm" />

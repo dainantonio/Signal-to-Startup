@@ -3,13 +3,13 @@
 @plugin "@tailwindcss/typography";
 
 @theme {
-  --color-background: #FAFAF9;
-  --color-foreground: #0F0F0F;
-  --color-primary: #0F0F0F;
-  --color-secondary: #059669;
+  --color-background: #F8F8F6;
+  --color-foreground: #0A0A0A;
+  --color-primary: #0A0A0A;
+  --color-secondary: #16A34A;
   --color-accent: #DC2626;
-  --color-muted: #6B7280;
-  --color-border: #E5E7EB;
+  --color-muted: #888888;
+  --color-border: #E8E8E4;
   --color-surface: #FFFFFF;
   --color-surface-secondary: #F8FAFC;
 
@@ -234,3 +234,12 @@
 }
 
 /* Print styles are handled inline by DeepDiveModal and Checklist components. */
+
+.signal-row {
+  border-bottom: 1px solid #F5F5F3;
+  transition: background 0.1s;
+}
+.signal-row:hover { background: #FAFAF8; }
+.signal-row.high {
+  border-left: 3px solid #16A34A;
+}

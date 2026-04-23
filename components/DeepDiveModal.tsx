@@ -290,7 +290,7 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-foreground/40 backdrop-blur-md z-[70] flex items-end md:items-center justify-center p-0 md:p-8 no-print"
+      className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[70] flex items-end md:items-center justify-center p-0 md:p-8 no-print"
       onClick={handleClose}
     >
       <style dangerouslySetInnerHTML={{ __html: `
@@ -328,14 +328,14 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-        className="bg-background w-full max-w-6xl h-[92dvh] md:h-[85dvh] overflow-hidden rounded-t-3xl md:rounded-3xl border border-border/10 flex flex-col modal-container shadow-2xl"
+        className="bg-background w-full max-w-6xl h-[92dvh] md:h-[85dvh] overflow-hidden rounded-t-2xl md:rounded-2xl border border-slate-200 flex flex-col modal-container shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header - Mobile First */}
         <div className="border-b border-border/10 p-3 md:p-6 flex items-center gap-2 md:gap-3 bg-white/80 backdrop-blur-md sticky top-0 z-20 no-print">
           <div className="flex-1 min-w-0 overflow-hidden">
             <h2 className="font-sans font-semibold text-sm md:text-base leading-snug truncate break-words">{selectedOpportunity.name}</h2>
-            <p className="text-[9px] md:text-[10px] font-mono uppercase text-muted tracking-widest">Execution Suite</p>
+            <p className="text-[10px] text-slate-400">Execution Suite</p>
           </div>
           
           <div className="flex items-center gap-2 flex-shrink-0">
@@ -346,7 +346,7 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
                   <button
                     onClick={saveOpportunity}
                     disabled={saving}
-                    className="flex items-center gap-2 px-4 py-2.5 bg-white border border-border/10 hover:border-border/30 rounded-xl text-[10px] font-mono uppercase font-bold transition-all shadow-sm"
+                    className="flex items-center gap-2 px-4 py-2 border border-slate-200 bg-white hover:border-slate-300 rounded-lg text-xs font-semibold text-slate-700 transition-all"
                   >
                     {saving ? <Loader2 size={14} className="animate-spin" /> : <Bookmark size={14} />}
                     {saving ? 'Saving...' : 'Save Opportunity'}
@@ -354,7 +354,7 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
                 ) : (
                   <Link
                     href="/dashboard"
-                    className="flex items-center gap-2 px-4 py-2.5 bg-secondary text-white rounded-xl text-[10px] font-mono uppercase font-bold transition-all shadow-lg shadow-secondary/20"
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg text-xs font-semibold transition-all"
                   >
                     <BookmarkCheck size={14} />
                     View in Pipeline
@@ -363,14 +363,14 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
               )}
               <button
                 onClick={exportToNotion}
-                className="flex items-center gap-2 px-4 py-2.5 bg-foreground text-background rounded-xl text-[10px] font-mono uppercase font-bold hover:bg-foreground/90 transition-all shadow-lg shadow-foreground/10"
+                className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg text-xs font-semibold hover:bg-gray-800 transition-all"
               >
                 {copied === 'notion-export' ? <Check size={14} /> : <ExternalLink size={14} />}
                 {copied === 'notion-export' ? 'Copied' : 'Copy for Notion'}
               </button>
               <button
                 onClick={shareLink}
-                className="flex items-center gap-2 px-4 py-2.5 bg-primary/5 border border-primary/10 text-primary rounded-xl text-[10px] font-mono uppercase font-bold hover:bg-primary/10 transition-all"
+                className="flex items-center gap-2 px-4 py-2 border border-slate-200 bg-white text-slate-600 rounded-lg text-xs font-semibold hover:border-slate-300 transition-all"
               >
                 {copied === 'share-link' ? <Check size={14} /> : <Share2 size={14} />}
                 {copied === 'share-link' ? 'Link Copied' : 'Share Link'}
@@ -501,10 +501,10 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
                     key={tab.id}
                     type="button"
                     onClick={() => setActiveDeepDiveTab(tab.id)}
-                    className={`flex-shrink-0 flex items-center gap-2 lg:gap-3 px-3 lg:px-4 py-2.5 lg:py-3.5 rounded-xl text-[10px] md:text-xs font-bold transition-all whitespace-nowrap ${
+                    className={`flex-shrink-0 flex items-center gap-2 lg:gap-3 px-3 lg:px-4 py-2.5 lg:py-3 text-xs font-semibold transition-all whitespace-nowrap ${
                       activeDeepDiveTab === tab.id
-                        ? 'bg-white text-primary shadow-md shadow-primary/5 border border-primary/10'
-                        : 'text-muted hover:text-foreground hover:bg-white/50'
+                        ? 'border-b-2 border-gray-900 text-gray-900 lg:border-b-0 lg:border-l-2 lg:border-gray-900 bg-white'
+                        : 'text-gray-400 hover:text-gray-700 hover:bg-gray-50'
                     }`}
                   >
                     <span className="flex-shrink-0 text-base leading-none">{tab.icon}</span>
@@ -561,7 +561,7 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
                     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                       <div className="flex items-center gap-3 text-primary bg-primary/5 px-4 py-2 rounded-full w-fit">
                         <span className="text-base leading-none">💰</span>
-                        <span className="text-[10px] font-mono uppercase font-bold tracking-widest">Startup Cost Breakdown</span>
+                        <span className="text-xs font-semibold">Startup Cost Breakdown</span>
                       </div>
                       <CostEstimator deepDiveResult={deepDiveResult} />
                     </div>
@@ -571,7 +571,7 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
                     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                       <div className="flex items-center gap-3 text-primary bg-primary/5 px-4 py-2 rounded-full w-fit">
                         <span className="text-base leading-none">🏦</span>
-                        <span className="text-[10px] font-mono uppercase font-bold tracking-widest">Funding & Grant Opportunities</span>
+                        <span className="text-xs font-semibold">Funding & Grant Opportunities</span>
                       </div>
                       <GrantFinder deepDiveResult={deepDiveResult} selectedMode={selectedMode} />
                     </div>
@@ -581,7 +581,7 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
                     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                       <div className="flex items-center gap-3 text-primary bg-primary/5 px-4 py-2 rounded-full w-fit">
                         <span className="text-base leading-none">✅</span>
-                        <span className="text-[10px] font-mono uppercase font-bold tracking-widest">30-Day Execution Checklist</span>
+                        <span className="text-xs font-semibold">30-Day Execution Checklist</span>
                       </div>
                       <Checklist deepDiveResult={deepDiveResult} savedDocId={savedDocId} />
                     </div>
@@ -591,7 +591,7 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
                     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                       <div className="flex items-center gap-3 text-primary bg-primary/5 px-4 py-2 rounded-full w-fit">
                         <span className="text-base leading-none">🤝</span>
-                        <span className="text-[10px] font-mono uppercase font-bold tracking-widest">Potential Investor Match</span>
+                        <span className="text-xs font-semibold">Potential Investor Match</span>
                       </div>
                       <InvestorMatch deepDiveResult={deepDiveResult} />
                     </div>
@@ -601,7 +601,7 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
                     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                       <div className="flex items-center gap-3 text-primary bg-primary/5 px-4 py-2 rounded-full w-fit">
                         <span className="text-base leading-none">🎯</span>
-                        <span className="text-[10px] font-mono uppercase font-bold tracking-widest">Strategy Report</span>
+                        <span className="text-xs font-semibold">Strategy Report</span>
                       </div>
 
                       {!deepDiveResult.strategy_report ? (
@@ -709,7 +709,7 @@ ${deepDiveResult.investors.map(inv => `- **${inv.name}** (${inv.stage}): ${inv.f
                     <button
                       type="button"
                       onClick={() => generateDeepDive(selectedOpportunity)}
-                      className="px-8 py-4 bg-primary text-white rounded-2xl font-mono text-xs uppercase font-bold tracking-widest hover:bg-primary/90 transition-all shadow-xl shadow-primary/20"
+                      className="px-8 py-3 bg-gray-900 text-white rounded-lg text-sm font-semibold hover:bg-gray-800 transition-all"
                     >
                       Generate Execution Suite
                     </button>
