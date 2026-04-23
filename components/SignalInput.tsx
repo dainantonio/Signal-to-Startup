@@ -376,18 +376,44 @@ export const SignalInput: React.FC<SignalInputProps> = ({
 
   return (
     <section id="step-1" className="scroll-mt-24 mb-12">
-      <div className="bg-white border border-slate-200 rounded-xl p-1 mb-6 flex w-full">
-        <button onClick={() => setInputMode('paste')} className={`flex-1 py-2.5 rounded-lg text-xs font-semibold transition-all duration-200 ${inputMode === 'paste' ? 'bg-gray-900 text-white shadow-sm' : 'text-slate-500 hover:text-gray-900 hover:bg-slate-50'}`}>
-          Paste Signal
-        </button>
-        <button onClick={() => setInputMode('feed')} className={`flex-1 py-2.5 rounded-lg text-xs font-semibold transition-all duration-200 flex items-center justify-center gap-2 ${inputMode === 'feed' ? 'bg-gray-900 text-white shadow-sm' : 'text-slate-500 hover:text-gray-900 hover:bg-slate-50'}`}>
-          <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${inputMode === 'feed' ? 'bg-red-400 animate-pulse' : 'bg-gray-300'}`} />
-          Live Feed
-        </button>
-        <button onClick={() => setInputMode('reddit')} className={`flex-1 py-2.5 rounded-lg text-xs font-semibold transition-all duration-200 flex items-center justify-center gap-2 ${(inputMode as string) === 'reddit' ? 'bg-gray-900 text-white shadow-sm' : 'text-slate-500 hover:text-gray-900 hover:bg-slate-50'}`}>
-          <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${(inputMode as string) === 'reddit' ? 'bg-orange-400 animate-pulse' : 'bg-gray-300'}`} />
-          Reddit Signals
-        </button>
+      <div style={{ display: 'flex', borderBottom: '1px solid #E8E8E4', background: 'white', marginBottom: '0' }}>
+        {([
+          { mode: 'feed',   label: 'News Feed',   dot: '#22C55E' },
+          { mode: 'reddit', label: 'Reddit',       dot: '#F97316' },
+          { mode: 'paste',  label: 'Paste / URL',  dot: null },
+        ] as { mode: string; label: string; dot: string | null }[]).map(tab => (
+          <button
+            key={tab.mode}
+            type="button"
+            onClick={() => setInputMode(tab.mode as 'paste' | 'feed' | 'reddit')}
+            style={{
+              padding: '12px 20px',
+              fontSize: '13px',
+              fontWeight: inputMode === tab.mode ? 600 : 400,
+              color: inputMode === tab.mode ? '#0A0A0A' : '#999',
+              border: 'none',
+              background: 'transparent',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '7px',
+              borderBottom: inputMode === tab.mode ? '2px solid #0A0A0A' : '2px solid transparent',
+              marginBottom: '-1px',
+              transition: 'all 0.15s',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {tab.dot && (
+              <span style={{
+                width: '6px', height: '6px',
+                borderRadius: '50%',
+                background: inputMode === tab.mode ? tab.dot : '#DDD',
+                flexShrink: 0,
+              }} />
+            )}
+            {tab.label}
+          </button>
+        ))}
       </div>
 
       {inputMode === 'paste' ? (
@@ -605,68 +631,44 @@ export const SignalInput: React.FC<SignalInputProps> = ({
             </div>
           )}
 
-          {/* Slim filter bar */}
+          {/* Feed header */}
           {inputMode === 'feed' ? (() => {
-            const countryTag = countryTags[0] ?? '';
             const hasActiveFilters =
               countryTags.length > 0 ||
               filters.sectors.length < ALL_SECTORS.length ||
               filters.recency !== '3d';
             return (
-              <div className="flex items-center justify-between px-1 py-1">
-                {/* Active filter summary */}
-                <div className="flex items-center gap-2">
-                  {countryTag && (
-                    <span className="flex items-center gap-1 text-xs text-gray-600 font-medium">
-                      {COUNTRY_CONTEXT[countryTag.toLowerCase()]?.flag ?? '🌍'} {countryTag}
-                    </span>
-                  )}
-                  {filters.sectors.length < ALL_SECTORS.length && (
-                    <span className="text-xs text-gray-500">
-                      {filters.sectors.length} sectors
-                    </span>
-                  )}
-                  {!countryTag && filters.sectors.length === ALL_SECTORS.length && (
-                    <span className="text-xs text-gray-400">All signals</span>
-                  )}
-                </div>
-                {/* Controls */}
-                <div className="flex items-center gap-2">
-                  {!fetchingFeed && signals.length > 0 && (
-                    <span className="text-xs text-gray-400">{signals.length} signals</span>
-                  )}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', borderBottom: '1px solid #F5F5F3', background: 'white' }}>
+                <span style={{ fontSize: '11px', fontWeight: 600, color: '#BBB', letterSpacing: '1px', textTransform: 'uppercase' as const }}>
+                  {fetchingFeed ? 'Loading…' : `${signals.length} signals`}
+                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <button
                     type="button"
-                    onClick={() => {
-                      setMultiSelectMode(!multiSelectMode);
-                      setSelectedArticles([]);
+                    onClick={() => { setMultiSelectMode(!multiSelectMode); setSelectedArticles([]); }}
+                    style={{
+                      border: multiSelectMode ? '1px solid #0A0A0A' : '1px solid #E8E8E4',
+                      background: multiSelectMode ? '#0A0A0A' : 'white',
+                      color: multiSelectMode ? 'white' : '#555',
+                      borderRadius: '7px', fontSize: '12px', fontWeight: 500,
+                      padding: '5px 12px', cursor: 'pointer', whiteSpace: 'nowrap' as const,
                     }}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${
-                      multiSelectMode
-                        ? 'bg-black text-white border-black'
-                        : 'border-gray-200 text-gray-600 hover:border-black'
-                    }`}
                   >
-                    {multiSelectMode ? '✕ Cancel' : '⊕ Compare signals'}
+                    {multiSelectMode ? '✕ Cancel' : 'Compare'}
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowFilterDrawer(true)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-600 hover:border-gray-400 transition-colors"
+                    style={{
+                      border: '1px solid #E8E8E4',
+                      background: 'white',
+                      color: '#555',
+                      borderRadius: '7px', fontSize: '12px', fontWeight: 500,
+                      padding: '5px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px',
+                    }}
                   >
-                    ⚙ Filters
-                    {hasActiveFilters && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-black" />
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => fetchFeed(true)}
-                    disabled={fetchingFeed}
-                    aria-label="Refresh feed"
-                    className="p-1.5 text-gray-400 hover:text-black transition-colors"
-                  >
-                    <RefreshCw className={`w-4 h-4 ${fetchingFeed ? 'animate-spin' : ''}`} />
+                    Filters
+                    {hasActiveFilters && <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#0A0A0A', flexShrink: 0 }} />}
                   </button>
                 </div>
               </div>
